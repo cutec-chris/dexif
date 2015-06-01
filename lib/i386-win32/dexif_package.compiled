@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="C:\fpc\2.6.4\bin\i386-win32\fpc.exe" Date="1147568783"/>
-  <Params Value=" -MObjFPC -Scghi -CX -Os3 -g -gl -vewnhi -FuC:\lazarus\packager\units\i386-win32 -FuZ:\media\Daten\Source\promet\promet\source\components\dexif\ -FUZ:\media\Daten\Source\promet\promet\source\components\dexif\lib\i386-win32\ -l -ddExifNoJpeg dexif_package.pas"/>
-</CONFIG>

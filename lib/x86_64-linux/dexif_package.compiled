@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="/usr/bin/fpc" Date="1390412254"/>
-  <Params Value=" -MObjFPC -Scghi -CX -Cg -Os3 -g -gl -l -vewnhibq -Fu/media/Daten/lazarus/packager/units/x86_64-linux -Fu/media/Daten/Source/promet/promet/source/components/dexif/ -FU/media/Daten/Source/promet/promet/source/components/dexif/lib/x86_64-linux/ -ddExifNoJpeg dexif_package.pas"/>
-</CONFIG>
