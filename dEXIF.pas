@@ -16,7 +16,7 @@ DatetimeToStr(ExifDateToDateTime(DateTime/fstr)) bei den Tags
 Revision: 1.10 check in time: 2009-02-10 12:31:56 by Stefan
 Workfile edit time: 2009-02-10 12:29:04
 Labeled by Stefan as 'Stefan s Komponenten 2009-03-23'
-[-] Die Ausgabeformatierungen von TImageInfo.toLongString/toShortString geändert
+[-] Die Ausgabeformatierungen von TImageInfo.toLongString/toShortString geÃ¤ndert
 ----------------------------------------
 Revision: 1.9 check in time: 2009-02-10 12:20:37 by Stefan
 Workfile edit time: 2009-02-10 12:17:06
@@ -26,17 +26,17 @@ Revision: 1.8 check in time: 2009-02-07 14:52:47 by Stefan
 Workfile edit time: 2009-02-06 09:38:38
 Vorbereitung zur Migration nach Delphi 2009 
 - Chr -> AnsiChar 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe
+- Explizite Typecast auf AnsiString fÃ¼r Funktionsaufrufe
 ----------------------------------------
 Revision: 1.7 check in time: 2009-02-05 23:01:40 by Stefan
 Workfile edit time: 2009-02-05 22:58:30
 Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+- Explizite Typecast auf AnsiString fÃ¼r Funktionsaufrufe von 
   - trim 
   - IntToStr, IntToHex 
   - AnsiUpperCase, AnsiLowerCase 
   - ExtractFileName/Ext 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
+- Explizite Typecast auf String fÃ¼r Parameter bei Funktionsaufrufen von 
   - trim 
   - StrToInt 
 - ErrStr wieder von String auf AnsiString
@@ -44,10 +44,10 @@ Vorbereitung zur Migration nach Delphi 2009
 Revision: 1.6 check in time: 2009-02-05 22:20:31 by Stefan
 Workfile edit time: 2009-02-05 22:17:42
 Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+- Explizite Typecast auf AnsiString fÃ¼r Funktionsaufrufe von 
   - trim 
   - IntToStr, IntToHex 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
+- Explizite Typecast auf String fÃ¼r Parameter bei Funktionsaufrufen von 
   - trim 
   - StrToInt
 ----------------------------------------
@@ -56,7 +56,7 @@ Workfile edit time: 2009-02-05 22:10:15
 Vorbereitung zur Migration nach Delphi 2009 
 - Funktion TImageInfo.toString -> toShortString 
 - Chr -> AnsiChar 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+- Explizite Typecast auf AnsiString fÃ¼r Funktionsaufrufe von 
   - AnsiUpperCase, AnsiLowerCase 
   - Format, FormatDateTime 
 - #13#10 durch Konstante crlf ersetzt
@@ -73,9 +73,9 @@ Vorbereitung zur Migration nach Delphi 2009
 Revision: 1.3 check in time: 2007-11-01 12:37:23 by Stefan
 Workfile edit time: 2007-11-01 09:45:12
 + Das Dekodieren von GPS-Tag: $006;   Name:'GPSAltitude'  durch die
-neue CallBack-Funktion GpsAltitude hinzugefügt. 
+neue CallBack-Funktion GpsAltitude hinzugefÃ¼gt. 
 - Das Dekodieren von GPS-Tag: $005;   Name:'GPSAltitudeRef' durch die
-beiden möglichen Codes erweitert: '0:Above Sealevel,1:Below Sealevel'.
+beiden mÃ¶glichen Codes erweitert: '0:Above Sealevel,1:Below Sealevel'.
 ----------------------------------------
 Revision: 1.2 check in time: 2006-05-26 19:51:47 by Stefan
 Workfile edit time: 2006-04-20 08:24:34
@@ -568,7 +568,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $10F;   Name:'Make'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $110;   Name:'Model'                  ),
   (TID:0;TType:0;ICode: 2;Tag: $111;   Name:'StripOffsets'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $112;   Name:'Orientation'            ;Desc:''; Code:'1:Normal,3:Rotated 180°,6:CounterClockwise 90°,8:Clockwise 90°'),
+  (TID:0;TType:0;ICode: 2;Tag: $112;   Name:'Orientation'            ;Desc:''; Code:'1:Normal,3:Rotated 180Â°,6:CounterClockwise 90Â°,8:Clockwise 90Â°'),
   (TID:0;TType:0;ICode: 2;Tag: $115;   Name:'SamplesPerPixel'        ),
   (TID:0;TType:0;ICode: 2;Tag: $116;   Name:'RowsPerStrip'           ),
   (TID:0;TType:0;ICode: 2;Tag: $117;   Name:'StripByteCounts'        ),
@@ -2695,9 +2695,9 @@ var extn:ansistring;
 begin
   reset;
   result := false;
-  if not FileExists(FileName) then
+  if not FileExists(aFileName) then
     exit;
-  SetFileInfo(FileName);
+  SetFileInfo(aFileName);
   try
       errstr := 'Not an EXIF file';
       extn :=  AnsiString(AnsiLowerCase(ExtractFileExt(filename)));
@@ -3134,4 +3134,4 @@ end.
 
 
 
-
+
