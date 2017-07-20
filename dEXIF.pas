@@ -1085,9 +1085,12 @@ begin
     ExifTag: for i := 0 to ExifTagCnt-1 do
                if TagTable[i].Tag = idx then
                  result := TagTable[i];
+{$push}
+{$R-}
      GpsTag: for i := 0 to GPSCnt-1 do
                if GPSTable[i].Tag = idx then
                  result := GPSTable[i];
+{$pop}
   else
   end;
 end;
