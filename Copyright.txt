@@ -1,4 +1,14 @@
+----------------------------------
+This port of dEXIF to Lazarus/Freepascal is accepted in July 2017 by the Copyright-Owner
+----------------------------------
+Hello Andreas ,
+  It is possible, all I ask is attribution somewhere in your documentation or source.  
+  I will indeed look at updating the license terms but wanted to let you know it's OK to proceed so you don't have to wait.
+Thanks,   
 
+Gerry McGuire dEXIF author.
+
+---------------------------------
 dEXIF is Copyright © 2001 - 2006 Gerry McGuire. All rights reserved.
 
 LICENSE

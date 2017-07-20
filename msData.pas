@@ -1,53 +1,6 @@
 unit msData;
 
-{----------------------------------------
-Revision: 1.5 check in time: 2009-02-05 23:01:40 by Stefan
-Workfile edit time: 2009-02-05 22:32:08
-Labeled by Stefan as 'Stefan s Komponenten 2009-03-23'
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-  - AnsiUpperCase, AnsiLowerCase 
-  - ExtractFileName/Ext 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt 
-- ErrStr wieder von String auf AnsiString
-----------------------------------------
-Revision: 1.4 check in time: 2009-02-05 22:20:31 by Stefan
-Workfile edit time: 2009-02-05 15:32:06
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt
-----------------------------------------
-Revision: 1.3 check in time: 2009-02-05 22:12:33 by Stefan
-Workfile edit time: 2009-02-05 11:33:28
-Vorbereitung zur Migration nach Delphi 2009 
-- Funktion TImageInfo.toString -> toShortString 
-- Chr -> AnsiChar 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - AnsiUpperCase, AnsiLowerCase 
-  - Format, FormatDateTime 
-- #13#10 durch Konstante crlf ersetzt
-----------------------------------------
-Revision: 1.2 check in time: 2009-02-05 20:26:54 by Stefan
-Workfile edit time: 2009-02-04 17:13:34
-Vorbereitung zur Migration nach Delphi 2009 
-- String -> AnsiString 
-- Char -> AnsiChar 
-- Char() -> AnsiChar() 
-- Uppercase -> AnsiUppercase 
-- Lowercase -> AnsiLowercase
-----------------------------------------
-Revision: 1.1 check in time: 2005-07-05 20:23:15 by Stefan
-Workfile edit time: 2005-06-06 07:44:28
-Labeled by Stefan as 'dEXIF 1.03d 2006-04-20'}
-
+////////////////////////////////////////////////////////////////////////////////
 // msData.pas - Copyright 2001-2004, Gerry McGuire
 //--------------------------------------------------------------------------
 // msData - maker specific data as encoded in exif structures

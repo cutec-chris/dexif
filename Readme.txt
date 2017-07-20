@@ -1,10 +1,89 @@
 dEXIF is Copyright © 2001 - 2006 Gerry McGuire. All rights reserved.
 See the copyright details specified in Copyright.txt
 
-Written and tested in Delphi 7.0
+Written and tested in Delphi 7.0 now adapted for Lazarus/Freepascal
 
 Version History:
 
+Revision: 1.11 check in time: 2009-03-31 21:40:45 by Stefan
+Workfile edit time: 2009-03-31 21:35:04
+EXIF-Datumsformat in dEXIF 
+- toLongString 
+- toShortString 
+- ProcessExifDir 
+von 2009:01:02 ins ISO-Format 2009-01-02 umgewandelt mit    
+DatetimeToStr(ExifDateToDateTime(DateTime/fstr)) bei den Tags 
+- TAG_DATETIME 
+- TAG_DATETIME_ORIGINAL 
+- TAG_DATETIME_DIGITIZED
+----------------------------------------
+Revision: 1.10 check in time: 2009-02-10 12:31:56 by Stefan
+Workfile edit time: 2009-02-10 12:29:04
+Labeled by Stefan as 'Stefan s Komponenten 2009-03-23'
+[-] Die Ausgabeformatierungen von TImageInfo.toLongString/toShortString geändert
+----------------------------------------
+Revision: 1.9 check in time: 2009-02-10 12:20:37 by Stefan
+Workfile edit time: 2009-02-10 12:17:06
+[-] In function TImageInfo.toLongString wird das File Date komplett als DateTimeStr ausgegeben
+----------------------------------------
+Revision: 1.8 check in time: 2009-02-07 14:52:47 by Stefan
+Workfile edit time: 2009-02-06 09:38:38
+Vorbereitung zur Migration nach Delphi 2009 
+- Chr -> AnsiChar 
+- Explizite Typecast auf AnsiString für Funktionsaufrufe
+----------------------------------------
+Revision: 1.7 check in time: 2009-02-05 23:01:40 by Stefan
+Workfile edit time: 2009-02-05 22:58:30
+Vorbereitung zur Migration nach Delphi 2009 
+- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+  - trim 
+  - IntToStr, IntToHex 
+  - AnsiUpperCase, AnsiLowerCase 
+  - ExtractFileName/Ext 
+- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
+  - trim 
+  - StrToInt 
+- ErrStr wieder von String auf AnsiString
+----------------------------------------
+Revision: 1.6 check in time: 2009-02-05 22:20:31 by Stefan
+Workfile edit time: 2009-02-05 22:17:42
+Vorbereitung zur Migration nach Delphi 2009 
+- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+  - trim 
+  - IntToStr, IntToHex 
+- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
+  - trim 
+  - StrToInt
+----------------------------------------
+Revision: 1.5 check in time: 2009-02-05 22:12:33 by Stefan
+Workfile edit time: 2009-02-05 22:10:15
+Vorbereitung zur Migration nach Delphi 2009 
+- Funktion TImageInfo.toString -> toShortString 
+- Chr -> AnsiChar 
+- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
+  - AnsiUpperCase, AnsiLowerCase 
+  - Format, FormatDateTime 
+- #13#10 durch Konstante crlf ersetzt
+----------------------------------------
+Revision: 1.4 check in time: 2009-02-05 20:26:54 by Stefan
+Workfile edit time: 2009-02-05 20:25:22
+Vorbereitung zur Migration nach Delphi 2009 
+- String -> AnsiString 
+- Char -> AnsiChar 
+- Char() -> AnsiChar() 
+- Uppercase -> AnsiUppercase 
+- Lowercase -> AnsiLowercase
+----------------------------------------
+Revision: 1.3 check in time: 2007-11-01 12:37:23 by Stefan
+Workfile edit time: 2007-11-01 09:45:12
++ Das Dekodieren von GPS-Tag: $006;   Name:'GPSAltitude'  durch die
+neue CallBack-Funktion GpsAltitude hinzugefügt. 
+- Das Dekodieren von GPS-Tag: $005;   Name:'GPSAltitudeRef' durch die
+beiden möglichen Codes erweitert: '0:Above Sealevel,1:Below Sealevel'.
+-----------------------------------------
+dEXIF 1.03d 2006-04-20 
+
+---------------------------------------------------------------
 v1.03d - Bug fixes: fix the last fix! Oops! (20-Apr-2006)   
 v1.03c - Bug fixes: stop recursive EXIF directory entries   
   [Thanks to Ronald Ruijs] (18-Apr-2006)

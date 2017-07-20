@@ -1,49 +1,5 @@
 unit dIPTC;
-
-{----------------------------------------
-Revision: 1.6 check in time: 2009-02-05 23:01:40 by Stefan
-Workfile edit time: 2009-02-05 22:50:46
-Labeled by Stefan as 'Stefan s Komponenten 2009-03-23'
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-  - AnsiUpperCase, AnsiLowerCase 
-  - ExtractFileName/Ext 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt 
-- ErrStr wieder von String auf AnsiString
-----------------------------------------
-Revision: 1.5 check in time: 2009-02-05 22:20:31 by Stefan
-Workfile edit time: 2009-02-05 15:36:20
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt
-----------------------------------------
-Revision: 1.4 check in time: 2009-02-05 20:26:54 by Stefan
-Workfile edit time: 2009-02-04 17:14:18
-Vorbereitung zur Migration nach Delphi 2009 
-- String -> AnsiString 
-- Char -> AnsiChar 
-- Char() -> AnsiChar() 
-- Uppercase -> AnsiUppercase 
-- Lowercase -> AnsiLowercase
-----------------------------------------
-Revision: 1.3 check in time: 2008-01-02 18:23:38 by Stefan
-Workfile edit time: 2008-01-02 18:22:51
-+ QVCS-Header hinzugefügt 
-- Unbenutzte Variablendeklarationen entfernt
-----------------------------------------
-Revision: 1.2 check in time: 2006-05-26 19:51:47 by Stefan
-Workfile edit time: 2006-04-20 08:24:48
-Labeled by Stefan as 'dEXIF 1.03d 2006-04-20'
-dEXIF 1.03d 2006-04-20 }
-
+////////////////////////////////////////////////////////////////////////////////
 // unit IPTC - Copyright 2001-2006, Gerry McGuire
 //--------------------------------------------------------------------------
 // Program to pull the IPTC (Photoshop) information out of various
