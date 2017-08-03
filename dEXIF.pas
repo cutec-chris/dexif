@@ -54,6 +54,9 @@ Const
    EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
 type
+
+   { tEndInd }
+
    tEndInd = class
       MotorolaOrder: boolean;
       function Get16u(oset: integer): word;
@@ -67,12 +70,23 @@ type
       property DataBuff:ansistring read GetDataBuff write SetDataBuff;
    private
       llData: ansistring;
+      destructor destroy;
    end;
 
   TimgData = class;
+
+  { TImageInfo }
+
   TImageInfo = class(tEndind)
   private
+    function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
+    function getTag(TagID: integer; forceCreate: Boolean=false; parentID: word=
+      0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
     function GetTagElement(TagID: integer): TTagEntry;
+    function ReadArtist: AnsiString;
+    function ReadComments: String;
+    function ReadImageDescription: AnsiString;
+    procedure removeTag(TagID: integer; parentID: word=0);
     procedure SetTagElement(TagID: integer; const Value: TTagEntry);
     function GetTagByName(TagName: ansistring): TTagEntry;
     procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
@@ -81,6 +95,9 @@ type
     procedure pushDirStack(dirStart, offsetbase: Integer);
     function testDirStack(dirStart, offsetbase: Integer): boolean;
     procedure clearDirStack;
+    procedure WriteArtist(v: String);
+    procedure WriteComments(v: String);
+    procedure WriteImageDescription(v: AnsiString);
   public
     FITagArray: array of tTagEntry;
     FITagCount: integer;
@@ -143,8 +160,8 @@ type
                   spOffset:integer = 0);
     Procedure ProcessThumbnail;
     Procedure AddMSTag(fname,fstr:ansistring;fType:word);
-    Procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
-             tagType:integer = ExifTag; prefix:ansistring='');
+    procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
+      tagType: integer=ExifTag; prefix: string=''; parentID: word=0);
     function CvtInt(buff: ansistring): longint;
     Function FormatNumber(buffer: ansistring; fmt: integer; fmtStr:ansistring;
       decodeStr: ansistring=''): ansistring;
@@ -170,7 +187,7 @@ type
     function GetRawFloat(tagName: ansistring): double;
     function GetRawInt(tagName: ansistring): integer;
     function LookupRatio: double;
-    destructor Destroy; override;
+    destructor Destroy;
     function WriteThruInt(tname: ansistring; value: Integer): boolean;
     function WriteThruString(tname, value: ansistring): boolean;
   private
@@ -208,7 +225,8 @@ type
         procedure reset;
         procedure SetFileInfo(fname:ansistring);
         constructor Create(buildCode: integer = GenAll);
-        function SaveExif(var jfs2:tstream):longint;
+        function SaveExif(var jfs2: tstream; EnabledMeta: Byte=$FF;
+          freshExifBlock: Boolean=false): longint;
         function ReadExifInfo(fname:ansistring):boolean;
         Procedure MakeIPTCSegment(buff:ansistring);
         Procedure MakeCommentSegment(buff:ansistring);
@@ -242,7 +260,7 @@ type
         function MetaDataToXML: tstringlist;
         function FillInIptc:boolean;
   public
-    destructor Destroy; override;
+    destructor Destroy;
 
     end; // TImgData
 
@@ -460,7 +478,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 30;
-   ExifTagCnt = 250;
+   ExifTagCnt = 250-17;
    TotalTagCnt = GPSCnt+ExifTagCnt;
 
 var 
@@ -1546,9 +1564,10 @@ end;
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
+var idCnt : Word = 0;
 procedure  TImageInfo.ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
-  tagType:integer = ExifTag; prefix:ansistring='');
-var 
+  tagType:integer = ExifTag; prefix:string=''; parentID:word=0);
+var
   ByteCount: integer;
   tag,TFormat,components: integer;
   de,DirEntry,OffsetVal,NumDirEntries,ValuePtr,subDirStart: Longint;
@@ -1557,6 +1576,7 @@ var
   lookupE, newE: TTagEntry;
   tmpTR: ansistring;
   tmpDateTime: string;
+  tagID : word;
 begin
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
@@ -2605,9 +2625,9 @@ end;
 
 destructor tEndInd.destroy;
 begin
- DebugLn('   tEndInd.Destroy entered.');
+// DebugLn('   tEndInd.Destroy entered.');
  inherited;
- DebugLn('   tEndInd.Destroy finished.');
+// DebugLn('   tEndInd.Destroy finished.');
 end;
 
 
@@ -3345,24 +3365,6 @@ begin
   buff.add('</dImageFile>');
   result := buff;
 end;
-
-destructor TImgdata.Destroy;
-begin
-  if assigned(ExifObj) then begin
-    DebugLn('  ExifObj Free...');
-    ExifObj.free;
-  end;
-
-  if assigned(IptcObj) then begin
-    DebugLn('  IPTCObj Free...');
-    IptcObj.free;
-  end;
-  DebugLn('  start TImgData.Destroy:inherited');
-  inherited;
-  DebugLn('  finished TImgData.Destroy:inherited');
-end;
-
-
 
 function defIntFmt (inInt:integer):ansistring;
 begin

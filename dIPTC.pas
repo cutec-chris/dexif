@@ -51,7 +51,10 @@ type
     FormatS:ansistring;      // Format string
     Size: integer;       // used by ITPC module
     CallBack: StrFunct;  // formatting string
+    id : word;           // msta - used for exif-parent-child-structure
+    parentID : word;     // msta - used for exif-parent-child-structure
   end;
+  PTagEntry = ^TTagEntry; // msta
 
   TTagDefArray = array of TTagEntry;
 
@@ -759,4 +762,4 @@ begin
   tmp.Free;
 end;
 
-end.
+end.
