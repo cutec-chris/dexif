@@ -450,6 +450,8 @@ const
    TAG_DATETIME_ORIGINAL  = $9003;
    TAG_DATETIME_DIGITIZED = $9004;
    TAG_USERCOMMENT        = $9286;
+   TAG_IMAGEDESCRIPTION   = $010E;     // msta
+   TAG_ARTIST             = $013B;     // msta
    TAG_FLASH              = $9209;
    TAG_MAKERNOTE          = $927C;
    TAG_EXIF_IMAGEWIDTH    = $A002;
@@ -458,9 +460,12 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 30;
-   ExifTagCnt = 250-17;
+   ExifTagCnt = 250;
    TotalTagCnt = GPSCnt+ExifTagCnt;
 
+var 
+    whitelist : array [0..37] of Word = ($8769, $100, $101, $102, $103, $106, $10E, $10F, $110, $132, $13B, $13E, $301, $304, $5010, $5011, $8298, $829A, $882A, $9003, $9004, $9201, $9202, $9203, $9204, $9205, $9206, $9208, $9209, $920A, $920B, $920D, $9286, $9C9B, $9C9C, $9C9D, $9C9E, $9C9F);
+   
 {   Many tags added based on Php4 source...
 http://lxr.php.net/source/php4/ext/exif/exif.c
 }
@@ -1446,6 +1451,98 @@ begin
   result := Pos(ts,dirStack) > 0;
 end;
 
+//{$DEFINE CreateExifBufDebug}  // uncomment to see written Exif data
+{$ifdef CreateExifBufDebug}var CreateExifBufDebug : String;{$endif}
+function TImageInfo.CreateExifBuf (parentID:word=0; offsetBase:integer=0 {offsetBase required, because the pointers of subIFD are referenced from parent IFD (WTF!!)}) : String;  // msta Creates APP1 block with IFD0 only
+var
+  i, f, n : integer;
+  size, pDat, p : Cardinal;
+  head : String;
+
+function check (const t : TTagEntry; pid : word) : Boolean; inline;
+var i : integer;
+begin
+ if (t.parentID <> pid) or (t.TType >= Length(BytesPerFormat)) or (BytesPerFormat[t.TType] = 0) then Result := false
+ else begin
+  Result := Length(whitelist) = 0;
+  for i := 0 to Length(whitelist)-1 do if (whitelist[i] = t.Tag) then begin Result := true; break; end;
+ end;
+end;
+
+function calcSubIFDSize(pid : integer) : integer;
+var i : integer;
+begin
+ Result := 6;
+ for i := 0 to Length(fiTagArray)-1 do begin
+  if (not check(fiTagArray[i], pid)) then continue;
+  Result := Result + 12;
+  if (fiTagArray[i].id <> 0) then Result := Result + calcSubIFDSize(fiTagArray[i].id)
+  else if (Length(fiTagArray[i].Raw) > 4) then Result := Result + Length(fiTagArray[i].Raw);  // calc size
+ end;
+end;
+begin
+ {$ifdef CreateExifBufDebug}if (parentID = 0) then CreateExifBufDebug := '';{$endif}
+ if (parentID = 0) then head := #0#0                 // APP1 block size (calculated later)
+        + 'Exif' + #$00+#$00                         // Exif Header
+        + 'II' + #$2A+#$00 + #$08+#$00+#$00+#$00     // TIFF Header (Intel)
+ else head := '';
+ n := 0;
+ size := 0;
+ for i := 0 to Length(fiTagArray)-1 do begin
+  if (not check(fiTagArray[i], parentID)) then continue;
+  n := n + 1; // calc number of Tags in current IFD
+  if (fiTagArray[i].id <> 0) then size := size + calcSubIFDSize(fiTagArray[i].id)
+  else if (Length(fiTagArray[i].Raw) > 4) then size := size + Length(fiTagArray[i].Raw);  // calc size
+ end;
+ pDat := Length(head) + 2 + n*12 + 4; // position of DataArea
+ p := pDat;
+ size := size + pDat;
+ SetLength(Result, size);
+ if (parentID = 0) then begin
+  head[1] := char(size div 256);
+  head[2] := char(size mod 256);
+  move(head[1], Result[1], Length(head));             // write header
+ end;
+ PWord(@Result[1+Length(head)])^ := n;                // write tag count
+ PCardinal(@Result[1+Length(head)+2+12*n])^ := 0;     // write offset to next IFD (0, because just IFD0 is included)
+ n := 0;
+ for f := 0 to 1 do for i := 0 to Length(fiTagArray)-1 do begin          // write tags
+  if (not check(fiTagArray[i], parentID)) then continue;
+  if (f = 0) and (fiTagArray[i].Tag <> TAG_EXIF_OFFSET) then continue; // Sub-IFD must be first data block... more or less (WTF)
+  if (f = 1) and (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then continue;
+  PWord(@Result[1+Length(head)+2+12*n+0])^ := fiTagArray[i].Tag;
+  if (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then begin
+   PWord(@Result[1+Length(head)+2+12*n+2])^ := 4;  // Exif-Pointer is not a real data block but really a pointer (WTF)
+   PCardinal(@Result[1+Length(head)+2+12*n+4])^ := 1;
+  end else begin
+   PWord(@Result[1+Length(head)+2+12*n+2])^ := fiTagArray[i].TType;
+   PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BytesPerFormat[fiTagArray[i].TType];
+  end;
+  {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + '  ' + fiTagArray[i].Name;{$endif}
+  if (Length(fiTagArray[i].Raw) <= 4) and (fiTagArray[i].id = 0) then begin
+   PCardinal(@Result[1+Length(head)+2+12*n+8])^ := 0;
+   if (Length(fiTagArray[i].Raw) > 0) then move(fiTagArray[i].Raw[1], Result[1+Length(head)+2+12*n+8], Length(fiTagArray[i].Raw));
+  end else begin
+   PCardinal(@Result[1+Length(head)+2+12*n+8])^ := p - 8 + offsetBase;
+   if (fiTagArray[i].id <> 0) then begin
+    {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' { ';{$endif}
+    fiTagArray[i].Raw := CreateExifBuf(fiTagArray[i].id, p); // create sub IFD
+    fiTagArray[i].Size := Length(fiTagArray[i].Raw);
+    {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' } ';{$endif}
+   end;
+   move(fiTagArray[i].Raw[1], Result[1+p], Length(fiTagArray[i].Raw));
+   p := p + Length(fiTagArray[i].Raw);
+  end;
+  n := n+1;
+ end;
+ {$ifdef CreateExifBufDebug}if (parentID = 0) then ShowMessage(CreateExifBufDebug);{$endif}
+end;
+
+
+
+
+
+
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
@@ -1530,11 +1627,12 @@ begin
        TAG_USERCOMMENT:
          begin
            // here we strip off comment header
-           Comments := AnsiString(trim(string(copy(RawStr,9,ByteCount-9))));
-           fStr := Comments;  // old one is erroneous
-
-           CommentPosn := ValuePtr;
-           CommentSize := ByteCount-9;
+            fStr := trim(copy(RawStr,9,ByteCount-8));    // msta - one letter is missing, when using ByteCount-9...    // old one is erroneous
+//           Comments := AnsiString(trim(string(copy(RawStr,9,ByteCount-9))));
+//           fStr := Comments;  // old one is erroneous
+//
+//           CommentPosn := ValuePtr;
+//           CommentSize := ByteCount-9;
          end;
        TAG_DATETIME, //Umwandlung vom EXIF-Format 2009:01:02 12:10:12 nach 2009-01-02 12:10:12
        TAG_DATETIME_ORIGINAL,
@@ -1571,8 +1669,13 @@ begin
              SubdirStart := OffsetBase + LongInt(Get32u(ValuePtr));
              // some mal-formed images have recursive references...
              // if (subDirStart <> DirStart) then
-             if not testDirStack(SubDirStart,OffsetBase) then
-               ProcessExifDir(SubdirStart, OffsetBase, ExifLength, ExifTag);
+             if not testDirStack(SubDirStart,OffsetBase) then begin
+               TagID := IDCnt;
+               IDCnt := IDCnt+1;
+               ProcessExifDir(SubdirStart, OffsetBase, ExifLength, ExifTag, '', tagID);
+			 end;  
+ 
+               // ProcessExifDir(SubdirStart, OffsetBase, ExifLength, ExifTag);
            except
            end;
          end;
@@ -1709,7 +1812,7 @@ var NumDirEntries:integer;
     NewE:TTagEntry;
 begin
   DirStart := DirStart+1;
-  OffsetBase := DirStart-MakerOffset+1;
+  OffsetBase := DirStart-aMakerOffset+1;
   SetDataBuff(MakerBuff);
   try
     NumDirEntries := Get16u(DirStart);
@@ -2100,6 +2203,142 @@ begin
   end;
 end;
 
+procedure TImageInfo.removeTag(TagID:integer; parentID:word=0);
+var i,j : integer;
+begin
+ j := 0;
+ for i := 0 to Length(fiTagArray)-1 do begin
+  if (j <> 0) then fiTagArray[i-j] := fiTagArray[i];
+  if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then j := j+1;
+ end;
+ if (j <> 0) then SetLength(fiTagArray, Length(fiTagArray)-j);
+end;
+
+function TImageInfo.getTag(TagID:integer; forceCreate:Boolean=false; parentID:word=0; TagType:word=65535; forceID:Boolean=false) : PTagEntry; // msta
+var i,j : integer;
+begin
+ Result := nil;
+ for i := 0 to Length(fiTagArray)-1 do if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then begin
+  Result := @fiTagArray[i];
+  exit;
+ end;
+ if (forceCreate) then begin
+  i := Length(fiTagArray);
+  SetLength(fiTagArray, i+1);
+  fiTagArray[i].Tag := TagID;
+  for j := 0 to Length(TagTable)-1 do if (TagTable[j].Tag = TagID) then begin fiTagArray[i] := TagTable[j]; break; end;
+  if (TagType <> 65535) then fiTagArray[i].TType := TagType;
+  fiTagArray[i].ParentID := parentID;
+  fiTagArray[i].Id := 0;
+  if (forceID) then begin
+   j := 1;
+   for i := 0 to Length(fiTagArray)-1 do if (fiTagArray[i].id >= j) then j := fiTagArray[i].id+1;
+   fiTagArray[i].Id := j;
+  end;
+  Result := @fiTagArray[i];
+ end;
+end;
+
+function TImageInfo.ReadComments : String;
+var
+  p : PTagEntry;
+  w : WideString;
+begin
+ Result := '';
+ w := '';
+ p := getTag(TAG_EXIF_OFFSET, false, 0, 4);
+ if (p = nil) then exit;
+ p := getTag(TAG_USERCOMMENT, false, p^.ID, 2);
+ if (p = nil) or (Length(p^.Raw) <= 10) then exit;
+ if (Pos('ASCII', p^.Raw) = 1) then begin
+  setLength(Result, Length(p^.Raw)-9);
+  move(p^.Raw[9], Result[1], Length(p^.Raw)-9);
+ end else begin
+  setLength(w, (Length(p^.Raw)-10 div 2));
+  move(p^.Raw[9], w[1], Length(p^.Raw)-10);
+  Result := w;
+ end;
+end;
+
+function TImageInfo.ReadImageDescription : AnsiString;
+var p : PTagEntry;
+begin
+ Result := '';
+ p := getTag(TAG_IMAGEDESCRIPTION, false, 0, 2);
+ if (p = nil) then exit;
+ setLength(Result, Length(p^.Raw)-1);
+ move(p^.Raw[1], Result[1], Length(p^.Raw)-1);
+ Result := trim(Result);
+end;
+
+function TImageInfo.ReadArtist : AnsiString;
+var p : PTagEntry;
+begin
+ Result := '';
+ p := getTag(TAG_ARTIST, false, 0, 2);
+ if (p = nil) then exit;
+ setLength(Result, Length(p^.Raw)-1);
+ move(p^.Raw[1], Result[1], Length(p^.Raw)-1);
+ Result := trim(Result);
+end;
+
+procedure TImageInfo.WriteComments (v : String);
+var
+  p : PTagEntry;
+  i : integer;
+  w : WideString;
+  u : Boolean;
+begin
+ p := getTag(TAG_EXIF_OFFSET, true, 0, 4, true);
+ if (v = '') then begin
+  removeTag(TAG_USERCOMMENT, p^.ID);
+  exit;
+ end;
+ p := getTag(TAG_USERCOMMENT, true, p^.ID, 7);
+ u := false;
+ w := v;
+ for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin u := true; break; end;
+ if (u) then begin
+  p^.Raw := 'UNICODE ';
+  for i := 1 to Length(w) do begin
+   p^.Raw := p^.Raw + Char(PByte(@w[i])^) + Char(PByte(@w[i]+1)^);
+  end;
+  p^.Raw := p^.Raw + #0#0;
+ end else begin
+  p^.Raw := 'ASCII   ';
+  for i := 1 to Length(w) do begin
+   p^.Raw := p^.Raw + Char(PByte(@w[i])^);
+  end;
+  p^.Raw := p^.Raw + #0;
+ end;
+ p^.Size := Length(p^.Raw);
+end;
+
+procedure TImageInfo.WriteImageDescription (v : AnsiString);
+var p : PTagEntry;
+begin
+ if (v = '') then begin
+  removeTag(TAG_IMAGEDESCRIPTION, 0);
+  exit;
+ end;
+ p := getTag(TAG_IMAGEDESCRIPTION, true, 0, 2);
+ p^.Raw := v + #0;
+ p^.Size := Length(p^.Raw);
+end;
+
+procedure TImageInfo.WriteArtist (v : String);
+var p : PTagEntry;
+begin
+ if (v = '') then begin
+  removeTag(TAG_ARTIST, 0);
+  exit;
+ end;
+ p := getTag(TAG_ARTIST, true, 0, 2);
+ p^.Raw := v + #0;
+ p^.Size := Length(p^.Raw);
+end;
+
+
 function TImageInfo.IterateFoundTags(TagId: integer;
         var retVal:TTagEntry):boolean;
 begin
@@ -2364,6 +2603,14 @@ begin
   result := Longword(Get32S(oset)) and $FFFFFFFF;
 end;
 
+destructor tEndInd.destroy;
+begin
+ DebugLn('   tEndInd.Destroy entered.');
+ inherited;
+ DebugLn('   tEndInd.Destroy finished.');
+end;
+
+
 //--------------------------------------------------------------------------
 // The following methods implement the outer parser which
 // decodes the segments.  Further parsing isthen passed on to
@@ -2404,6 +2651,7 @@ begin
     result := copy(CommentSegment^.data,2,maxint);
 end;
 
+(*
 function TImgData.SaveExif(var jfs2:tstream):longint;
 var cnt:longint;
     buff:ansistring;
@@ -2445,6 +2693,47 @@ begin
     end;
    result := cnt;
 end;
+*)
+
+function TImgData.SaveExif(var jfs2:tstream; EnabledMeta : Byte = $FF; freshExifBlock : Boolean = false):longint;
+var cnt:longint;
+    buff:AnsiString;
+begin
+  cnt:=0;
+  buff := #$FF#$D8;
+  jfs2.Write(pointer(buff)^,length(buff));
+  if (EnabledMeta and 1 <> 0) then begin
+   if (freshExifBlock) then begin
+    buff := #$FF + Chr(M_EXIF);
+    cnt := cnt+jfs2.Write(buff[1], length(buff));
+    buff := ExifObj.CreateExifBuf;
+    cnt := cnt+jfs2.Write(buff[1], length(buff));
+    buff := '';
+   end else if (ExifSegment <> nil) then with ExifSegment^ do begin
+    buff := #$FF+chr(Dtype)+data;
+    cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
+   end else if (HeaderSegment <> nil) then with HeaderSegment^ do begin
+    buff := chr($FF)+chr(Dtype)+data;
+    // buff := #$FF+chr(Dtype)+#$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
+    cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
+   end else if (cnt = 0) then begin
+    // buff := chr($FF)+chr(Dtype)+data;
+    buff := #$FF+chr(M_JFIF)+#$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
+    cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
+   end;
+  end;
+  if (EnabledMeta and 2 <> 0) and (IPTCSegment <> nil) then with IPTCSegment^ do begin
+   buff := chr($FF)+chr(Dtype)+data;
+   cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
+  end;
+  if (EnabledMeta and 4 <> 0) and (CommentSegment <> nil) then with CommentSegment^ do begin
+   buff := chr($FF)+chr(Dtype)+data;
+   cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
+  end;
+  result := cnt;
+end;
+
+
 
 function TImgData.ExtractThumbnailBuffer:ansistring;
 var
@@ -2520,10 +2809,10 @@ end;
 procedure TImgData.WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);
 var jms:tmemorystream;
     jfs:TFileStream;
-    pslen:integer;
-    tb:array[0..12] of byte;
+//    pslen:integer;
+//    tb:array[0..12] of byte;
 begin
-  pslen := 2;
+  //pslen := 2;
   jms := tmemorystream.Create;
   try  { Thanks to Erik Ludden... }
     jfs := tfilestream.Create(fname,fmCreate or fmShareExclusive);
@@ -2531,6 +2820,8 @@ begin
       if adjSize and (EXIFobj <> nil) then
         EXIFobj.AdjExifSize(j.height,j.width);
       SaveExif(tstream(jfs));
+      MergeToStream(jms, jfs); // msta
+(*
       j.SaveToStream(jms);
       jms.Seek(2,soFromBeginning);
       jms.Read(tb,12);      // a little big to help debug...
@@ -2551,13 +2842,41 @@ begin
       jms.Seek(pslen,soFromBeginning);
       jfs.Seek(0,soFromEnd);
       jfs.CopyFrom(jms,jms.Size-pslen);
-    finally
+*)
+	finally
       jfs.Free;
     end
   finally
     jms.Free;
   end
 end;
+procedure TImgData.MergeToStream(Input, Output : TStream; EnabledMeta : Byte = $FF; freshExifBlock : Boolean = false);   // msta
+var pslen:integer;
+    tb:array[0..12] of byte;
+begin
+ pslen := 2;
+ SaveExif(tstream(Output), EnabledMeta, freshExifBlock);
+ Input.Seek(2,soFromBeginning);
+ Input.Read(tb,12);      // a little big to help debug...
+ if tb[1] = M_JFIF then                // strip header
+   pslen := pslen+(tb[2]*256)+tb[3]+2; // size+id bytes
+ Input.Seek(pslen,soFromBeginning);
+ Input.Read(tb,12);
+ if tb[1] = M_EXIF then                // strip exif
+   pslen := pslen+tb[2]*256+tb[3]+2;   // size+id bytes
+ Input.Seek(pslen,soFromBeginning);
+ Input.Read(tb,12);
+ if tb[1] = M_IPTC then                // strip iptc
+   pslen := pslen+tb[2]*256+tb[3]+2;   // size+id bytes
+ Input.Seek(pslen,soFromBeginning);
+ Input.Read(tb,12);
+ if tb[1] = M_COM then                 // strip comment
+   pslen := pslen+tb[2]*256+tb[3]+2;   // size+id bytes
+ Input.Seek(pslen,soFromBeginning);
+ Output.Seek(0,soFromEnd);
+ Output.CopyFrom(Input,Input.Size-pslen);
+end;
+
 {$ENDIF}
 function TImgData.FillInIptc:boolean;
 begin
@@ -2609,6 +2928,64 @@ begin
   ProcessFile(fname);
   result := HasMetaData();
 end;
+
+{$IFNDEF dExifNoJpeg}
+function TImgData.FillInIptc:boolean;
+begin
+  if IPTCSegment = nil then
+    CreateIPTCObj
+  else
+    IPTCObj.ParseIPTCArray(IPTCSegment^.Data);
+//    filename := FName;
+  result := IPTCObj.HasData();
+end;
+
+
+function TImgData.MetaDataToXML: tstringlist;
+var buff,buff2:tstringlist;
+  s:tsearchrec;
+begin
+  if FindFirst(Filename,faAnyFile,s) { *Converted from FindFirst* } <> 0 then
+  begin
+    FindClose(s); { *Converted from FindClose* }
+    result := nil;
+    exit;
+  end;
+  buff := TStringList.Create;
+  buff.add('<dImageFile>');
+  buff.add('   <OSdata>');
+  buff.add('      <name> '+ExtractFileName(s.Name)+' </name>');
+  buff.add('      <path> '+ExtractFilePath(Filename)+' </path>');
+  buff.add('      <size> '+inttostr(s.Size)+' </size>');
+  buff.add('      <date> '+DateToStr(FileDateToDateTime(s.time))+' </date>');
+  buff.add('   </OSdata>');
+  if ExifObj <> nil then
+  begin
+    buff2 := ExifObj.EXIFArrayToXML;
+    if buff2 <> nil then
+    begin
+      buff.AddStrings(buff2);
+      buff2.Clear;
+      buff2.Free;
+    end;
+  end;
+  if IptcObj <> nil then
+  begin
+    buff2 := IptcObj.IPTCArrayToXML;
+    if buff2 <> nil then
+    begin
+      buff.AddStrings(buff2);
+      buff2.Clear;
+      buff2.Free;
+    end;
+  end;
+  buff.add('</dImageFile>');
+  result := buff;
+end;
+
+
+{$ENDIF}
+
 
 function TImgData.ProcessFile( const aFileName :ansistring):boolean;
 var extn:ansistring;
@@ -2968,6 +3345,24 @@ begin
   buff.add('</dImageFile>');
   result := buff;
 end;
+
+destructor TImgdata.Destroy;
+begin
+  if assigned(ExifObj) then begin
+    DebugLn('  ExifObj Free...');
+    ExifObj.free;
+  end;
+
+  if assigned(IptcObj) then begin
+    DebugLn('  IPTCObj Free...');
+    IptcObj.free;
+  end;
+  DebugLn('  start TImgData.Destroy:inherited');
+  inherited;
+  DebugLn('  finished TImgData.Destroy:inherited');
+end;
+
+
 
 function defIntFmt (inInt:integer):ansistring;
 begin

@@ -24,10 +24,15 @@ unit msData;
 //      www.butaman.ne.jp/~tsuruzoh/Computer/Digicams/exif-e.html
 //
 //--------------------------------------------------------------------------
+{$IFDEF FPC}
+  {$mode DELPHI}{$H+}
+{$ENDIF}
 
 interface
 
+
 uses Sysutils,math,dEXIF,dIPTC;
+
 
 type
 
