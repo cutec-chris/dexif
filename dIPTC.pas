@@ -1,5 +1,3 @@
-unit dIPTC;
-////////////////////////////////////////////////////////////////////////////////
 // unit IPTC - Copyright 2001-2006, Gerry McGuire
 //--------------------------------------------------------------------------
 // Program to pull the IPTC (Photoshop) information out of various
@@ -17,38 +15,41 @@ unit dIPTC;
 // This code is designed to be easily extended.  For each new field
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
+unit dIPTC;
+
+{$IFDEF LCL}
+ {$MODE Delphi}{$H+}
+{$ENDIF}
 
 interface
-  uses classes, sysutils
-  {$IFNDEF DELPHI}
-  {$DEFINE dExifNoJpeg}
-  {$ENDIF}
-  {$IFNDEF dExifNoJpeg}
+  uses classes, LCLIntf, LCLType, LMessages, sysutils
+{$IFNDEF dExifNoJpeg}
+ {$IFDEF DELPHI}
   ,jpeg
-  {$ENDIF}
-  {$IFDEF WINDOWS}
-  ,windows
-  {$ENDIF}
-  ;
+ {$ENDIF}
+ {$IFDEF LCL}
+  ,graphics, LazFileUtils
+ {$ENDIF}
+{$ENDIF};
 
-const dIPTCVersion: ansistring = '1.03d';
+const dIPTCVersion = '1.03d';
       TagArrayGrowth = 25;
 type
 
-  StrFunct = function (instr:ansistring):ansistring;
+  StrFunct = function (instr:string): string;
 
   TTagEntry = record
     TID: integer;        // TagTableID - EXIF use
     TType: word;         // tag type
     ICode: Word;         // iptc code
     Tag: word;           // primary key
-    Name:ansistring;        // searchable
-    Desc:ansistring;        // translatable
-    Code:ansistring;        // decode capability
-    Data:ansistring;        // display value
-    Raw:ansistring;         // unprocessed value
+    Name: string;        // searchable
+    Desc: string;        // translatable
+    Code: string;        // decode capability
+    Data: string;        // display value
+    Raw: string;         // unprocessed value
     PRaw: integer;       // pointer to unprocessed
-    FormatS:ansistring;      // Format string
+    FormatS:string;      // Format string
     Size: integer;       // used by ITPC module
     CallBack: StrFunct;  // formatting string
   end;
@@ -59,17 +60,17 @@ type
   ITag = record
     ICode: word;
     Tag:  word;
-    Name:ansistring;
-    Desc:ansistring;
+    Name: string;
+    Desc: string;
     Size: word;
-    Data:ansistring;
+    Data: string;
   end;
     }
   ITag = TTagEntry;
 
   TIPTCdata = class
   private
-    function getTimeZoneStr:ansistring;
+    function getTimeZoneStr: string;
   protected
     MaxTag: integer;
     parent: tobject;
@@ -79,9 +80,9 @@ type
     procedure SetTagElement(TagID: integer; const Value: ITag);
     function GetCount: integer;
     procedure SetCount(const Value: integer);
-    procedure SetDateTimePrim(TimeIn: TDateTime; prefix:ansistring);
+    procedure SetDateTimePrim(TimeIn: TDateTime; prefix:string);
   public
-//    Filename :ansistring;
+//    Filename : string;
     constructor Create(p:tobject);
     procedure Reset;
     property ITagArray[TagID:integer]: ITag
@@ -89,104 +90,156 @@ type
     property Count : integer read GetCount write SetCount;
     function HasData: boolean;
     Function Clone(source:TIPTCdata):TIPTCdata;
-    Function ParseIPTCStrings(buff:ansistring):tstringlist;
+    Function ParseIPTCStrings(buff:string):tstringlist;
     Procedure ParseIPTCArray; overload;
-    Procedure ParseIPTCArray(buff:ansistring);  overload;
-    function IPTCArrayToBuffer:ansistring;
+    Procedure ParseIPTCArray(buff:string);  overload;
+    function IPTCArrayToBuffer:string;
     function IPTCArrayToXML:tstringlist;
 
-    function LookupTag(SearchStr:ansistring):integer; virtual;
-    Function LookupTagDefn(item:ansistring): integer;
-    function LookupTagByDesc(SearchStr:ansistring): integer;
+    function LookupTag(SearchStr:string):integer; virtual;
+    Function LookupTagDefn(item: string): integer;
+    function LookupTagByDesc(SearchStr: string): integer;
 
-    procedure RemoveTag( tagstr:ansistring ); virtual;
-    function AddTag(tagstr:ansistring; dataval:ansistring = ''):integer; virtual;
-    function AppendToTag(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function AddOrAppend(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function UpdateTag(tagstr, dataval:ansistring): integer;
-    procedure SetTagByIdx(idx:integer; val:ansistring);
-    function GetTag(tagstr:ansistring; defval:ansistring=''):ansistring; virtual;
-    function ReadFile(fname:ansistring):boolean; virtual;
-    function ReadFileStrings(fname:ansistring):tstringlist;
+    procedure RemoveTag( tagstr: string ); virtual;
+    function AddTag(tagstr: string; dataval:string = ''):integer; virtual;
+    function AppendToTag(tagstr: string; dataval:string):integer; virtual;
+    function AddOrAppend(tagstr: string; dataval:string):integer; virtual;
+    function UpdateTag(tagstr, dataval: string): integer;
+    procedure SetTagByIdx(idx:integer; val:string);
+    function GetTag(tagstr: string; defval: string=''):string; virtual;
+    function ReadFile(fname:string):boolean; virtual;
+    function ReadFileStrings(fname: string):tstringlist;
     function AddTagToArray(nextTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
-    procedure SetDateTimeExt(TimeIn: TDateTime; prefix:ansistring);
-    function GetMultiPartTag(tagName:ansistring):tstringlist;
-    procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
+    procedure SetDateTimeExt(TimeIn: TDateTime; prefix:string);
+    function GetMultiPartTag(tagName:string):tstringlist;
+    procedure WriteFile(fname:string;origname:string = ''); overload;
 {$IFNDEF dExifNoJpeg}
-    procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
+    procedure WriteFile(fname:string;memImage:tjpegimage); overload;
 {$ENDIF}
   end;
 
 const IPTCTAGCNT = 49;
-      MultiTagSep: ansistring = ',';
+      MultiTagSep = ',';
 
 var
   rawDefered : boolean = false;
-  defaultTimeZone:ansistring = '_0000';
+  defaultTimeZone: string = '_0000';
   IPTCMultiTags: set of byte = [20,25];
   IPTCTable : array [0..IPTCTAGCNT-1] of ITag =
-    (( TID:0;TType:0;ICode: 2; Tag:  0; Name:'SKIP';         Desc:'Record Version';Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  3; Name:'ObjectType';   Desc:'Object Type Ref';Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:67),
-     ( TID:0;TType:0;ICode: 2; Tag:  4; Name:'ObjectAttr';   Desc:'Object Attribute Ref';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:67),
-     ( TID:0;TType:0;ICode: 2; Tag:  5; Name:'ObjectName';   Desc:'Object name';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  7; Name:'EditStatus';   Desc:'Edit Status';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  8; Name:'EditorialUpdate';  Desc:'Editorial Update';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2),
-     ( TID:0;TType:0;ICode: 2; Tag: 10; Name:'Urgency';      Desc:'Urgency';      Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1),
-     ( TID:0;TType:0;ICode: 2; Tag: 12; Name:'SubRef';       Desc:'Subject Reference';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:236),
-     ( TID:0;TType:0;ICode: 2; Tag: 15; Name:'Category';     Desc:'Category';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:3),
-     ( TID:0;TType:0;ICode: 2; Tag: 20; Name:'SuppCategory'; Desc:'Supplemental category'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 22; Name:'FixtureID';    Desc:'Fixture ID';   Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 25; Name:'Keywords';     Desc:'Keywords';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag: 26; Name:'ContentLocCode'; Desc:'Content Location Code'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 3),
-     ( TID:0;TType:0;ICode: 2; Tag: 27; Name:'ContentLocName'; Desc:'Content Location Name'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 64),
-     ( TID:0;TType:0;ICode: 2; Tag: 30; Name:'ReleaseDate';  Desc:'Release Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 35; Name:'ReleaseTime';  Desc:'Release Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 37; Name:'ExpireDate';  Desc:'Expiration Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 38; Name:'ExpireTime';  Desc:'Expiration Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 40; Name:'SpecialInstru'; Desc:'Special Instructions'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:256),
-     ( TID:0;TType:0;ICode: 2; Tag: 42; Name:'ActionAdvised'; Desc:'Action Advised'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2),
-     ( TID:0;TType:0;ICode: 2; Tag: 45; Name:'RefService';    Desc:'Reference Service'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:10),
-     ( TID:0;TType:0;ICode: 2; Tag: 47; Name:'RefDate';  Desc:'Reference Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 50; Name:'RefNumber';    Desc:'Reference Number'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 55; Name:'DateCreated';  Desc:'Date created'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 60; Name:'TimeCreated';  Desc:'Time created'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 62; Name:'DigitizeDate';  Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 63; Name:'DigitizeTime';  Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 65; Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 32),
-     ( TID:0;TType:0;ICode: 2; Tag: 70; Name:'ProgramVersion'; Desc:'Program version'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 10),
-     ( TID:0;TType:0;ICode: 2; Tag: 75; Name:'ObjectCycle';  Desc:'Object Cycle'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1),
-     ( TID:0;TType:0;ICode: 2; Tag: 80; Name:'ByLine';       Desc:'ByLine';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 85; Name:'ByLineTitle';  Desc:'ByLine Title'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 90; Name:'City';         Desc:'City';         Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 92; Name:'SubLocation';  Desc:'Sublocation';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 95; Name:'State';        Desc:'Province/State';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:100; Name:'LocationCode'; Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 3),
-     ( TID:0;TType:0;ICode: 2; Tag:101; Name:'LocationName'; Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:   64),
-     ( TID:0;TType:0;ICode: 2; Tag:103; Name:'TransmissionRef'; Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:   32),
-     ( TID:0;TType:0;ICode: 2; Tag:105; Name:'ImageHeadline'; Desc:'Image headline'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:256),
-     ( TID:0;TType:0;ICode: 2; Tag:110; Name:'ImageCredit';  Desc:'Image credit';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:115; Name:'Source';       Desc:'Source';        Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:116; Name:'Copyright';    Desc:'Copyright Notice';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:128),
-     ( TID:0;TType:0;ICode: 2; Tag:118; Name:'Contact';      Desc:'Contact';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:128),
-     ( TID:0;TType:0;ICode: 2; Tag:120; Name:'ImageCaption'; Desc:'Image caption'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2000),
-     ( TID:0;TType:0;ICode: 2; Tag:122; Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:130; Name:'ImageType';    Desc:'Image type';    Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2 ),
-     ( TID:0;TType:0;ICode: 2; Tag:131; Name:'Orientation';  Desc:'Image Orientation'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1 ),
-     ( TID:0;TType:0;ICode: 2; Tag:135; Name:'LangID';       Desc:'Language ID';   Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:3 ),
-     ( TID:0;TType:0;ICode: 8; Tag:10;  Name:'Subfile';      Desc:'Subfile';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2 )
+    (( TID:0; TType:0; ICode: 2; Tag:  0; Name:'SKIP';              Desc:'Record Version';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:  3; Name:'ObjectType';        Desc:'Object Type Ref';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 67; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:  4; Name:'ObjectAttr';        Desc:'Object Attribute Ref';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 67; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:  5; Name:'ObjectName';        Desc:'Object name';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:  7; Name:'EditStatus';        Desc:'Edit Status';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:  8; Name:'EditorialUpdate';   Desc:'Editorial Update';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  2; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 10; Name:'Urgency';           Desc:'Urgency';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  1; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 12; Name:'SubRef';            Desc:'Subject Reference';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:236; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 15; Name:'Category';          Desc:'Category';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  3; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 20; Name:'SuppCategory';      Desc:'Supplemental category';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 22; Name:'FixtureID';         Desc:'Fixture ID';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 25; Name:'Keywords';          Desc:'Keywords';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 26; Name:'ContentLocCode';    Desc:'Content Location Code';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  3; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 27; Name:'ContentLocName';    Desc:'Content Location Name';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 30; Name:'ReleaseDate';       Desc:'Release Date';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 35; Name:'ReleaseTime';       Desc:'Release Time';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 11; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 37; Name:'ExpireDate';        Desc:'Expiration Date';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 38; Name:'ExpireTime';        Desc:'Expiration Time';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 11; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 40; Name:'SpecialInstru';     Desc:'Special Instructions';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:256; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 42; Name:'ActionAdvised';     Desc:'Action Advised';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  2; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 45; Name:'RefService';        Desc:'Reference Service';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 10; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 47; Name:'RefDate';           Desc:'Reference Date';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 50; Name:'RefNumber';         Desc:'Reference Number';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 55; Name:'DateCreated';       Desc:'Date created';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 60; Name:'TimeCreated';       Desc:'Time created';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 11; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 62; Name:'DigitizeDate';      Desc:'Digital Creation Date';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  8; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 63; Name:'DigitizeTime';      Desc:'Digital Creation Time';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 11; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 65; Name:'OriginatingProgram';Desc:'Originating Program';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 70; Name:'ProgramVersion';    Desc:'Program version';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 10; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 75; Name:'ObjectCycle';       Desc:'Object Cycle';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  1; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 80; Name:'ByLine';            Desc:'ByLine';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 85; Name:'ByLineTitle';       Desc:'ByLine Title';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 90; Name:'City';              Desc:'City';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 92; Name:'SubLocation';       Desc:'Sublocation';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag: 95; Name:'State';             Desc:'Province/State';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:100; Name:'LocationCode';      Desc:'Country/Primary Location Code';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  3; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:101; Name:'LocationName';      Desc:'Country/Primary Location Name';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 64; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:103; Name:'TransmissionRef';   Desc:'Original Transmission Reference';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:105; Name:'ImageHeadline';     Desc:'Image headline';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:256; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:110; Name:'ImageCredit';       Desc:'Image credit';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:115; Name:'Source';            Desc:'Source';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:116; Name:'Copyright';         Desc:'Copyright Notice';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:128; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:118; Name:'Contact';           Desc:'Contact';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:128; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:120; Name:'ImageCaption';      Desc:'Image caption';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:2000;CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:122; Name:'ImageCaptionWriter';Desc:'Image caption writer';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size: 32; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:130; Name:'ImageType';         Desc:'Image type';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  2; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:131; Name:'Orientation';       Desc:'Image Orientation';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  1; CallBack:nil),
+     ( TID:0; TType:0; ICode: 2; Tag:135; Name:'LangID';            Desc:'Language ID';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  3; CallBack:nil),
+     ( TID:0; TType:0; ICode: 8; Tag:10;  Name:'Subfile';           Desc:'Subfile';
+       Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:  2; CallBack:nil)
     );
 
-procedure IPTCWriteTransFile(fname:ansistring);
-function IPTCReadTransFile(fname:ansistring):boolean;
+procedure IPTCWriteTransFile(fname:string);
+function IPTCReadTransFile(fname:string):boolean;
 
 implementation
 
-uses dEXIF;
+uses
+ {$IFDEF MSWINDOWS} Windows,{$ENDIF}
+ {$IFDEF UNIX} unixutil, {$ENDIF}
+ dEXIF;
 
 var
-  buffer:ansistring;
+  buffer:string;
 
 constructor TIPTCdata.Create(p:tobject);
 begin
@@ -217,7 +270,7 @@ end;
 
 Function ExtractTag(var start:integer):iTag;
 var blen,x,tagId,code,i:integer;
-    tmp:iTag;
+    dmy,tmp:iTag;
 begin
   FillChar(tmp,sizeof(iTag),0);
   code := byte(buffer[start]);
@@ -241,8 +294,8 @@ begin
       end;
     if tmp.Tag = 65534 then
     begin
-      tmp.name := 'Custom_'+AnsiString(inttostr(tagid));
-      tmp.Desc := 'Custom_'+AnsiString(inttostr(tagid));
+      tmp.name := 'Custom_'+inttostr(tagid);
+      tmp.Desc := 'Custom_'+inttostr(tagid);
       tmp.Tag := tagid;
       tmp.ICode := code;
       tmp.Data := copy(buffer,start,x);
@@ -255,13 +308,13 @@ end;
 
 //  This function returns the index of a tag name
 //  in the tag buffer.
-Function TIPTCdata.LookupTag(SearchStr:ansistring):integer;
+Function TIPTCdata.LookupTag(SearchStr:string):integer;
 var i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
+ SearchStr := UpperCase(SearchStr);
  result := -1;
  for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Name)) = SearchStr then
+   if UpperCase(iTagArray[i].Name) = SearchStr then
    begin
      result := i;
      break;
@@ -271,13 +324,13 @@ end;
 //  This function returns the index of a tag name
 //  in the tag buffer. It searches by the description
 //  which is most likely to be used as a label
-Function TIPTCdata.LookupTagByDesc(SearchStr:ansistring):integer;
+Function TIPTCdata.LookupTagByDesc(SearchStr:string):integer;
 var i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
+ SearchStr := UpperCase(SearchStr);
  result := -1;
  for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Desc)) = SearchStr then
+   if UpperCase(iTagArray[i].Desc) = SearchStr then
    begin
      result := i;
      break;
@@ -286,13 +339,13 @@ end;
 
 //  This function returns the index of a tag definition
 //  for a given tag name.
-function TIPTCdata.LookupTagDefn(item:ansistring): integer;
+function TIPTCdata.LookupTagDefn(item: string): integer;
 var i:integer;
 begin
   result := -1;
   for i := 0 to IPTCTAGCNT-1 do
   begin
-    if AnsiString(AnsiLowerCase(item)) = AnsiString(AnsiLowerCase(IPTCtable[i].Name)) then
+    if lowercase(item) = lowercase(IPTCtable[i].Name) then
     begin
       result := i;
       break;
@@ -300,14 +353,14 @@ begin
   end;
 end;
 
-Function TIPTCdata.ParseIPTCStrings(buff:ansistring):tstringlist;
+Function TIPTCdata.ParseIPTCStrings(buff:string):tstringlist;
 var ts:tstringlist;
     tmpItem:itag;
     start,i,j:Integer;
 begin
   ts := tstringlist.Create;
   buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
+  i := pos('Photoshop 3.0',buff)+13;
   for j := i to length(buffer) do       // Look for first field marker
     if ( byte(buffer[j]) = $1C) and
        ( byte(buffer[j+1]) in [2,8]) then
@@ -342,13 +395,13 @@ begin
   ParseIPTCArray(timgdata(parent).IPTCsegment^.data);
 end;
 
-Procedure TIPTCdata.ParseIPTCArray(buff:ansistring);
+Procedure TIPTCdata.ParseIPTCArray(buff:string);
 var nextTag:itag;
     start,i,j:Integer;
 begin
   reset;
   buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
+  i := pos('Photoshop 3.0',buff)+13;
   for j := i to length(buffer) do       // Look for first field marker
     if ( byte(buffer[j]) = $1C) and
        ( byte(buffer[j+1]) in [2,8]) then
@@ -366,18 +419,17 @@ begin
   end;
 end;
  
-function MakeEntry(code,tag:integer;data:ansistring):ansistring;
-var buff,sLen:ansistring;
+function MakeEntry(code,tag:integer;data:string):string;
+var buff,sLen:string;
   bLen:integer;
 begin
   bLen := length(Data);
-  sLen := ansichar(blen div 256)+ansichar(blen mod 256);
-  result := buff+ansichar($1C)+ansichar(code)+ansichar(tag)+sLen+Data;
+  sLen := char(blen div 256)+char(blen mod 256);
+  result := buff+char($1C)+char(code)+char(tag)+sLen+Data;
 end;
 
 function TIPTCdata.IPTCArrayToXML: tstringlist;
-var
-  buff:tstringlist;
+var buff:tstringlist;
   i:integer;
 begin
   buff := TStringList.Create;
@@ -395,19 +447,17 @@ begin
   result := buff;
 end;
  
-function SplitMultiTag(code, tag:integer; buff:ansistring):ansistring;
-var
-  tmps:ansistring;
-  j:integer;
-begin
+function SplitMultiTag(code, tag:integer; buff:string):string;
+var tmps:string;
+  j:integer; begin
   result := '';
-  while trim(string(buff)) <> '' do
+  while trim(buff) <> '' do
   begin
-    j := Pos(MultiTagSep,buff);
+    j := pos(MultiTagSep,buff);
     if j > 0 then
     begin
-      tmps := AnsiString(trim(string(copy(buff,1,j-1))));
-      buff := AnsiString(trim(string(copy(buff,j+1,maxint))));
+      tmps := trim(copy(buff,1,j-1));
+      buff := trim(copy(buff,j+1,maxint));
     end
     else
     begin
@@ -418,9 +468,8 @@ begin
   end;
 end;
  
-function TIPTCdata.IPTCArrayToBuffer:ansistring;
-var
-  buff,slen,h2:ansistring;
+function TIPTCdata.IPTCArrayToBuffer:string;
+var buff,slen,h2:string;
   blen,i:integer;
 begin
   buff := '';
@@ -437,7 +486,7 @@ begin
     buff := buff+#0;
   h2 := MakeEntry(2,0,#0#2);
   bLen := length(buff)+length(h2);
-  sLen := ansichar(blen div 256)+ansichar(blen mod 256);
+  sLen := char(blen div 256)+char(blen mod 256);
   buff := 'Photoshop 3.0'#0'8BIM'#4#4#0#0#0#0+slen+h2+buff;
  
 // Photoshop requires the following End-of-data marker:
@@ -445,8 +494,7 @@ begin
 end;
 
 function TIPTCdata.Clone(source: TIPTCdata): TIPTCdata;
-var
-  newie:TIPTCdata;
+var newie:TIPTCdata;
 begin
   newie := TIPTCdata.Create(parent);
   newie.fITagArray := copy(source.fITagArray,0,MaxTag);
@@ -454,8 +502,8 @@ begin
   result := newie;
 end;
 
-function TIPTCdata.AddOrAppend(tagstr, dataval:ansistring): integer;
-var
+function TIPTCdata.AddOrAppend(tagstr, dataval: string): integer;
+var nextTag:iTag;
   i:integer;
 begin
   result := -1;
@@ -469,11 +517,10 @@ begin
   end;
 end;
 
-function noDups(exst,newstr:ansistring):ansistring;
-var
-  lst,nlst: tstringList;
-  s:ansistring;
-  i:integer;
+function noDups(exst,newstr:string):string;
+var lst,nlst: tstringList;
+    s:string;
+    i:integer;
 begin
   lst := tstringlist.Create;
   nlst := tstringlist.Create;
@@ -482,18 +529,17 @@ begin
   nlst.CommaText := newstr;
   for i := 0 to nlst.Count-1 do
   begin
-    s := AnsiString(trim(string(nlst[i])));
+    s := trim(nlst[i]);
     if (lst.IndexOf(s) < 0) then
     begin
       lst.Add(s);
     end;
   end;
-  result := AnsiString(lst.CommaText);
+  result := lst.CommaText;
 end;
 
-function TIPTCdata.AppendToTag(tagstr, dataval:ansistring): integer;
-var
-  inspt:integer;   // INSertion PoinT
+function TIPTCdata.AppendToTag(tagstr, dataval: string): integer;
+var inspt:integer;   // INSertion PoinT
 begin
   inspt := LookupTag(tagstr);
   if (inspt >= 0) then
@@ -507,7 +553,7 @@ begin
   result := inspt;
 end;
 
-function TIPTCdata.UpdateTag(tagstr, dataval:ansistring): integer;
+function TIPTCdata.UpdateTag(tagstr, dataval: string): integer;
 var inspt:integer;   // INSertion PoinT
 begin
   inspt := LookupTag(tagstr);
@@ -519,7 +565,7 @@ begin
   result := inspt;
 end;
 
-function TIptcData.GetMultiPartTag(tagName:ansistring):tstringlist;
+function TIptcData.GetMultiPartTag(tagName:string):tstringlist;
 var tmp:tstringlist;
 begin
   tmp := tstringlist.create;
@@ -528,7 +574,7 @@ begin
   result := tmp;
 end;
  
-function TIPTCdata.AddTag(tagstr, dataval:ansistring): integer;
+function TIPTCdata.AddTag(tagstr, dataval: string): integer;
 var inspt,defidx:integer;
   newTag:itag;
 begin
@@ -553,7 +599,7 @@ begin
   result := inspt;
 end;
 
-procedure TIPTCdata.RemoveTag(tagstr:ansistring);
+procedure TIPTCdata.RemoveTag(tagstr: string);
 var rempt,i:integer;
 begin
  rempt := LookupTag(tagstr);
@@ -571,7 +617,7 @@ begin
  FillChar(fITagArray[0],sizeof(iTag)*MaxTag,0);  // clear out old data
 end;
 
-function TIPTCdata.GetTag(tagstr:ansistring; defval:ansistring=''):ansistring;
+function TIPTCdata.GetTag(tagstr: string; defval: string=''): string;
 var i:integer;
 begin
   result := defval;
@@ -585,7 +631,7 @@ begin
   result := Count > 0;
 end;
  
-function TIPTCdata.ReadFile(fname:ansistring):boolean;
+function TIPTCdata.ReadFile(fname: string):boolean;
 var p:tImgData;
 begin
   p := tImgData(parent);
@@ -599,23 +645,23 @@ begin
   result := HasData();
 end;
  
-function TIPTCdata.ReadFileStrings(fname:ansistring):tstringlist;
+function TIPTCdata.ReadFileStrings(fname: string):tstringlist;
 begin
   result := ParseIPTCStrings(timgdata(parent).IPTCSegment^.Data);
 end;
  
 {$IFNDEF dExifNoJpeg}
  
-procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
-var tmp:ansistring;
+procedure TIPTCdata.WriteFile(fname:string;memImage:tjpegimage);
+var tmp:string;
 begin
   tmp := IPTCArrayToBuffer;                       // Create temp buffer
   timgdata(parent).MakeIPTCSegment(tmp);          // Create IPTC segment
   timgdata(parent).WriteEXIFjpeg(memImage,FName); // Write to disk
 end;
  
-procedure TIPTCdata.WriteFile(FName:ansistring; OrigName :ansistring = '');
-var tmp:ansistring;
+procedure TIPTCdata.WriteFile(FName: string; OrigName : string = '');
+var tmp:string;
     Orig:tjpegimage;
 begin
   Orig := TJPEGImage.Create;
@@ -630,7 +676,7 @@ end;
 
 {$ELSE}
 
-procedure TIPTCdata.WriteFile(fname:ansistring; origname :ansistring = '');
+procedure TIPTCdata.WriteFile(fname: string; origname : string = '');
 begin
   // if you're not using Borland's jpeg unit
   // then you should override/avoid this method
@@ -639,26 +685,30 @@ begin
 end;
  
 {$ENDIF}
-procedure TIPTCdata.SetTagByIdx(idx: integer; val:ansistring);
+procedure TIPTCdata.SetTagByIdx(idx: integer; val: string);
 begin
   fITagArray[idx].Data := val;
 end;
 
 function GetTimeZoneBias:longint;
-{$IFDEF WINDOWS}
+{$IFDEF MSWINDOWS}
 var
   TZoneInfo: TTimeZoneInformation;
-{$ENDIF}
+  TimeZoneBias: longint;
 begin
-  {$IFDEF WINDOWS}
   GetTimeZoneInformation(TZoneInfo);
   result := TZoneInfo.Bias;
-  {$ENDIF}
 end;
+{$ENDIF}
+{$IFDEF UNIX}
+begin
+  Result := -Tzseconds div 60;
+end;
+{$ENDIF}
 
-function TIPTCdata.getTimeZoneStr:ansistring;
+function TIPTCdata.getTimeZoneStr:string;
 var tmp,h,m:integer;
-    sign:ansistring;
+    sign:string;
 begin
   result := defaultTimeZone;
   if defaultTimeZone <> '_0000' then
@@ -669,13 +719,13 @@ begin
   if tmp < 0         // local time correction: invertsign
     then sign := '+'
     else sign := '-';
-  result := AnsiString(Format('%s%.2d%.2d',[sign,h,m]));
+  result := Format('%s%.2d%.2d',[sign,h,m]);
 end;
 
-procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:ansistring);
-var dateStr, timeStr, timeZone:ansistring;
+procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:string);
+var dateStr, timeStr, timeZone:string;
 begin
-  if AnsiString(AnsiLowerCase(prefix)) = 'default' then
+  if lowercase(prefix) = 'default' then
   begin
     datestr := 'DateCreated';
     timestr := 'TimeCreated';
@@ -686,8 +736,8 @@ begin
     timestr := prefix+'Time';
   end;
   timeZone := getTimeZoneStr();  // use local time zone
-  AddTag(datestr, AnsiString(FormatDateTime('yyyymmdd',TimeIn)));
-  AddTag(timestr, AnsiString(FormatDateTime('hhnnss',TimeIn))+timeZone);
+  AddTag(datestr,FormatDateTime('yyyymmdd',TimeIn));
+  AddTag(timestr,FormatDateTime('hhnnss',TimeIn)+timeZone);
 end;
 
 procedure TIPTCdata.SetDateTime(TimeIn:TDateTime);
@@ -695,7 +745,7 @@ begin
   SetDateTimePrim(TimeIn,'Default');
 end;
 
-procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; prefix:ansistring);
+procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; prefix:string);
 begin
   SetDateTimePrim(TimeIn,prefix);
 end;
@@ -703,18 +753,18 @@ end;
 function TIPTCdata.GetDateTime:TDateTime;
 type
   TConvert= packed record
-     year: Array [1..4] of ansichar;
-     mon, day, hr, min, sec: Array [1..2] of ansichar;
+     year: Array [1..4] of char;
+     mon, day, hr, min, sec: Array [1..2] of Char;
   end;
   PConvert= ^TConvert;
 var
-  tsd,tst:ansistring;
+   tsd,tst:string;
 begin
    try
      tsd := GetTag('DateCreated','00000000');
      tst := tsd+GetTag('TimeCreated','000000');
      with PConvert( @tst[1] )^ do
-       Result := EncodeDate( StrToInt( year),
+       Result := EncodeDate( StrToInt( year ),
                              StrToInt( mon ),
                              StrToInt( day ))
               +  EncodeTime( StrToInt( hr  ),
@@ -725,7 +775,7 @@ begin
    end;
 end;
 
-procedure IPTCWriteTransFile(fname:ansistring);
+procedure IPTCWriteTransFile(fname:string);
 var tmp:tstringlist;
     i: integer;
 begin
@@ -736,23 +786,23 @@ begin
   tmp.Free;
 end;
 
-function IPTCReadTransFile(fname:ansistring):boolean;
+function IPTCReadTransFile(fname:string):boolean;
 var tmp:tstringlist;
     i: integer;
-    ts:ansistring;
+    ts:string;
 begin
   result := false;
-  if not fileexists(fname) then
+  if not FileExistsUTF8(fname) { *Converted from FileExists* } then
     exit;
   tmp := tstringlist.Create;
   tmp.LoadFromFile(fname);
   for i := 0 to IPTCTAGCNT-1 do
   begin
-    ts := AnsiString(tmp.Values[IPTCTable[i].Name]);
+    ts := tmp.Values[IPTCTable[i].Name];
     if ts > '' then
       IPTCTable[i].Desc := ts;
   end;
   tmp.Free;
 end;
 
-end.
+end.

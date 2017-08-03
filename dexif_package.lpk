@@ -1,34 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
+    <PathDelim Value="\"/>
     <Name Value="dexif_package"/>
     <CompilerOptions>
       <Version Value="11"/>
+      <PathDelim Value="\"/>
       <SearchPaths>
-        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)-$(LCLWidgetType)"/>
+        <OtherUnitFiles Value="source"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Other>
-        <CustomOptions Value="-ddExifNoJpeg"/>
+        <CompilerMessages>
+          <MsgFileName Value=""/>
+        </CompilerMessages>
+        <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Files Count="3">
       <Item1>
-        <Filename Value="dEXIF.pas"/>
-        <UnitName Value="dEXIF"/>
-      </Item1>
-      <Item2>
         <Filename Value="dIPTC.pas"/>
         <UnitName Value="dIPTC"/>
-      </Item2>
-      <Item3>
+      </Item1>
+      <Item2>
         <Filename Value="msData.pas"/>
         <UnitName Value="msData"/>
+      </Item2>
+      <Item3>
+        <Filename Value="dEXIF.pas"/>
+        <UnitName Value="dEXIF"/>
       </Item3>
     </Files>
-    <RequiredPkgs Count="1">
+    <Type Value="RunAndDesignTime"/>
+    <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="FCL"/>
+        <PackageName Value="LCL"/>
       </Item1>
+      <Item2>
+        <PackageName Value="FCL"/>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
