@@ -645,16 +645,20 @@ begin
 end;
 
 function GetTimeZoneBias:longint;
-{$IFDEF WINDOWS}
+{$IFDEF MSWINDOWS}
 var
   TZoneInfo: TTimeZoneInformation;
-{$ENDIF}
+  TimeZoneBias: longint;
 begin
-  {$IFDEF WINDOWS}
   GetTimeZoneInformation(TZoneInfo);
   result := TZoneInfo.Bias;
-  {$ENDIF}
 end;
+{$ENDIF}
+{$IFDEF UNIX}
+begin
+  Result := -Tzseconds div 60;
+end;
+{$ENDIF}
 
 function TIPTCdata.getTimeZoneStr:ansistring;
 var tmp,h,m:integer;
