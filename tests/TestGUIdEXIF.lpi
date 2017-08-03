@@ -11,9 +11,6 @@
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
     </General>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -25,16 +22,19 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="fpcunittestrunner"/>
+        <PackageName Value="dexif_package"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="fpcunittestrunner"/>
       </Item2>
       <Item3>
-        <PackageName Value="FCL"/>
+        <PackageName Value="LCL"/>
       </Item3>
+      <Item4>
+        <PackageName Value="FCL"/>
+      </Item4>
     </RequiredPackages>
     <Units Count="2">
       <Unit0>
@@ -67,7 +67,7 @@
     </Linking>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="3">
+    <Exceptions Count="4">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -77,6 +77,9 @@
       <Item3>
         <Name Value="EFOpenError"/>
       </Item3>
+      <Item4>
+        <Name Value="EAssertionFailedError"/>
+      </Item4>
     </Exceptions>
   </Debugging>
 </CONFIG>

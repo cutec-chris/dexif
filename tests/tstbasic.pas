@@ -5,37 +5,106 @@ unit tstBasic;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry;
+  Classes, SysUtils, fpcunit, testutils, testregistry, FileUtil;
+
+const
+  // Picture with EXIF Data
+  co_TestPic01 = '../samples/pictures/pexels-photo-355241max.jpeg';
+  co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
+  // Picture without data
+  co_TestPic02 = '../samples/pictures/pexels-photo-355241.jpeg';
+  co_DUTPicName02 = './testpictures/DUTPic02.jpeg';
 
 type
 
-  TTestCase1= class(TTestCase)
+  { TTsTBasic_dEXIF }
+
+  TTsTBasic_dEXIF= class(TTestCase)
+  private
   protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestHookUp;
+    procedure CheckForPicture;
+    procedure TstImgDataCreate;
+    procedure TstImgDataCanProcessFile;
+    procedure TstImgDataDetectEXIF_True;
+    procedure TstImgDataDetectEXIF_False;
   end;
 
 implementation
 
-procedure TTestCase1.TestHookUp;
+uses
+ dEXIF;
+
+procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
-  Fail('Write your own test');
+  CheckTrue(FileExists(co_DUTPicName01));
 end;
 
-procedure TTestCase1.SetUp;
+procedure TTsTBasic_dEXIF.TstImgDataCreate;
+var
+  DUT: TImgData;
 begin
-
+  DUT:= TImgData.Create();
+  CheckIs(DUT,TImgData,'Not TImgData');
+  DUT.Free;
 end;
 
-procedure TTestCase1.TearDown;
+procedure TTsTBasic_dEXIF.TstImgDataCanProcessFile;
+var
+  DUT: TImgData;
 begin
+  DUT:= TImgData.Create();
+  CheckTrue(DUT.ProcessFile(co_DUTPicName01),'TImgData cannot process file:'+co_DUTPicName01);
+  CheckTrue(DUT.ProcessFile(co_DUTPicName02),'TImgData cannot process file:'+co_DUTPicName02);
+  DUT.Free;
+end;
 
+procedure TTsTBasic_dEXIF.TstImgDataDetectEXIF_True;
+var
+  DUT: TImgData;
+begin
+  DUT:= TImgData.Create();
+  DUT.ProcessFile(co_DUTPicName01);
+  CheckTrue(DUT.HasEXIF,'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
+  DUT.ClearEXIF;
+  CheckFalse(DUT.HasEXIF,'TImgData cannot reset EXIF');
+  DUT.Free;
+end;
+
+procedure TTsTBasic_dEXIF.TstImgDataDetectEXIF_False;
+var
+  DUT: TImgData;
+begin
+  DUT:= TImgData.Create();
+  DUT.ProcessFile(co_DUTPicName02);
+  CheckFalse(DUT.HasEXIF,'TImgData cannot detect EXIF in file:'+co_DUTPicName02);
+  DUT.ClearEXIF;
+  CheckFalse(DUT.HasEXIF,'TImgData cannot reset EXIF');
+  DUT.Free;
+end;
+
+procedure TTsTBasic_dEXIF.SetUp;
+begin
+  if not FileExists(co_DUTPicName01) then
+    if FileExists(co_TestPic01) then
+      CopyFile(co_TestPic01,co_DUTPicName01);
+  if not FileExists(co_DUTPicName02) then
+    if FileExists(co_TestPic02) then
+      CopyFile(co_TestPic02,co_DUTPicName02);
+end;
+
+procedure TTsTBasic_dEXIF.TearDown;
+begin
+  //if FileExists(co_DUTPicName01) then
+  //  DeleteFile(co_DUTPicName01);
+  //if FileExists(co_DUTPicName02) then
+  //  DeleteFile(co_DUTPicName02);
 end;
 
 initialization
 
-  RegisterTest(TTestCase1);
+  RegisterTest(TTsTBasic_dEXIF);
 end.
 
