@@ -9,10 +9,10 @@ uses
 
 const
   // Picture with EXIF Data
-  co_TestPic01 = '../samples/pictures/pexels-photo-355241max.jpeg';
+  co_TestPic01 = './testpictures/original/with_exif_large.jpeg';
   co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
   // Picture without data
-  co_TestPic02 = '../samples/pictures/pexels-photo-355241.jpeg';
+  co_TestPic02 = './testpictures/original/no_exif.jpg';
   co_DUTPicName02 = './testpictures/DUTPic02.jpeg';
 
 type
