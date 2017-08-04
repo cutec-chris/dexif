@@ -37,9 +37,13 @@ uses
 {$IFNDEF DELPHI}
   {$DEFINE dExifNoJpeg}
 {$ENDIF}
-{$IFNDEF dExifNoJpeg}
-  ,jpeg
-{$ENDIF};
+{$IFDEF FPC}
+  {$UNDEF dExifNoJpeg}
+  ,Graphics
+{$ELSE}
+  ,Jpeg
+{$ENDIF}
+  ;
 
 Const
    DexifVersion: ansistring = '1.03d';
@@ -226,19 +230,14 @@ type
   // TImgData
   TImgData = class(TEndInd) // One per image object
   private
-    sections: array [1..21] of tSection;
     TiffFmt: boolean;
-    BuildList: integer;
-    SectionCnt : integer;
-    ExifSegment: pSection;
-    CommentSegment: pSection;
-    HeaderSegment : pSection;
-    Filename: ansistring;
     FileDateTime: tDateTime;
     FileSize: longint;
     ErrStr: ansistring;
     TraceLevel: integer;
     // Clear the internal information
+    procedure MergeToStream(Input, Output: TStream; EnabledMeta: Byte=$FF;
+      freshExifBlock: Boolean=false);
     procedure reset;
     // Set the basic fileinfo eg. filename, filedate and filesize
     procedure SetFileInfo(fname: ansistring);
@@ -247,19 +246,10 @@ type
     function ReadExifInfo(fname:ansistring):boolean;
     Procedure MakeIPTCSegment(buff:ansistring);
     Procedure MakeCommentSegment(buff:ansistring);
-    function  GetCommentStr:ansistring;
-    Function  GetCommentSegment:ansistring;
     procedure ProcessEXIF;
     procedure CreateIPTCObj;
     function ReadIPTCStrings(fname: ansistring):tstringlist;
     function ExtractThumbnailBuffer: ansistring;
-{$IFNDEF dExifNoJpeg}
-    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring;origName:ansistring;
-              adjSize:boolean = true);  overload;
-    procedure WriteEXIFJpeg(fname:ansistring); overload;
-    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);  overload;
-    function ExtractThumbnailJpeg: TJpegImage;
-{$ENDIF}
     function MetaDataToXML: tstringlist;
     function FillInIptc:boolean;
 
@@ -269,9 +259,25 @@ type
     function ReadTiffSections (var f: tstream):boolean;
     function ReadTiffFile(const aFileName:ansistring):boolean;
   public
+    sections: array [1..21] of tSection;
+    SectionCnt : integer;
+    Filename: ansistring;
+    ExifSegment: pSection;
+    CommentSegment: pSection;
+    HeaderSegment : pSection;
     ExifObj: TImageInfo;
     IptcObj: TIPTCData;
     IPTCSegment: pSection;
+    BuildList: integer;
+{$IFNDEF dExifNoJpeg}
+    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring;origName:ansistring;
+              adjSize:boolean = true);  overload;
+    procedure WriteEXIFJpeg(fname:ansistring); overload;
+    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);  overload;
+    function ExtractThumbnailJpeg: TJpegImage;
+{$ENDIF}
+    function  GetCommentStr:ansistring;
+    Function  GetCommentSegment:ansistring;
     procedure ClearSections;
     // Clear the EXIF information
     //   not written to the file yet
@@ -2919,6 +2925,7 @@ begin
     jms.Free;
   end
 end;
+
 procedure TImgData.MergeToStream(Input, Output : TStream; EnabledMeta : Byte = $FF; freshExifBlock : Boolean = false);   // msta
 var pslen:integer;
     tb:array[0..12] of byte;
@@ -2999,59 +3006,59 @@ begin
 end;
 
 {$IFNDEF dExifNoJpeg}
-function TImgData.FillInIptc:boolean;
-begin
-  if IPTCSegment = nil then
-    CreateIPTCObj
-  else
-    IPTCObj.ParseIPTCArray(IPTCSegment^.Data);
-//    filename := FName;
-  result := IPTCObj.HasData();
-end;
+//function TImgData.FillInIptc:boolean;
+//begin
+//  if IPTCSegment = nil then
+//    CreateIPTCObj
+//  else
+//    IPTCObj.ParseIPTCArray(IPTCSegment^.Data);
+////    filename := FName;
+//  result := IPTCObj.HasData();
+//end;
 
 
-function TImgData.MetaDataToXML: tstringlist;
-var buff,buff2:tstringlist;
-  s:tsearchrec;
-begin
-  if FindFirst(Filename,faAnyFile,s) { *Converted from FindFirst* } <> 0 then
-  begin
-    FindClose(s); { *Converted from FindClose* }
-    result := nil;
-    exit;
-  end;
-  buff := TStringList.Create;
-  buff.add('<dImageFile>');
-  buff.add('   <OSdata>');
-  buff.add('      <name> '+ExtractFileName(s.Name)+' </name>');
-  buff.add('      <path> '+ExtractFilePath(Filename)+' </path>');
-  buff.add('      <size> '+inttostr(s.Size)+' </size>');
-  buff.add('      <date> '+DateToStr(FileDateToDateTime(s.time))+' </date>');
-  buff.add('   </OSdata>');
-  if ExifObj <> nil then
-  begin
-    buff2 := ExifObj.EXIFArrayToXML;
-    if buff2 <> nil then
-    begin
-      buff.AddStrings(buff2);
-      buff2.Clear;
-      buff2.Free;
-    end;
-  end;
-  if IptcObj <> nil then
-  begin
-    buff2 := IptcObj.IPTCArrayToXML;
-    if buff2 <> nil then
-    begin
-      buff.AddStrings(buff2);
-      buff2.Clear;
-      buff2.Free;
-    end;
-  end;
-  buff.add('</dImageFile>');
-  result := buff;
-end;
-
+//function TImgData.MetaDataToXML: tstringlist;
+//var buff,buff2:tstringlist;
+//  s:tsearchrec;
+//begin
+//  if FindFirst(Filename,faAnyFile,s) { *Converted from FindFirst* } <> 0 then
+//  begin
+//    FindClose(s); { *Converted from FindClose* }
+//    result := nil;
+//    exit;
+//  end;
+//  buff := TStringList.Create;
+//  buff.add('<dImageFile>');
+//  buff.add('   <OSdata>');
+//  buff.add('      <name> '+ExtractFileName(s.Name)+' </name>');
+//  buff.add('      <path> '+ExtractFilePath(Filename)+' </path>');
+//  buff.add('      <size> '+inttostr(s.Size)+' </size>');
+//  buff.add('      <date> '+DateToStr(FileDateToDateTime(s.time))+' </date>');
+//  buff.add('   </OSdata>');
+//  if ExifObj <> nil then
+//  begin
+//    buff2 := ExifObj.EXIFArrayToXML;
+//    if buff2 <> nil then
+//    begin
+//      buff.AddStrings(buff2);
+//      buff2.Clear;
+//      buff2.Free;
+//    end;
+//  end;
+//  if IptcObj <> nil then
+//  begin
+//    buff2 := IptcObj.IPTCArrayToXML;
+//    if buff2 <> nil then
+//    begin
+//      buff.AddStrings(buff2);
+//      buff2.Clear;
+//      buff2.Free;
+//    end;
+//  end;
+//  buff.add('</dImageFile>');
+//  result := buff;
+//end;
+//
 
 {$ENDIF}
 

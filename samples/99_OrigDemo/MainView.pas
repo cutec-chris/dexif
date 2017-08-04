@@ -10,18 +10,20 @@
 //--------------------------------------------------------------------------
 unit MainView;
 
-{$IFDEF LCL}
+{$IFDEF FPC}
   {$MODE DELPHI}{$H+}
 {$ENDIF}
 
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Controls, Forms, Dialogs,
   ExtDlgs, StdCtrls,
- {$IFDEF DELPHI}
+{$IFDEF FPC}
+  Graphics,
+{$ELSE}
   Jpeg,
- {$ENDIF}
+{$ENDIF}
   dExif, msData, ComCtrls, ExtCtrls, SHLObj, FileCtrl,
   dIPTC,mmsystem;
 
@@ -79,7 +81,7 @@ implementation
 {$IFDEF DELPHI}
  {$R *.dfm}
 {$ENDIF}
-{$IFDEF LCL}
+{$IFDEF FPC}
  {$R *.lfm}
 {$ENDIF}
 
@@ -137,7 +139,7 @@ uses About, ShellApi;
    {$IFDEF DELPHI}
     ItemIDList := SHBrowseForFolder(BrowseInfo);
    {$ENDIF}
-   {$IFDEF LCL}
+   {$IFDEF FPC}
     ItemIDList := SHBrowseForFolder(@BrowseInfo);
    {$ENDIF}
     TRY // Get directory from the ItemIDList
@@ -222,12 +224,12 @@ begin
     if not ImgData.HasEXIF then
       exit;
 
-    if ImgData.HasThumbnail then
-    begin
-      jpegThumb := imgData.ExtractThumbnailJpeg();
-      image1.Picture.Assign(jpegThumb);
-      jpegThumb := nil;
-    end;
+    //if ImgData.HasThumbnail then
+    //begin
+    //  jpegThumb := imgData.ExtractThumbnailJpeg();
+    //  image1.Picture.Assign(jpegThumb);
+    //  jpegThumb := nil;
+    //end;
 
     try
     // ProcessHWSpecific(ImageInfo.MakerNote,Nikon1Table,8,MakerOffset);
@@ -238,7 +240,7 @@ begin
       Memo(' -- EXIF Summary -(long)---- ');
       Memo(ImgData.ExifObj.toLongString());
     // only allow image to be written if no errors
-      if ImgData.ErrStr = '<none>' then
+      if ImgData.LastError = '<none>' then
         btnWrite.enabled := true;
       if ImgData.ExifObj.CommentPosn > 0 then
         btnCmt.enabled := true;
@@ -290,7 +292,7 @@ var item:TTagEntry;
 begin
   Memo(' ');
   Memo('-- EXIF-Data -------------- ');
-  Memo('ErrStr = '+ImgData.ErrStr);
+  Memo('ErrStr = '+ImgData.LastError);
   if not ImgData.HasEXIF() then
     exit;
   If ImgData.MotorolaOrder

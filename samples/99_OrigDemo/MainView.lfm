@@ -7,13 +7,15 @@ object Form1: TForm1
   ClientHeight = 295
   ClientWidth = 592
   Color = clBtnFace
+  DesignTimePPI = 120
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poDefaultPosOnly
-  LCLVersion = '1.3'
+  LCLVersion = '1.8.0.3'
+  Visible = False
   object Image1: TImage
     Left = 393
     Height = 121
@@ -42,16 +44,16 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Height = 23
-    Top = 272
+    Height = 29
+    Top = 266
     Width = 592
     Panels = <>
   end
   object cbClearOnLoad: TCheckBox
     Left = 16
-    Height = 19
+    Height = 23
     Top = 72
-    Width = 86
+    Width = 90
     Caption = 'Clear on Load'
     Checked = True
     State = cbChecked
@@ -87,9 +89,9 @@ object Form1: TForm1
   end
   object cbVerbose: TCheckBox
     Left = 16
-    Height = 19
+    Height = 23
     Top = 96
-    Width = 90
+    Width = 94
     Caption = 'Verbose Trace'
     OnClick = cbVerboseClick
     TabOrder = 7
@@ -106,9 +108,9 @@ object Form1: TForm1
   end
   object cbDecode: TCheckBox
     Left = 16
-    Height = 19
+    Height = 23
     Top = 120
-    Width = 58
+    Width = 62
     Caption = 'Decode'
     Checked = True
     OnClick = cbDecodeClick
@@ -128,11 +130,11 @@ object Form1: TForm1
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'
     InitialDir = '.'
-    left = 144
-    top = 16
+    Left = 144
+    Top = 16
   end
   object JpegOut: TSavePictureDialog
-    left = 144
-    top = 48
+    Left = 144
+    Top = 48
   end
 end
