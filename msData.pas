@@ -25,7 +25,7 @@ unit msData;
 //
 //--------------------------------------------------------------------------
 {$IFDEF FPC}
-  {$mode DELPHI}{$H+}
+  {$mode DELPHI}
 {$ENDIF}
 
 interface
@@ -679,4 +679,4 @@ begin
     gblUCMaker := DR.CameraMake;   //only if there's a match
 end;
 
-end.
+end.

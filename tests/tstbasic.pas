@@ -30,12 +30,14 @@ type
     procedure TstImgDataCanProcessFile;
     procedure TstImgDataDetectEXIF_True;
     procedure TstImgDataDetectEXIF_False;
+    procedure TstImgDataCoutEXIF;
   end;
 
 implementation
 
 uses
- dEXIF;
+ dEXIF
+ ,dIPTC;
 
 procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
@@ -56,8 +58,8 @@ var
   DUT: TImgData;
 begin
   DUT:= TImgData.Create();
-  CheckTrue(DUT.ProcessFile(co_DUTPicName01),'TImgData cannot process file:'+co_DUTPicName01);
-  CheckTrue(DUT.ProcessFile(co_DUTPicName02),'TImgData cannot process file:'+co_DUTPicName02);
+  CheckTrue(DUT.ProcessFile(co_DUTPicName01),'TImgData should process the file:'+co_DUTPicName01);
+  CheckFalse(DUT.ProcessFile(co_DUTPicName02),'TImgData shold not process the file (as no information inside):'+co_DUTPicName02);
   DUT.Free;
 end;
 
@@ -80,8 +82,27 @@ begin
   DUT:= TImgData.Create();
   DUT.ProcessFile(co_DUTPicName02);
   CheckFalse(DUT.HasEXIF,'TImgData cannot detect EXIF in file:'+co_DUTPicName02);
-  DUT.ClearEXIF;
-  CheckFalse(DUT.HasEXIF,'TImgData cannot reset EXIF');
+  DUT.Free;
+end;
+
+procedure TTsTBasic_dEXIF.TstImgDataCoutEXIF;
+var
+  DUT: TImgData;
+  cnt: integer;
+  dummy: TTagEntry;
+begin
+  //ImgData.ExifObj.ResetIterator;
+  //while ImgData.ExifObj.IterateFoundTags(GenericEXIF ,item) do
+  //  Memo(item.Desc+DexifDelim+item.Data);
+  DUT:= TImgData.Create();
+  DUT.ProcessFile(co_DUTPicName01);
+  CheckTrue(DUT.HasEXIF,'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
+  cnt:= 0;
+  DUT.ExifObj.ResetIterator;
+  // Ceck for 5 Tags
+  while DUT.ExifObj.IterateFoundTags(GenericEXIF ,dummy) do
+    inc(cnt);
+  CheckEquals(5,cnt,'TImgData expected 5 but '+IntToStr(cnt)+' Items found');
   DUT.Free;
 end;
 

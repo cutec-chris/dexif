@@ -23,17 +23,23 @@ Unit dEXIF;
 //--------------------------------------------------------------------------
 //  17.05.2002 MS Corrections/additions M. Schwaiger
 //--------------------------------------------------------------------------
-
 interface
 
+{$IFDEF fpc}
+  {$mode DELPHI}
+{$ENDIF fpc}
+
 uses
-  sysutils,classes,math,dIPTC
-  {$IFNDEF DELPHI}
+  sysutils
+  ,classes
+  ,math
+  ,dIPTC
+{$IFNDEF DELPHI}
   {$DEFINE dExifNoJpeg}
-  {$ENDIF}
-  {$IFNDEF dExifNoJpeg}
+{$ENDIF}
+{$IFNDEF dExifNoJpeg}
   ,jpeg
-  {$ENDIF};
+{$ENDIF};
 
 Const
    DexifVersion: ansistring = '1.03d';
@@ -55,29 +61,35 @@ Const
 
 type
 
-   { tEndInd }
+  { TEndInd }
+  // Class to respect the endianness for the Motorolaformat
+  //   see https://en.wikipedia.org/wiki/Endianness
+  //   Intel use little-endian: MotorolaOrder = False (eg. default)
+  //   Motorola use big-endian: MotorolaOrder = True
+  TEndInd = class
+  private
+    llData: ansistring;
+  protected
+    function Get16u(oset: integer): word;
+    function Get32s(oset: integer): Longint;
+    function Get32u(oset: integer): Longword;
+    function Put32s(data: Integer): ansistring;
+    procedure WriteInt16(var buff: ansistring;int,posn: integer);
+    procedure WriteInt32(var buff: ansistring;int,posn: longint);
+    function GetDataBuff: ansistring;
+    procedure SetDataBuff(const Value: ansistring);
+  public
+    MotorolaOrder: boolean;
+    constructor Create;
+    destructor Destroy; override;
+  published
+    property DataBuff: ansistring read GetDataBuff write SetDataBuff;
+  end;
 
-   tEndInd = class
-      MotorolaOrder: boolean;
-      function Get16u(oset: integer): word;
-      function Get32s(oset: integer): Longint;
-      function Get32u(oset: integer): Longword;
-      function Put32s(data: Integer): ansistring;
-      procedure WriteInt16(var buff:ansistring;int,posn:integer);
-      procedure WriteInt32(var buff:ansistring;int,posn:longint);
-      function GetDataBuff: ansistring;
-      procedure SetDataBuff(const Value: ansistring);
-      property DataBuff:ansistring read GetDataBuff write SetDataBuff;
-   private
-      llData: ansistring;
-      destructor destroy;
-   end;
-
-  TimgData = class;
+  TImgData = class;
 
   { TImageInfo }
-
-  TImageInfo = class(tEndind)
+  TImageInfo = class(TEndInd)
   private
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
     function getTag(TagID: integer; forceCreate: Boolean=false; parentID: word=
@@ -175,6 +187,9 @@ type
     function AddTagToArray(nextTag: iTag): integer;
     function AddTagToThumbArray(nextTag: iTag): integer;
     Procedure ResetIterator;
+    // Iterate throug the Tags
+    //   True: a next Tag is available
+    //   False: no more Tag available
     Function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
     Function GetTagByDesc(SearchStr: ansistring): TTagEntry;
     Function HasThumbnail:boolean;
@@ -203,66 +218,95 @@ type
   end;
   pSection = ^tSection;
 
- // TTagTableArray = array of TTagEntry;
+  // TTagTableArray = array of TTagEntry;
+
+  // TGPSFormat
   TGpsFormat = (gf_DD,gf_DM,gf_DMS);
 
-    TImgData = class(tEndInd) // One per image object
-        sections: array [1..21] of tSection;
-        TiffFmt: boolean;
-        BuildList: integer;
-        SectionCnt : integer;
-        ExifSegment: pSection;
-        IPTCSegment: pSection;
-        CommentSegment: pSection;
-        HeaderSegment : pSection;
-        Filename: ansistring;
-        FileDateTime: tDateTime;
-        FileSize: longint;
-        ErrStr: ansistring;
-        ExifObj: TImageInfo;
-        IptcObj: TIPTCData;
-        TraceLevel: integer;
-        procedure reset;
-        procedure SetFileInfo(fname:ansistring);
-        constructor Create(buildCode: integer = GenAll);
-        function SaveExif(var jfs2: tstream; EnabledMeta: Byte=$FF;
-          freshExifBlock: Boolean=false): longint;
-        function ReadExifInfo(fname:ansistring):boolean;
-        Procedure MakeIPTCSegment(buff:ansistring);
-        Procedure MakeCommentSegment(buff:ansistring);
-        function  GetCommentStr:ansistring;
-        Function  GetCommentSegment:ansistring;
-        function ProcessFile(const aFileName:ansistring):boolean;
-        function ReadJpegSections (var f: tstream):boolean;
-        function ReadJpegFile(const aFileName:ansistring):boolean;
-        function ReadTiffSections (var f: tstream):boolean;
-        function ReadTiffFile(const aFileName:ansistring):boolean;
-        procedure ClearSections;
-        procedure ClearEXIF;
-        procedure ClearIPTC;
-        procedure ClearComments;
-        procedure ProcessEXIF;
-        procedure CreateIPTCObj;
-        function  HasMetaData:boolean;
-        function HasEXIF: boolean;
-        function HasIPTC: boolean;
-        function HasComment: boolean;
-        function HasThumbnail: boolean;
-        function ReadIPTCStrings(fname: ansistring):tstringlist;
-        function ExtractThumbnailBuffer: ansistring;
-        {$IFNDEF dExifNoJpeg}
-        procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring;origName:ansistring;
-                  adjSize:boolean = true);  overload;
-        procedure WriteEXIFJpeg(fname:ansistring); overload;
-        procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);  overload;
-        function ExtractThumbnailJpeg: TJpegImage;
-        {$ENDIF}
-        function MetaDataToXML: tstringlist;
-        function FillInIptc:boolean;
-  public
-    destructor Destroy;
+  // TImgData
+  TImgData = class(TEndInd) // One per image object
+  private
+    sections: array [1..21] of tSection;
+    TiffFmt: boolean;
+    BuildList: integer;
+    SectionCnt : integer;
+    ExifSegment: pSection;
+    CommentSegment: pSection;
+    HeaderSegment : pSection;
+    Filename: ansistring;
+    FileDateTime: tDateTime;
+    FileSize: longint;
+    ErrStr: ansistring;
+    TraceLevel: integer;
+    // Clear the internal information
+    procedure reset;
+    // Set the basic fileinfo eg. filename, filedate and filesize
+    procedure SetFileInfo(fname: ansistring);
+    function SaveExif(var jfs2: tstream; EnabledMeta: Byte=$FF;
+      freshExifBlock: Boolean=false): longint;
+    function ReadExifInfo(fname:ansistring):boolean;
+    Procedure MakeIPTCSegment(buff:ansistring);
+    Procedure MakeCommentSegment(buff:ansistring);
+    function  GetCommentStr:ansistring;
+    Function  GetCommentSegment:ansistring;
+    procedure ProcessEXIF;
+    procedure CreateIPTCObj;
+    function ReadIPTCStrings(fname: ansistring):tstringlist;
+    function ExtractThumbnailBuffer: ansistring;
+{$IFNDEF dExifNoJpeg}
+    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring;origName:ansistring;
+              adjSize:boolean = true);  overload;
+    procedure WriteEXIFJpeg(fname:ansistring); overload;
+    procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);  overload;
+    function ExtractThumbnailJpeg: TJpegImage;
+{$ENDIF}
+    function MetaDataToXML: tstringlist;
+    function FillInIptc:boolean;
 
-    end; // TImgData
+  protected
+    function ReadJpegSections (var f: tstream):boolean;
+    function ReadJpegFile(const aFileName:ansistring):boolean;
+    function ReadTiffSections (var f: tstream):boolean;
+    function ReadTiffFile(const aFileName:ansistring):boolean;
+  public
+    ExifObj: TImageInfo;
+    IptcObj: TIPTCData;
+    IPTCSegment: pSection;
+    procedure ClearSections;
+    // Clear the EXIF information
+    //   not written to the file yet
+    procedure ClearEXIF;
+    // Clear the IPTC information
+    //   not written to the file yet
+    procedure ClearIPTC;
+    // Clear the comment
+    //   not written to the file yet
+    procedure ClearComments;
+    // EXIF header found in file
+    function HasEXIF: boolean;
+    // IPTC header found in file
+    function HasIPTC: boolean;
+    // EXIF, IPTC or Comment found in file
+    function HasMetaData:boolean;
+    // Comment found in file
+    function HasComment: boolean;
+    // EXIF information about Thumbnail found in file
+    function HasThumbnail: boolean;
+    // Reads the file and and set the EXIF or IPTC information
+    //  true  = file is readable and is a valid format eg. jpg or tiff act.
+    //  false = file is not readable or an not supported type or has no metadata
+    function ProcessFile(const aFileName:ansistring):boolean;
+    // Create the TImgData object
+    //   bulidCode:  (build in list)
+    //     GenAll = all codes are scanned  (255)
+    //     GenNone= no code is scanned     (0)
+    constructor Create(buildCode: integer = GenAll);
+    // Destroy the TImgData object an give the internal objects free
+    destructor Destroy; override;
+  published
+    // Give the last Error back
+    property LastError: string read ErrStr;
+  end; // TImgData
 
   // these function variables can be overridden to
   // alter the default formatting for various data types
@@ -906,9 +950,9 @@ end;
 
 destructor TImgdata.Destroy;
 begin
-  if assigned(ExifObj) then
+  if Assigned(ExifObj) then
     ExifObj.free;
-  if assigned(IptcObj) then
+  if Assigned(IptcObj) then
     IptcObj.free;
   inherited;
 end;
@@ -2529,6 +2573,11 @@ begin
   llData := Value;
 end;
 
+constructor tEndInd.create;
+begin
+  MotorolaOrder:=false;
+end;
+
 procedure tEndInd.WriteInt16(var buff:ansistring;int,posn:integer);
 begin
   if MotorolaOrder then
@@ -2596,7 +2645,7 @@ end;
 //--------------------------------------------------------------------------
 // Convert a 32 bit unsigned value from file's native byte order
 //--------------------------------------------------------------------------
-function tEndInd.Put32s(data:Longint):ansistring;
+function tEndInd.Put32s(data: Integer): ansistring;
 var
   data2:integer;
   buffer:string[4] absolute data2;
@@ -3007,53 +3056,56 @@ end;
 {$ENDIF}
 
 
-function TImgData.ProcessFile( const aFileName :ansistring):boolean;
-var extn:ansistring;
+function TImgData.ProcessFile(const aFileName :ansistring):boolean;
+var
+  extn:ansistring;
 begin
   reset;
   result := false;
   if not FileExists(aFileName) then
     exit;
+  // if the file exist, we set the basic information eg. filename, size and date
   SetFileInfo(aFileName);
   try
-      errstr := 'Not an EXIF file';
-      extn :=  AnsiString(AnsiLowerCase(ExtractFileExt(filename)));
-      if (extn = '.jpg') or (extn = '.jpeg') or (extn = '.jpe') then
-      begin
-        if not ReadJpegFile(FileName) then
-          exit;
-      end
-      else
-      if (extn = '.tif') or (extn = '.tiff') or (extn = '.nef') then
-      begin
-        if not ReadTiffFile(FileName) then
-          exit;
-      end
-      else
-      begin
+    errstr := 'Not an EXIF file';
+    extn :=  AnsiString(AnsiLowerCase(ExtractFileExt(filename)));
+    if (extn = '.jpg') or (extn = '.jpeg') or (extn = '.jpe') then
+    begin
+      if not ReadJpegFile(FileName) then
         exit;
-      end;
-      errstr := '<none>';
+    end
+    else
+    if (extn = '.tif') or (extn = '.tiff') or (extn = '.nef') then
+    begin
+      if not ReadTiffFile(FileName) then
+        exit;
+    end
+    else
+    begin
+      exit;
+    end;
+    errstr := '<none>';
 //      msAvailable := ReadMSData(Imageinfo);
 //      msName := gblUCMaker;
-      result := true;
+    result := true;
   except
     errstr := 'Illegal Exif construction';
   end;
 end;
 
-procedure TImgData.SetFileInfo(fname:ansistring);
-var s:tsearchrec;
-    stat:word;
+procedure TImgData.SetFileInfo(fname: ansistring);
+var
+  s:tsearchrec;
+  stat:word;
 begin
-   stat := findfirst(fname,faAnyFile,s);
-   if stat = 0 then
-   begin
-     Filename := fname;
-     FileDateTime := FileDateToDateTime(s.Time);
-     FileSize := s.Size;
-   end;
-   FindClose(s);
+  stat := findfirst(fname,faAnyFile,s);
+  if stat = 0 then
+  begin
+    Filename := fname;
+    FileDateTime := FileDateToDateTime(s.Time);
+    FileSize := s.Size;
+  end;
+  FindClose(s);
 end;
 
 procedure TImgData.CreateIPTCObj;
@@ -3164,7 +3216,7 @@ function TImgData.ReadJpegFile(const aFileName:ansistring):boolean;
 var F: tfilestream;
 begin
   TiffFmt := false;  // default mode
-  F := TFileStream.Create(filename,fmOpenRead or fmShareDenyWrite);
+  F := TFileStream.Create(aFileName,fmOpenRead or fmShareDenyWrite);
   try
     result := ReadJpegSections(tstream(F));
   except
@@ -3223,7 +3275,7 @@ function TImgData.ReadTiffFile(const aFileName:ansistring):boolean;
 var F: tfilestream;
 begin
   TiffFmt := true;
-  F := TFileStream.Create(filename,fmOpenRead or fmShareDenyWrite);
+  F := TFileStream.Create(aFileName,fmOpenRead or fmShareDenyWrite);
   try
     result := ReadTiffSections(tstream(F));
   except

@@ -18,17 +18,23 @@ unit dIPTC;
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
 
+{$IFDEF fpc}
+  {$mode DELPHI}
+{$ENDIF fpc}
+
 interface
-  uses classes, sysutils
-  {$IFNDEF DELPHI}
+uses
+  classes
+  , sysutils
+{$IFNDEF DELPHI}
   {$DEFINE dExifNoJpeg}
-  {$ENDIF}
-  {$IFNDEF dExifNoJpeg}
+{$ENDIF}
+{$IFNDEF dExifNoJpeg}
   ,jpeg
-  {$ENDIF}
-  {$IFDEF WINDOWS}
+{$ENDIF}
+{$IFDEF WINDOWS}
   ,windows
-  {$ENDIF}
+{$ENDIF}
   ;
 
 const dIPTCVersion: ansistring = '1.03d';
