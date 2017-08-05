@@ -11,6 +11,8 @@ uses
 
 {.$R *.RES}
 
+{$R *.res}
+
 begin
   Application.Initialize;
   Application.CreateForm(TIPTCform, IPTCform);

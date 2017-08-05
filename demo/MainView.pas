@@ -17,56 +17,62 @@ unit MainView;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtDlgs, StdCtrls,
- {$IFDEF DELPHI}
+  {$IFDEF DELPHI}
+  Windows, Messages, SHLObj,
   Jpeg,
- {$ENDIF}
-  dExif, msData, ComCtrls, ExtCtrls, SHLObj, FileCtrl,
-  dIPTC,mmsystem;
+  {$ELSE}
+  LCLIntf, LCLType,
+  {$ENDIF}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs, ExtDlgs,
+  StdCtrls, ComCtrls, ExtCtrls,
+  msData, dExif, dIPTC;
 
 type
+
+  { TForm1 }
+
   TForm1 = class(TForm)
     btnLoad: TButton;
+    btnWriteChDate: TButton;
+    NoThumbInfo: TLabel;
     pdlg: TOpenPictureDialog;
-    Memo1: TMemo;
-    StatusBar1: TStatusBar;
+    Memo: TMemo;
+    StatusBar: TStatusBar;
     cbClearOnLoad: TCheckBox;
     btnAbout: TButton;
     btnTree: TButton;
     PBar: TProgressBar;
     cbVerbose: TCheckBox;
-    btnWrite: TButton;
+    btnWriteSmall: TButton;
     JpegOut: TSavePictureDialog;
     cbDecode: TCheckBox;
-    btnCmt: TButton;
-    Image1: TImage;
-    procedure btnLoadClick(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
+    btnComment: TButton;
+    ThumbnailImage: TImage;
     procedure btnAboutClick(Sender: TObject);
+    procedure btnCommentClick(Sender: TObject);
+    procedure btnLoadClick(Sender: TObject);
     procedure btnTreeClick(Sender: TObject);
-    procedure cbVerboseClick(Sender: TObject);
-    procedure btnWriteClick(Sender: TObject);
+    procedure btnWriteChDateClick(Sender: TObject);
+    procedure btnWriteSmallClick(Sender: TObject);
     procedure cbDecodeClick(Sender: TObject);
-    procedure btnCmtClick(Sender: TObject);
+    procedure cbVerboseClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
-    procedure dumpSections;
-    procedure Memo(s: string);
-    procedure dumpEXIF;
-    procedure dumpMSpecific;
-    procedure dumpThumb;
-    procedure ReadExifDir(start:string;justcnt:boolean);
     procedure CleanupPreview;
-    { Private declarations }
+    procedure DumpSections;
+    procedure DumpEXIF;
+    procedure DumpMSpecific;
+    procedure DumpThumb;
+    procedure ReadExifDir(start:string;justcnt:boolean);
+    procedure WriteToMemo(s: string);
   public
-    { Public declarations }
     exifBuffer: string;
     lastDir: string;
     jpgcnt: integer;
-    scrar:real;
-    flist:tstringlist;
-    etime:longint;
+    scrar: real;
+    flist: TStringList;
     Verbose:boolean;
   end;
 
@@ -78,17 +84,24 @@ implementation
 
 {$IFDEF DELPHI}
  {$R *.dfm}
-{$ENDIF}
-{$IFDEF LCL}
+{$ELSE}
  {$R *.lfm}
 {$ENDIF}
 
-uses About, ShellApi;
-  const crlf = #13#10;
-        progName = 'DExView';
+uses
+  About; //, ShellApi;
+
+const
+  {$IFDEF DELPHI}
+  crlf = #13#10;
+  {$ELSE}
+  crlf = LineEnding;
+  {$ENDIF}
+  progName = 'DExView';
 
   var DirBrowseName : string;
 
+{$IFDEF DELPHI}
   // Direct call to undocumented Windows function
   PROCEDURE FreePIDL;  EXTERNAL 'Shell32.DLL'  INDEX 155;
 
@@ -150,59 +163,95 @@ uses About, ShellApi;
 //      FreePIDL;  //  Causes crash if left in
     END
   end;
+{$ENDIF}
 
-function clock:longint;
+function Clock: TDateTime;
 begin
-  Clock := TimeGetTime;
+  Result := Now();
+end;
+
+
+{ TForm1 }
+
+procedure TForm1.btnAboutClick(Sender: TObject);
+begin
+  AboutBox.FormSetup(ProgName, dEXIFVersion);
+  AboutBox.ShowModal;
+end;
+
+procedure TForm1.btnCommentClick(Sender: TObject);
+var
+  cmt:string;
+begin
+  if ImgData.ExifObj.CommentPosn = 0 then
+    ShowMessage('No EXIF comment field detected')
+  else
+  begin
+    cmt := InputBox('Enter EXIF comment:',
+       'Enter a new comment (limited to '+
+       inttostr(ImgData.ExifObj.CommentSize)+' characters )',
+       ImgData.ExifObj.Comments
+    );
+    if ImgData.ExifObj.Comments <> cmt then
+    begin
+      ImgData.ExifObj.SetExifComment(cmt);
+      Memo.Lines.Add('Comment set to: '+cmt);
+      ImgData.ExifObj.Comments := cmt;
+    end;
+  end;
 end;
 
 procedure TForm1.btnLoadClick(Sender: TObject);
-var i:integer;
-    ts:tstringlist;
-    tmp:string;
-    jpegThumb:tjpegimage;
+var
+  i: integer;
+  ts: TStringList;
+  tmp: string;
+  jpegThumb: TJpegImage;
+  {$IFNDEF DELPHI}
+  stream: TStream;
+  {$ENDIF}
 begin
-  btnWrite.enabled := false;
-  btnCmt.enabled := false;
+  btnWriteSmall.Enabled := false;
+  btnWriteChDate.Enabled := false;
+  btnComment.enabled := false;
   if pdlg.Execute then
   begin
     CleanupPreview;
-    StatusBar1.SimpleText  := 'Info for '+pdlg.FileName;
+    StatusBar.SimpleText := 'Info for ' + pdlg.FileName;
     if verbose
       then ExifTrace := 1
       else ExifTrace := 0;
     if cbClearOnLoad.Checked then
-      memo1.Clear;
+      Memo.Clear;
 
     ImgData.BuildList := GenAll;  // on by default anyway
 
     ImgData.ProcessFile(pdlg.FileName);
 
     if Verbose then
-      dumpSections;
+      DumpSections;
 
-    dumpExif;
+    DumpExif;
 
     if not ImgData.HasMetaData() then
       exit;
 
     if ImgData.HasEXIF and ImgData.ExifObj.msAvailable then
-      dumpMSpecific;
+      DumpMSpecific;
 
     if ImgData.HasThumbnail then
     begin
       ImgData.ExifObj.ProcessThumbnail;
-      dumpThumb;
+      DumpThumb;
     end
     else
-      Memo('No Thumbnail');
-
+      WriteToMemo('No Thumbnail');
 
     if ImgData.commentSegment <> nil then
     begin
-      Memo(' ');
-      Memo(' Comment Segment Available');
-      Memo(ImgData.GetCommentStr());
+      WriteToMemo(' ');
+      WriteToMemo('--- Comment Segment Available ---');
+      WriteToMemo(ImgData.GetCommentStr());
     end;
 
     if ImgData.IPTCSegment <> nil then
@@ -210,11 +259,9 @@ begin
       ts := ImgData.IptcObj.ParseIPTCStrings(ImgData.IPTCSegment^.Data);
       if ts.Count > 0 then
       begin
-        Memo(crlf+' IPTC Segment Available!'+crlf);
+        WriteToMemo(crlf + '--- IPTC Segment Available! ---' + crlf);
         for i := 0 to ts.Count-1 do
-        begin
-          Memo(ts.strings[i]);
-        end;
+          WriteToMemo(ts.strings[i]);
       end;
       ts.Free;
     end;
@@ -224,240 +271,118 @@ begin
 
     if ImgData.HasThumbnail then
     begin
+      {$IFDEF DELPHI}
       jpegThumb := imgData.ExtractThumbnailJpeg();
-      image1.Picture.Assign(jpegThumb);
-      jpegThumb := nil;
-    end;
+      ThumbnailImage.Picture.Assign(jpegThumb);
+      jpegThumb.Free;
+      {$ELSE}
+      stream := TMemoryStream.Create;
+      if imgData.ExtractThumbnailJpeg(stream) then begin
+        jpegThumb := TJpegImage.Create;
+        jpegThumb.LoadfromStream(stream);
+        ThumbnailImage.Picture.Assign(jpegThumb);
+        jpegThumb.Free;
+      end;
+      stream.Free;
+      NoThumbInfo.Hide;
+      {$ENDIF}
+    end else
+      NoThumbInfo.Show;
 
     try
     // ProcessHWSpecific(ImageInfo.MakerNote,Nikon1Table,8,MakerOffset);
-      Memo(' ');
-      Memo(' -- EXIF Summary -(short)--- ');
-      Memo(ImgData.ExifObj.toString());
-      Memo(' ');
-      Memo(' -- EXIF Summary -(long)---- ');
-      Memo(ImgData.ExifObj.toLongString());
+      WriteToMemo(' ');
+      WriteToMemo('--- EXIF Summary (short) --- ');
+      WriteToMemo(ImgData.ExifObj.toShortString());
+      WriteToMemo(' ');
+      WriteToMemo('--- EXIF Summary (long) --- ');
+      WriteToMemo(ImgData.ExifObj.toLongString());
     // only allow image to be written if no errors
-      if ImgData.ErrStr = '<none>' then
-        btnWrite.enabled := true;
+      if ImgData.ErrStr = '<none>' then begin
+        btnWriteSmall.Enabled := true;
+        btnWriteChDate.Enabled := true;
+      end;
       if ImgData.ExifObj.CommentPosn > 0 then
-        btnCmt.enabled := true;
-      Memo('');
+        btnComment.Enabled := true;
+      WriteToMemo('');
     // An example of pulling some specific tags out of
     // the found items list.  I'll change the names
     // around a little just because...
       tmp := ImgData.ExifObj.LookupTagVal('MaxApertureValue');
       if tmp <> '' then
-        Memo(' ** Widest Aperture is '+tmp);
+        WriteToMemo(' ** Widest Aperture is ' + tmp);
       tmp := ImgData.ExifObj.LookupTagVal('ShutterSpeedValue');
       if tmp <> '' then
-        Memo(' ** Response Time is '+tmp);
+        WriteToMemo(' ** Response Time is ' + tmp);
       tmp := ImgData.ExifObj.LookupTagVal('MeteringMode');
       if tmp <> '' then
-        Memo(' ** Light Meter mode is '+tmp);
+        WriteToMemo(' ** Light Meter mode is ' + tmp);
     finally
+      {$IFDEF DELPHI}
       if cbClearOnLoad.Checked then
-            memo1.Perform(EM_LINESCROLL,0,-memo1.Lines.Count);
+        Memo.Perform(EM_LINESCROLL,0,-Memo.Lines.Count);
+      {$ENDIF}
     end;
   end;
 end;
 
-procedure TForm1.Memo(s:string);
-begin
-  Memo1.Lines.Add(s);
-end;
-
-procedure TForm1.dumpSections;
-var i:integer;
-    sh:string;
-begin
-  Memo(' --------------------------- ');
-  Memo('File = '+ImgData.Filename);
-  Memo('Section count = '+inttostr(ImgData.SectionCnt));
-  for i := 1 to ImgData.SectionCnt do
-  begin
-    sh := '    Section['+inttostr(i)+']';
-    Memo(sh+'.type = $'+IntToHex(ImgData.Sections[i].dtype,2)
-           +' - '+LookupType(ImgData.Sections[i].dtype) +' ('
-           +IntToStr(ImgData.Sections[i].size)+')');
-//    Memo(' Printable -> '+MakePrintable(
-//        copy(ImgData.Sections[i].data,1,100)));
-  end;
-end;
-
-procedure TForm1.dumpEXIF;
-var item:TTagEntry;
-begin
-  Memo(' ');
-  Memo('-- EXIF-Data -------------- ');
-  Memo('ErrStr = '+ImgData.ErrStr);
-  if not ImgData.HasEXIF() then
-    exit;
-  If ImgData.MotorolaOrder
-    then Memo('Motorola Byte Order')
-    else Memo('Intel Byte Order');
-  // verbose data is only available in the trace strings
-  if cbVerbose.Checked then
-    Memo1.Lines.Add(ImgData.ExifObj.TraceStr)
-  else
-  begin
-    ImgData.ExifObj.ResetIterator;
-    while ImgData.ExifObj.IterateFoundTags(GenericEXIF ,item) do
-      Memo(item.Desc+DexifDelim+item.Data);
-  end;
-end;
-
-procedure TForm1.dumpMSpecific;
-var item:TTagEntry;
-begin
-  Memo(' ');
-  Memo(' -- Maker Specific Data ---- ');
-  // verbose data is only available in the trace strings
-  if cbVerbose.Checked then
-    Memo1.Lines.Add(ImgData.ExifObj.msTraceStr)
-  else
-  begin
-    ImgData.ExifObj.ResetIterator;
-    while ImgData.ExifObj.IterateFoundTags(CustomEXIF,item) do
-      Memo(item.Desc+DexifDelim+item.Data);
-  end;
-end;
-
-procedure TForm1.dumpThumb;
-var item:TTagEntry;
-begin
-  Memo(' ');
-  Memo(' -- Thumbnail Data ---- ');
-  Memo('Thumbnail Start = ' +inttostr(ImgData.ExifObj.ThumbStart));
-  Memo('Thumbnail Length = '+inttostr(ImgData.ExifObj.ThumbLength));
-  // verbose data is only available in the trace strings
-  if cbVerbose.Checked then
-    Memo1.Lines.Add(ImgData.ExifObj.ThumbTrace)
-  else
-  begin
-    ImgData.ExifObj.ResetThumbIterator;
-    while ImgData.ExifObj.IterateFoundThumbTags(GenericEXIF,item) do
-      Memo(item.Desc+DexifDelim+item.Data);
-  end;
-end;
-
-procedure TForm1.FormCreate(Sender: TObject);
-begin
-  ImgData := TimgData.Create;
-  Verbose := false;
-  constraints.MinHeight := height;
-  constraints.MinWidth := width;
-  fList := tStringList.Create;
-  lastDir := GetCurrentDir;
-  DoubleBuffered := true;
-  memo1.DoubleBuffered := true;
-end;
-
-procedure TForm1.btnAboutClick(Sender: TObject);
-begin
-  AboutBox.FormSetup(ProgName,dEXIFVersion);
-  AboutBox.ShowModal;
-end;
-
-procedure TForm1.CleanupPreview;
-begin
-  if image1.Picture.Bitmap <> nil then
-  begin
-    image1.Picture.Bitmap.FreeImage;
-    image1.Picture.Bitmap := nil;
-  end;
-end;
-
 procedure TForm1.btnTreeClick(Sender: TObject);
+var
+  etime: TDateTime;
 begin
-  btnWrite.enabled := false;
+  NoThumbInfo.Hide;
+  btnWriteSmall.Enabled := false;
+  btnWriteChDate.Enabled := false;
   if cbClearOnLoad.Checked then
-    memo1.Clear;
+    Memo.Clear;
   Flist.Clear;
   CleanupPreview;
   JpgCnt := 0;
   PBar.Position := 0;
+
+  {$IFDEF DELPHI}
   Lastdir := BrowseForDir(Handle,lastDir);
+  {$ELSE}
+  if not SelectDirectory('Directory', LastDir, LastDir) then
+    exit;
+  {$ENDIF}
+
   cursor := crHourglass;
-  StatusBar1.SimpleText := 'Scanning Directory Structure';
-  StatusBar1.Refresh;
-  ReadExifDir(lastDir,true);        //  run through it just to count jpegs
-  PBar.Max := JpgCnt;
-  etime := clock();
-  ReadExifDir(lastDir,false);
-  StatusBar1.SimpleText :=
-    format('Elapsed time (%d jpegs): %0.2f sec',
-      [JpgCnt,(clock-etime)/1000]);
-  Memo1.Lines.AddStrings(flist);
+  StatusBar.SimpleText := 'Scanning Directory Structure';
+  PBar.BorderSpacing.Left := StatusBar.Canvas.TextWidth(StatusBar.SimpleText) + 8;
+  StatusBar.Refresh;
+
+  ReadExifDir(lastDir, true);        //  run through it just to count jpegs
+
+  PBar.Show;
+  etime := Clock();
+  ReadExifDir(lastDir, false);
+  etime := Clock() - etime;
+  PBar.Hide;
+  StatusBar.SimpleText := Format('Elapsed time (%d jpegs): %s sec', [
+    JpgCnt, FormatDateTime('s.zz', etime)
+  ]);
+  Memo.Lines.AddStrings(flist);
   cursor := crDefault;
+  PBar.Hide;
 end;
 
-procedure TForm1.ReadExifDir(start:string;justcnt:boolean);
-var s:tsearchrec;
-    status:word;
-    finfo:string;
+procedure TForm1.btnWriteSmallClick(Sender: TObject);
+var
+  Orig,Smaller: TJpegImage;
+  buffer: TBitmap;
+  smallFname: string;
+  jpegStream: TMemoryStream;
 begin
-  refresh;                   // repaint the window now
-  if start = '' then exit;   // in case user pressed <cancel>
-  memo1.Lines.BeginUpdate;   // reduce repainting overhead
-  status := FindFirst(start+'\*.*',faAnyFile,s);
-  // ImgData.BuildList := GenNone;  // remove overhead but loose size
-  while status = 0 do
-  begin
-    if not ((s.Name = '.') or (s.name = '..')) then
-    if (s.Attr and fadirectory) <> 0 then
-      ReadExifDir(start+'\'+s.Name,JustCnt)  // recurse into subdirs
-    else
-      if (uppercase(ExtractFileExt(s.Name)) = '.JPG') or
-         (uppercase(ExtractFileExt(s.Name)) = '.NEF') or
-         (uppercase(ExtractFileExt(s.Name)) = '.TIF') then
-      if justCnt then
-        inc(JpgCnt)
-      else if ImgData.ProcessFile(start+'\'+s.name) then
-      begin
-        if ImgData.HasMetaData then
-        begin
-          if  ImgData.HasEXIF then
-            finfo := ImgData.ExifObj.toString()    // Just so you know:
-          else
-            finfo := s.name;
-          if ImgData.IPTCSegment <> nil then
-            finfo := finfo+' + IPTC';
-        end
-        else
-            finfo := s.name+' - No metadata';
-        Memo1.lines.Add(finfo);            //   this will blow up if there
-        PBar.StepIt;
-        StatusBar1.SimpleText :=
-          Format('%0.1f%% of %d files.',[Pbar.Position/JpgCnt*100,JpgCnt]);
-        if pbar.Position mod 100 = 0 then   // too many refreshes will show
-          application.ProcessMessages       // down the whole process
-      end;
-    status := FindNext(s);
-  end;
-  FindClose(s);
-  memo1.Lines.EndUpdate;
-end;
-
-procedure TForm1.cbVerboseClick(Sender: TObject);
-begin
-  Verbose := cbVerbose.Checked;
-end;
-
-procedure TForm1.btnWriteClick(Sender: TObject);
-var Orig,Smaller:tjpegimage;
-    buffer:tbitmap;
-    smallFname:string;
-begin
-  smallFname := copy(ImgData.Filename,1,length(ImgData.Filename)-4)
-    +'_smaller.jpg';
+  smallFName := ChangeFileExt(ImgData.FileName, '') + '_smaller.jpg';
   JpegOut.FileName := smallFName;
   if not JpegOut.Execute then
     exit;
+
   SmallFName := JPegOut.FileName;
-  Buffer := tbitmap.Create;
-  Orig := tjpegImage.Create;
-  Smaller := tjpegimage.create;
+  Buffer := TBitmap.Create;
+  Orig := TJpegImage.Create;
+  Smaller := TJpegImage.create;
   try
     Orig.LoadFromFile(ImgData.Filename);
    {$IFDEF DELPHI}
@@ -469,7 +394,7 @@ begin
     // Simple resize
     Buffer.Canvas.StretchDraw(rect(0,0,Buffer.width,buffer.height),Orig);
     Smaller.Assign(Buffer);
-    Smaller.CompressionQuality := 75;
+    //Smaller.CompressionQuality := 75;
    {$IFDEF DELPHI}
     Smaller.Compress;
    {$ENDIF}
@@ -478,7 +403,7 @@ begin
     //  ImgData.ExifObj.removeThumbnail;
     //
     //  Use the following to remove all metadata from an image
-    ImgData.ClearSections;
+    // ImgData.ClearSections;  // <--- wp: no - we want to transfer exit data to the new image
     //
     //  The following allows a program to apply a correction
     //  to the DateTime fields in the EXIF.  This can compensate,
@@ -488,7 +413,20 @@ begin
     // If dEXIF is built into a control then
     //   Smaller.SaveToFile(SmallFName);
     // Since it's not we use:
+    {$IFDEF DELPHI}
     ImgData.WriteEXIFjpeg(Smaller,SmallFName);
+    {$ELSE}
+    // Lazarus cannot access the jpeg image directly because dEXIF is ported
+    // without LCL. --> Use an intermediate stream
+    jpegStream := TMemoryStream.Create;
+    try
+      Smaller.SaveToStream(jpegStream);
+      ImgData.WriteEXIFJpeg(jpegStream, SmallFName);
+    finally
+      jpegStream.Free;
+    end;
+    {$ENDIF}
+
   finally // Cleanup
     Buffer.free;
     Orig.Free;
@@ -496,37 +434,227 @@ begin
   end;
 end;
 
+procedure TForm1.btnWriteChDateClick(Sender: TObject);
+var
+  newFName: string;
+  jpegStream: TMemoryStream;
+begin
+  newFName := ChangeFileExt(ImgData.FileName, '') + '_today.jpg';
+  JpegOut.FileName := newFName;
+  if not JpegOut.Execute then
+    exit;
+
+  ImgData.ExifObj.OverwritedateTime(now);
+
+  jpegStream := TMemoryStream.Create;
+  try
+    jpegStream.LoadFromFile(ImgData.Filename);
+    ImgData.WriteEXIFJpeg(jpegStream, newFName);
+  finally
+    jpegStream.Free;
+  end;
+end;
+
+procedure TForm1.CleanupPreview;
+begin
+  if ThumbnailImage.Picture.Bitmap <> nil then
+  begin
+    ThumbnailImage.Picture.Bitmap.FreeImage;
+    ThumbnailImage.Picture.Bitmap := nil;
+  end;
+end;
+
 procedure TForm1.cbDecodeClick(Sender: TObject);
 begin
-  // This variable will determine if the
-  // tags are decoded into human-based terms
+  // This variable will determine if the tags are decoded into human-based terms
   DexifDecode := cbDecode.Checked;
 end;
 
-procedure TForm1.btnCmtClick(Sender: TObject);
-var cmt:string;
+procedure TForm1.cbVerboseClick(Sender: TObject);
 begin
-  if ImgData.ExifObj.CommentPosn = 0 then
-    ShowMessage('No EXIF comment field detected')
+  Verbose := cbVerbose.Checked;
+end;
+
+procedure TForm1.DumpEXIF;
+var
+  item:TTagEntry;
+begin
+  if Memo.Lines.Count > 0 then
+    WriteToMemo(' ');
+  WriteToMemo('-- EXIF-Data -------------- ');
+  WriteToMemo('ErrStr = '+ImgData.ErrStr);
+
+  if not ImgData.HasEXIF() then
+    exit;
+
+  if ImgData.MotorolaOrder
+    then WriteToMemo('Motorola Byte Order')
+    else WriteToMemo('Intel Byte Order');
+
+  // verbose data is only available in the trace strings
+  if cbVerbose.Checked then
+    Memo.Lines.Add(ImgData.ExifObj.TraceStr)
   else
   begin
-    cmt := InputBox('Enter EXIF comment:',
-       'Enter a new comment (limited to '+
-       inttostr(ImgData.ExifObj.CommentSize)+' characters )',
-       ImgData.ExifObj.Comments);
-    if ImgData.ExifObj.Comments <> cmt then
-    begin
-      ImgData.ExifObj.SetExifComment(cmt);
-      Memo1.Lines.Add('Comment set to: '+cmt);
-      ImgData.ExifObj.Comments := cmt;
-    end;
+    ImgData.ExifObj.ResetIterator;
+    while ImgData.ExifObj.IterateFoundTags(GenericEXIF ,item) do
+      WriteToMemo(item.Desc+DexifDelim+item.Data);
   end;
+end;
+
+procedure TForm1.DumpMSpecific;
+var
+  item:TTagEntry;
+begin
+  if Memo.Lines.Count > 0 then
+    WriteToMemo(' ');
+  WriteToMemo(' -- Maker Specific Data ---- ');
+  // verbose data is only available in the trace strings
+  if cbVerbose.Checked then
+    Memo.Lines.Add(ImgData.ExifObj.msTraceStr)
+  else
+  begin
+    ImgData.ExifObj.ResetIterator;
+    while ImgData.ExifObj.IterateFoundTags(CustomEXIF,item) do
+      WriteToMemo(item.Desc+DexifDelim+item.Data);
+  end;
+end;
+
+procedure TForm1.DumpSections;
+var
+  i: integer;
+  sh: string;
+begin
+  WriteToMemo(' --------------------------- ');
+  WriteToMemo('File = '+ImgData.Filename);
+  WriteToMemo('Section count = '+inttostr(ImgData.SectionCnt));
+  for i := 1 to ImgData.SectionCnt do
+  begin
+    sh := '    Section['+inttostr(i)+']';
+    WriteToMemo(
+      sh + '.type = $' + IntToHex(ImgData.Sections[i].dtype,2) +
+      ' - ' + LookupType(ImgData.Sections[i].dtype) + ' (' +
+      IntToStr(ImgData.Sections[i].Size) + ')'
+    );
+//    WriteToMemo(' Printable -> '+MakePrintable(copy(ImgData.Sections[i].data,1,100)));
+  end;
+end;
+
+procedure TForm1.DumpThumb;
+var
+  item: TTagEntry;
+begin
+  if Memo.Lines.Count > 0 then
+    WriteToMemo(' ');
+  WriteToMemo(' -- Thumbnail Data ---- ');
+  WriteToMemo('Thumbnail Start = ' +inttostr(ImgData.ExifObj.ThumbStart));
+  WriteToMemo('Thumbnail Length = '+inttostr(ImgData.ExifObj.ThumbLength));
+  // verbose data is only available in the trace strings
+  if cbVerbose.Checked then
+    Memo.Lines.Add(ImgData.ExifObj.ThumbTrace)
+  else
+  begin
+    ImgData.ExifObj.ResetThumbIterator;
+    while ImgData.ExifObj.IterateFoundThumbTags(GenericEXIF,item) do
+      WriteToMemo(item.Desc+DexifDelim+item.Data);
+  end;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  ImgData := TImgData.Create;
+  Verbose := false;
+  constraints.MinHeight := height;
+  constraints.MinWidth := width;
+  fList := tStringList.Create;
+  lastDir := GetCurrentDir;
+  DoubleBuffered := true;
+  Memo.DoubleBuffered := true;
+  PBar.Parent := StatusBar;
+  PBar.Align := alClient;
+  {$IFDEF MSWINDOWS}
+  Memo.Font.Name := 'Courier New';
+  Memo.Font.Size := 9;
+  {$ENDIF}
+  {$IFDEF DELPHI}
+  Caption := 'Delphi EXIF jpeg viewer';
+  {$ELSE}
+  Caption := 'Lazarus EXIF jpeg viewer';
+  {$ENDIF}
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  ImgData.Free;
+  fList.Free;
 end;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
-  if not memo1.DoubleBuffered then
-      memo1.DoubleBuffered := true;
+  if not Memo.DoubleBuffered then
+    Memo.DoubleBuffered := true;
 end;
+
+procedure TForm1.ReadExifDir(start:string;justcnt:boolean);
+var
+  SR: TSearchRec;
+  status: Word;
+  finfo: string;
+  ext: String;
+begin
+  refresh;                   // repaint the window now
+  if start = '' then exit;   // in case user pressed <cancel>
+  Memo.Lines.BeginUpdate;   // reduce repainting overhead
+  status := FindFirst(start+'\*.*', faAnyFile, SR);
+  // ImgData.BuildList := GenNone;  // remove overhead but loose size
+  while status = 0 do
+  begin
+    if not ((SR.Name = '.') or (SR.name = '..')) then
+    begin
+      if (SR.Attr and faDirectory) <> 0 then
+        ReadExifDir(start+ '\' + SR.Name, JustCnt)  // recurse into subdirs
+      else
+      begin
+        ext := uppercase(ExtractFileExt(SR.Name));
+        if (ext = '.JPG') or (ext = '.JPEG') or (ext = '.NEF') or (ext = '.TIF')
+        then
+        begin
+          if justCnt then
+            inc(JpgCnt)
+          else
+          if ImgData.ProcessFile(start + '\' + SR.Name) then
+          begin
+            if ImgData.HasMetaData then
+            begin
+              if  ImgData.HasEXIF then
+                finfo := ImgData.ExifObj.ToShortString()    // Just so you know:
+              else
+                finfo := SR.Name;
+              if ImgData.IPTCSegment <> nil then
+                finfo := finfo + ' + IPTC';
+            end
+            else
+              finfo := SR.Name + ' - No metadata';
+            Memo.lines.Add(finfo);            //   this will blow up if there
+            PBar.StepIt;
+            StatusBar.SimpleText :=
+              Format('%0.1f%% of %d files.',[Pbar.Position/JpgCnt*100, JpgCnt]);
+            if pbar.Position mod 100 = 0 then   // too many refreshes will show
+              Application.ProcessMessages       // down the whole process
+          end;
+        end;
+      end;
+    end;
+    status := FindNext(SR);
+  end;
+  FindClose(SR);
+  Memo.Lines.EndUpdate;
+end;
+
+procedure TForm1.WriteToMemo(s:string);
+begin
+  Memo.Lines.Add(s);
+end;
+
 
 end.

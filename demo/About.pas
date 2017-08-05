@@ -13,8 +13,9 @@ unit About;
 
 interface
 
-uses LCLIntf, LCLType, LMessages, SysUtils, Classes, Graphics, Forms, Controls, StdCtrls,
-  Buttons, ExtCtrls;
+uses
+  LCLIntf, LCLType, LMessages, SysUtils, Classes, Graphics, Forms, Controls,
+  StdCtrls, Buttons, ExtCtrls;
 
 type
   TAboutBox = class(TForm)
@@ -57,18 +58,18 @@ uses dEXIF;
   //   A couple of utility functions that are handy
   //   in an About box module...
   //
-  Procedure SendEMail( instr:string );
+  Procedure SendEMail(instr: string );
   var loc:string;
   begin
     loc := 'mailto:'+trim(instr);
     if loc <> 'mailto:' then
-       OpenDocument(pchar(loc)) { *Converted from ShellExecute* }
+       OpenDocument(pchar(loc))
   end;
 
   Procedure BrowseURL( instr:string );
   begin
     if trim(instr) <> '' then
-       OpenDocument(pchar(instr)) { *Converted from ShellExecute* }
+       OpenDocument(pchar(instr))
   end;
 
 

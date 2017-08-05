@@ -15,6 +15,9 @@ uses
   msData in 'msData.pas';
 
 {.$R *.RES}
+
+{$R *.res}
+
 begin
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
