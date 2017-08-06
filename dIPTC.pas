@@ -19,22 +19,22 @@ unit dIPTC;
 //--------------------------------------------------------------------------
 
 interface
-  uses classes, sysutils
-  {$IFNDEF DELPHI}
-  {$DEFINE dExifNoJpeg}
-  {$ENDIF}
-  {$IFNDEF dExifNoJpeg}
-  ,jpeg
-  {$ENDIF}
-  {$IFDEF WINDOWS}
-  ,windows
-  {$ENDIF}
+
+uses
+  classes, sysutils
+ {$IFDEF DELPHI}
+  {$IFNDEF dExifNoJpeg}, jpeg {$ENDIF}
+ {$ENDIF}
+ {$IFDEF WINDOWS}
+  , windows
+ {$ENDIF}
   ;
 
-const dIPTCVersion: ansistring = '1.03d';
-      TagArrayGrowth = 25;
-type
+const
+  dIPTCVersion: ansistring = '1.04';
+  TagArrayGrowth = 25;
 
+type
   StrFunct = function (instr:ansistring):ansistring;
 
   TTagEntry = record
@@ -116,10 +116,12 @@ type
     procedure SetDateTime(TimeIn: TDateTime);
     procedure SetDateTimeExt(TimeIn: TDateTime; prefix:ansistring);
     function GetMultiPartTag(tagName:ansistring):tstringlist;
+   {$IFDEF DELPHI}
+    {$IFNDEF dExifNoJpeg}
     procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
-{$IFNDEF dExifNoJpeg}
     procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
-{$ENDIF}
+    {$ENDIF}
+   {$ENDIF}
   end;
 
 const IPTCTAGCNT = 49;
@@ -184,6 +186,9 @@ var
 procedure IPTCWriteTransFile(fname:ansistring);
 function IPTCReadTransFile(fname:ansistring):boolean;
 
+procedure InitTagEntry(out ATagEntry: TTagEntry);
+procedure InitITag(out ATag: ITag);
+
 implementation
 
 uses dEXIF;
@@ -222,7 +227,7 @@ Function ExtractTag(var start:integer):iTag;
 var blen,x,tagId,code,i:integer;
     tmp:iTag;
 begin
-  FillChar(tmp,sizeof(iTag),0);
+  InitITag(tmp);
   code := byte(buffer[start]);
   tagId := byte(buffer[start+1]);     // should be #$1C
   blen := (byte(buffer[start+2]) shl 8 ) or byte(buffer[start+3]);
@@ -569,9 +574,13 @@ begin
 end;
  
 procedure TIPTCdata.Reset;
+var
+  i: Integer;
 begin
- Count := 0 ;
- FillChar(fITagArray[0],sizeof(iTag)*MaxTag,0);  // clear out old data
+  Count := 0;
+  // clear out old data
+  for i:=0 to High(fITagArray) do
+    InitITag(fITagArray[i]);
 end;
 
 function TIPTCdata.GetTag(tagstr:ansistring; defval:ansistring=''):ansistring;
@@ -606,9 +615,9 @@ function TIPTCdata.ReadFileStrings(fname:ansistring):tstringlist;
 begin
   result := ParseIPTCStrings(timgdata(parent).IPTCSegment^.Data);
 end;
- 
+
+{$IFDEF DELPHI}
 {$IFNDEF dExifNoJpeg}
- 
 procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
 var tmp:ansistring;
 begin
@@ -631,8 +640,8 @@ begin
   Orig.free;
 end;
 
+(*
 {$ELSE}
-
 procedure TIPTCdata.WriteFile(fname:ansistring; origname :ansistring = '');
 begin
   // if you're not using Borland's jpeg unit
@@ -640,8 +649,10 @@ begin
   raise exception.create('WriteIPTCfile does nothing!');
   // I suppose I should make this method abstract...
 end;
- 
+*)
 {$ENDIF}
+{$ENDIF}
+
 procedure TIPTCdata.SetTagByIdx(idx: integer; val:ansistring);
 begin
   fITagArray[idx].Data := val;
@@ -651,7 +662,6 @@ function GetTimeZoneBias:longint;
 {$IFDEF MSWINDOWS}
 var
   TZoneInfo: TTimeZoneInformation;
-  TimeZoneBias: longint;
 begin
   GetTimeZoneInformation(TZoneInfo);
   result := TZoneInfo.Bias;
@@ -659,7 +669,7 @@ end;
 {$ENDIF}
 {$IFDEF UNIX}
 begin
-  Result := -Tzseconds div 60;
+  Result := -TZSeconds div 60;
 end;
 {$ENDIF}
 
@@ -760,6 +770,32 @@ begin
       IPTCTable[i].Desc := ts;
   end;
   tmp.Free;
+end;
+
+procedure InitTagEntry(out ATagEntry: TTagEntry);
+begin
+  with ATagEntry do begin
+    TID := 0;          // TagTableID - EXIF use
+    TType := 0;        // tag type
+    ICode := 0;        // iptc code
+    Tag := 0;          // primary key
+    Name := '';        // searchable
+    Desc := '';        // translatable
+    Code := '';        // decode capability
+    Data := '';        // display value
+    Raw := '';         // unprocessed value
+    PRaw := 0;         // pointer to unprocessed
+    FormatS := '';     // Format string
+    Size := 0;         // used by ITPC module
+    CallBack := nil;   // formatting string
+    id := 0;           // msta - used for exif-parent-child-structure
+    parentID := 0;     // msta - used for exif-parent-child-structure
+  end;
+end;
+
+procedure InitITag(out ATag: ITag);
+begin
+  InitTagEntry(TTagEntry(ATag));
 end;
 
 end.

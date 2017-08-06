@@ -1,6 +1,3 @@
-unit msData;
-
-////////////////////////////////////////////////////////////////////////////////
 // msData.pas - Copyright 2001-2004, Gerry McGuire
 //--------------------------------------------------------------------------
 // msData - maker specific data as encoded in exif structures
@@ -24,15 +21,15 @@ unit msData;
 //      www.butaman.ne.jp/~tsuruzoh/Computer/Digicams/exif-e.html
 //
 //--------------------------------------------------------------------------
-{$IFDEF FPC}
+unit msData;
+
+{$IFDEF LCL}
   {$mode DELPHI}{$H+}
 {$ENDIF}
 
 interface
 
-
 uses Sysutils,math,dEXIF,dIPTC;
-
 
 type
 
@@ -40,7 +37,7 @@ type
         isTiff:boolean;
         IMGparent:tImageInfo;
         makerOffset:integer;
-        gblUCMaker:ansistring ;
+        gblUCMaker:string ;
         function ReadMSData(var DR:TImageInfo):boolean;
         constructor Create(tiffFlag:boolean; p:tImageInfo);
      end;
@@ -49,267 +46,298 @@ type
      //  More complex fields can be formatted with a
      //  callback function.  Declare them here and insert
      //  the code in the implemenetation section.
-     Function NikonLens(instr:ansistring) :ansistring;
-     Function NikonColorMode(instr:ansistring) :ansistring;
-     Function CanonExp1(instr:ansistring) :ansistring;
-     Function CanonExp2(instr:ansistring) :ansistring;
-     Function CanonCustom1(instr:ansistring) :ansistring;
+     Function NikonLens(instr:string) :string;
+     Function NikonColorMode(instr:string) :string;
+     Function CanonExp1(instr:string) :string;
+     Function CanonExp2(instr:string) :string;
+     Function CanonCustom1(instr:string) :string;
 
 const
      Nikon1Table : array [0..10] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $02;    Name:'FamilyID';    Desc:'FamilyID'),
-      (TID:0;TType:0;ICode: 2;Tag: $03;    Name:'Quality';     Desc:'Quality'; Code:'1:Vga Basic,2:Vga Normal,'+
-          '3:Vga Fine,4:SXGA Basic,5:SXGA Normal,6:SXGA Fine'+
-          '10:2 Mpixel Basic,11:2 Mpixel Normal,12:2 Mpixel Fine'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;    Name:'ColorMode';   Desc:'ColorMode'; Code:'1:Color,2:Monochrome'),
-      (TID:0;TType:0;ICode: 2;Tag: $05;    Name:'ImageAdjustment';  Desc:'ImageAdjustment'; Code:'0:Normal,1:Bright+,'+
-          '2:Bright-,3:Contrast+,4:Contrast-'),
-      (TID:0;TType:0;ICode: 2;Tag: $06;    Name:'ISOSpeed';    Desc:'ISOSpeed'; Code:'0:ISO80,2:ISO160,4:ISO320,'+
-          '5:ISO100'),
-      (TID:0;TType:0;ICode: 2;Tag: $07;    Name:'WhiteBalance'; Desc:'WhiteBalance'; Code:'0:Auto,1:Preset,2:Daylight,'+
-          '3:Incandescense,4:Fluorescence,5:Cloudy,6:SpeedLight'),
-      (TID:0;TType:0;ICode: 2;Tag: $08;    Name:'Focus';       Desc:'Focus'),
-      (TID:0;TType:0;ICode: 2;Tag: $09;    Name:'Skip';        Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0A;    Name:'DigitalZoom'; Desc:'DigitalZoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $0B;    Name:'Converter';   Desc:'Converter'; Code:'0:Not used,1:Used'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F00;  Name:'Skip';        Desc:'Skip'));
+     ((TID:0; TType:0; ICode:0; Tag: $02;    Name:'FamilyID';     Desc:'FamilyID'),
+      (TID:0; TType:0; ICode:0; Tag: $03;    Name:'Quality';      Desc:'Quality';
+        Code:'1:Vga Basic,2:Vga Normal,3:Vga Fine,4:SXGA Basic,5:SXGA Normal,6:SXGA Fine'+
+           '10:2 Mpixel Basic,11:2 Mpixel Normal,12:2 Mpixel Fine'),
+      (TID:0; TType:0; ICode:0; Tag: $04;    Name:'ColorMode';    Desc:'ColorMode';
+        Code:'1:Color,2:Monochrome'),
+      (TID:0; TType:0; ICode:0; Tag: $05;    Name:'ImageAdjustment';Desc:'ImageAdjustment';
+        Code:'0:Normal,1:Bright+,2:Bright-,3:Contrast+,4:Contrast-'),
+      (TID:0; TType:0; ICode:0; Tag: $06;    Name:'ISOSpeed';     Desc:'ISOSpeed';
+        Code:'0:ISO80,2:ISO160,4:ISO320,5:ISO100'),
+      (TID:0; TType:0; ICode:0; Tag: $07;    Name:'WhiteBalance'; Desc:'WhiteBalance';
+        Code:'0:Auto,1:Preset,2:Daylight,3:Incandescense,4:Fluorescence,5:Cloudy,6:SpeedLight'),
+      (TID:0; TType:0; ICode:0; Tag: $08;    Name:'Focus';        Desc:'Focus'),
+      (TID:0; TType:0; ICode:0; Tag: $09;    Name:'Skip';         Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0A;    Name:'DigitalZoom';  Desc:'DigitalZoom'),
+      (TID:0; TType:0; ICode:0; Tag: $0B;    Name:'Converter';    Desc:'Converter';
+        Code:'0:Not used,1:Used'),
+      (TID:0; TType:0; ICode:0; Tag: $0F00;  Name:'Skip';         Desc:'Skip'));
 
      Nikon2Table : array [0..27] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $01;    Name:'FamilyID';            Desc:'Family ID'),
-      (TID:0;TType:0;ICode: 2;Tag: $02;    Name:'ISOSpeed';            Desc:'ISO Speed'),
-      (TID:0;TType:0;ICode: 2;Tag: $03;    Name:'ColorMode';           Desc:'Color Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;    Name:'Quality';             Desc:'Quality'),
-      (TID:0;TType:0;ICode: 2;Tag: $05;    Name:'WhiteBalance';        Desc:'White Balance'),
-      (TID:0;TType:0;ICode: 2;Tag: $06;    Name:'ImageSharpening';     Desc:'Image Sharpening'),
-      (TID:0;TType:0;ICode: 2;Tag: $07;    Name:'FocusMode';           Desc:'Focus Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $08;    Name:'FlashSetting';        Desc:'Flash Setting'),
-      (TID:0;TType:0;ICode: 2;Tag: $09;    Name:'AutoFlashMode';       Desc:'Auto Flash Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $0A;    Name:'Skip';                Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0B;    Name:'WhiteBiasValue';      Desc:'White Bias Value'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F;    Name:'DigitalZoom';         Desc:'Digital Zoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $10;    Name:'Skip';                Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $11;    Name:'Skip';                Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $80;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
-      (TID:0;TType:0;ICode: 2;Tag: $81;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
-      (TID:0;TType:0;ICode: 2;Tag: $82;    Name:'Adapter';             Desc:'Adapter'),
-      (TID:0;TType:0;ICode: 2;Tag: $84;    Name:'LensInformation';     Desc:'Lens information'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@NikonLens),
-      (TID:0;TType:0;ICode: 2;Tag: $85;    Name:'ManualFocusDistance'; Desc:'Manual Focus Distance'),
-      (TID:0;TType:0;ICode: 2;Tag: $86;    Name:'DigitalZoom';         Desc:'Digital Zoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $88;    Name:'FocusArea';           Desc:'Focus Area'),
-      (TID:0;TType:0;ICode: 2;Tag: $89;    Name:'Mode';                Desc:'Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $8D;    Name:'ColorMode';           Desc:'Color Mode'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@NikonColorMode),
-      (TID:0;TType:0;ICode: 2;Tag: $8F;    Name:'SceneMode';           Desc:'Scene Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $92;    Name:'HueAdjustment';       Desc:'Hue Adjustment'), // ??
-      (TID:0;TType:0;ICode: 2;Tag: $94;    Name:'Saturation';          Desc:'Saturation'),
-      (TID:0;TType:0;ICode: 2;Tag: $95;    Name:'NoiseReduction';      Desc:'Noise Reduction'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F00;  Name:'Skip';                Desc:'Skip')) ;
+     ((TID:0; TType:0; ICode:0; Tag: $01;    Name:'FamilyID';            Desc:'Family ID'),
+      (TID:0; TType:0; ICode:0; Tag: $02;    Name:'ISOSpeed';            Desc:'ISO Speed'),
+      (TID:0; TType:0; ICode:0; Tag: $03;    Name:'ColorMode';           Desc:'Color Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $04;    Name:'Quality';             Desc:'Quality'),
+      (TID:0; TType:0; ICode:0; Tag: $05;    Name:'WhiteBalance';        Desc:'White Balance'),
+      (TID:0; TType:0; ICode:0; Tag: $06;    Name:'ImageSharpening';     Desc:'Image Sharpening'),
+      (TID:0; TType:0; ICode:0; Tag: $07;    Name:'FocusMode';           Desc:'Focus Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $08;    Name:'FlashSetting';        Desc:'Flash Setting'),
+      (TID:0; TType:0; ICode:0; Tag: $09;    Name:'AutoFlashMode';       Desc:'Auto Flash Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $0A;    Name:'Skip';                Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0B;    Name:'WhiteBiasValue';      Desc:'White Bias Value'),
+      (TID:0; TType:0; ICode:0; Tag: $0F;    Name:'DigitalZoom';         Desc:'Digital Zoom'),
+      (TID:0; TType:0; ICode:0; Tag: $10;    Name:'Skip';                Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $11;    Name:'Skip';                Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $80;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
+      (TID:0; TType:0; ICode:0; Tag: $81;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
+      (TID:0; TType:0; ICode:0; Tag: $82;    Name:'Adapter';             Desc:'Adapter'),
+      (TID:0; TType:0; ICode:0; Tag: $84;    Name:'LensInformation';     Desc:'Lens information';
+        Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:NikonLens),
+      (TID:0; TType:0; ICode:0; Tag: $85;    Name:'ManualFocusDistance'; Desc:'Manual Focus Distance'),
+      (TID:0; TType:0; ICode:0; Tag: $86;    Name:'DigitalZoom';         Desc:'Digital Zoom'),
+      (TID:0; TType:0; ICode:0; Tag: $88;    Name:'FocusArea';           Desc:'Focus Area'),
+      (TID:0; TType:0; ICode:0; Tag: $89;    Name:'Mode';                Desc:'Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $8D;    Name:'ColorMode';           Desc:'Color Mode';
+        Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:NikonColorMode),
+      (TID:0; TType:0; ICode:0; Tag: $8F;    Name:'SceneMode';           Desc:'Scene Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $92;    Name:'HueAdjustment';       Desc:'Hue Adjustment'), // ??
+      (TID:0; TType:0; ICode:0; Tag: $94;    Name:'Saturation';          Desc:'Saturation'),
+      (TID:0; TType:0; ICode:0; Tag: $95;    Name:'NoiseReduction';      Desc:'Noise Reduction'),
+      (TID:0; TType:0; ICode:0; Tag: $0F00;  Name:'Skip';                Desc:'Skip')) ;
 
      Olympus1Table : array [0..32] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $0200;    Name:'SpecialMode';      Desc:'SpecialMode'),
-      (TID:0;TType:0;ICode: 2;Tag: $0201;    Name:'JpegQual';         Desc:'JpegQual'; Code:'1:SQ,2:HQ,3:SHQ,4:Raw'),
-      (TID:0;TType:0;ICode: 2;Tag: $0202;    Name:'Macro';            Desc:'Macro';    Code:'0=Normal,1:Macro;'),
-      (TID:0;TType:0;ICode: 2;Tag: $0203;    Name:'Skip';             Desc:'Skip'              ),
-      (TID:0;TType:0;ICode: 2;Tag: $0204;    Name:'DigiZoom';         Desc:'Digital Zoom Ratio'),
-      (TID:0;TType:0;ICode: 2;Tag: $0205;    Name:'Skip';             Desc:'Skip'              ),
-      (TID:0;TType:0;ICode: 2;Tag: $0206;    Name:'Skip';             Desc:'Skip'              ),
-      (TID:0;TType:0;ICode: 2;Tag: $0207;    Name:'Firmware';         Desc:'Firmware'          ),
-      (TID:0;TType:0;ICode: 2;Tag: $0208;    Name:'PictInfo';         Desc:'Picture Info'      ),
-      (TID:0;TType:0;ICode: 2;Tag: $0209;    Name:'CameraID';         Desc:'Camera ID'         ),
-      (TID:0;TType:0;ICode: 2;Tag: $0F00;    Name:'Skip';             Desc:'Skip'              ),
-      (TID:0;TType:0;ICode: 2;Tag: $1004;    Name:'FlashMode';        Desc:'Flash Mode'        ),
-      (TID:0;TType:0;ICode: 2;Tag: $1006;    Name:'Bracket'  ;        Desc:'Bracket'           ),
-      (TID:0;TType:0;ICode: 2;Tag: $100B;    Name:'FocusMode';        Desc:'Focus Mode'        ),
-      (TID:0;TType:0;ICode: 2;Tag: $100C;    Name:'FocusDistance';    Desc:'Focus Distance'    ),
-      (TID:0;TType:0;ICode: 2;Tag: $100D;    Name:'Zoom';             Desc:'Zoom'              ),
-      (TID:0;TType:0;ICode: 2;Tag: $100E;    Name:'MacroFocus';       Desc:'Macro Focus'       ),
-      (TID:0;TType:0;ICode: 2;Tag: $100F;    Name:'Sharpness';        Desc:'Sharpness'         ),
-      (TID:0;TType:0;ICode: 2;Tag: $1011;    Name:'ColorMatrix';      Desc:'Color Matrix'      ),
-      (TID:0;TType:0;ICode: 2;Tag: $1012;    Name:'BlackLevel';       Desc:'Black Level'       ),
-      (TID:0;TType:0;ICode: 2;Tag: $1015;    Name:'WhiteBalance';     Desc:'White Balance'     ),
-      (TID:0;TType:0;ICode: 2;Tag: $1017;    Name:'RedBias';          Desc:'Red Bias'          ),
-      (TID:0;TType:0;ICode: 2;Tag: $1018;    Name:'BlueBias';         Desc:'Blue Bias'         ),
-      (TID:0;TType:0;ICode: 2;Tag: $101A;    Name:'SerialNumber';     Desc:'SerialNumber'      ),
-      (TID:0;TType:0;ICode: 2;Tag: $1023;    Name:'FlashBias';        Desc:'Flash Bias'        ),
-      (TID:0;TType:0;ICode: 2;Tag: $1029;    Name:'Contrast';         Desc:'Contrast'          ),
-      (TID:0;TType:0;ICode: 2;Tag: $102A;    Name:'SharpnessFactor';  Desc:'Sharpness Factor'  ),
-      (TID:0;TType:0;ICode: 2;Tag: $102B;    Name:'ColorControl';     Desc:'Color Control'     ),
-      (TID:0;TType:0;ICode: 2;Tag: $102C;    Name:'ValidBits';        Desc:'Valid Bits'        ),
-      (TID:0;TType:0;ICode: 2;Tag: $102D;    Name:'Coring';           Desc:'Coring Filter'     ),
-      (TID:0;TType:0;ICode: 2;Tag: $102E;    Name:'FinalWidth';       Desc:'Final Width'       ),
-      (TID:0;TType:0;ICode: 2;Tag: $102F;    Name:'FinalHeight';      Desc:'Final Height'      ),
-      (TID:0;TType:0;ICode: 2;Tag: $1034;    Name:'CompressionRatio'; Desc:'Compression Ratio' )
+     ((TID:0; TType:0; ICode:0; Tag: $0200;    Name:'SpecialMode';      Desc:'SpecialMode'),
+      (TID:0; TType:0; ICode:0; Tag: $0201;    Name:'JpegQual';         Desc:'JpegQual';
+        Code:'1:SQ,2:HQ,3:SHQ,4:Raw'),
+      (TID:0; TType:0; ICode:0; Tag: $0202;    Name:'Macro';            Desc:'Macro';
+        Code:'0=Normal,1:Macro;'),
+      (TID:0; TType:0; ICode:0; Tag: $0203;    Name:'Skip';             Desc:'Skip'              ),
+      (TID:0; TType:0; ICode:0; Tag: $0204;    Name:'DigiZoom';         Desc:'Digital Zoom Ratio'),
+      (TID:0; TType:0; ICode:0; Tag: $0205;    Name:'Skip';             Desc:'Skip'              ),
+      (TID:0; TType:0; ICode:0; Tag: $0206;    Name:'Skip';             Desc:'Skip'              ),
+      (TID:0; TType:0; ICode:0; Tag: $0207;    Name:'Firmware';         Desc:'Firmware'          ),
+      (TID:0; TType:0; ICode:0; Tag: $0208;    Name:'PictInfo';         Desc:'Picture Info'      ),
+      (TID:0; TType:0; ICode:0; Tag: $0209;    Name:'CameraID';         Desc:'Camera ID'         ),
+      (TID:0; TType:0; ICode:0; Tag: $0F00;    Name:'Skip';             Desc:'Skip'              ),
+      (TID:0; TType:0; ICode:0; Tag: $1004;    Name:'FlashMode';        Desc:'Flash Mode'        ),
+      (TID:0; TType:0; ICode:0; Tag: $1006;    Name:'Bracket'  ;        Desc:'Bracket'           ),
+      (TID:0; TType:0; ICode:0; Tag: $100B;    Name:'FocusMode';        Desc:'Focus Mode'        ),
+      (TID:0; TType:0; ICode:0; Tag: $100C;    Name:'FocusDistance';    Desc:'Focus Distance'    ),
+      (TID:0; TType:0; ICode:0; Tag: $100D;    Name:'Zoom';             Desc:'Zoom'              ),
+      (TID:0; TType:0; ICode:0; Tag: $100E;    Name:'MacroFocus';       Desc:'Macro Focus'       ),
+      (TID:0; TType:0; ICode:0; Tag: $100F;    Name:'Sharpness';        Desc:'Sharpness'         ),
+      (TID:0; TType:0; ICode:0; Tag: $1011;    Name:'ColorMatrix';      Desc:'Color Matrix'      ),
+      (TID:0; TType:0; ICode:0; Tag: $1012;    Name:'BlackLevel';       Desc:'Black Level'       ),
+      (TID:0; TType:0; ICode:0; Tag: $1015;    Name:'WhiteBalance';     Desc:'White Balance'     ),
+      (TID:0; TType:0; ICode:0; Tag: $1017;    Name:'RedBias';          Desc:'Red Bias'          ),
+      (TID:0; TType:0; ICode:0; Tag: $1018;    Name:'BlueBias';         Desc:'Blue Bias'         ),
+      (TID:0; TType:0; ICode:0; Tag: $101A;    Name:'SerialNumber';     Desc:'SerialNumber'      ),
+      (TID:0; TType:0; ICode:0; Tag: $1023;    Name:'FlashBias';        Desc:'Flash Bias'        ),
+      (TID:0; TType:0; ICode:0; Tag: $1029;    Name:'Contrast';         Desc:'Contrast'          ),
+      (TID:0; TType:0; ICode:0; Tag: $102A;    Name:'SharpnessFactor';  Desc:'Sharpness Factor'  ),
+      (TID:0; TType:0; ICode:0; Tag: $102B;    Name:'ColorControl';     Desc:'Color Control'     ),
+      (TID:0; TType:0; ICode:0; Tag: $102C;    Name:'ValidBits';        Desc:'Valid Bits'        ),
+      (TID:0; TType:0; ICode:0; Tag: $102D;    Name:'Coring';           Desc:'Coring Filter'     ),
+      (TID:0; TType:0; ICode:0; Tag: $102E;    Name:'FinalWidth';       Desc:'Final Width'       ),
+      (TID:0; TType:0; ICode:0; Tag: $102F;    Name:'FinalHeight';      Desc:'Final Height'      ),
+      (TID:0; TType:0; ICode:0; Tag: $1034;    Name:'CompressionRatio'; Desc:'Compression Ratio' )
      );
 
      Casio1Table : array [0..25] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $01;   Name:'RecordingMode';  Desc:'RecordingMode'; Code:'1:Single Shutter,2:Panorama,'+
-          '3:Night Scene,4:Portrait,5:Landscape'),
-      (TID:0;TType:0;ICode: 2;Tag: $02;   Name:'Quality'     ;  Desc:'Quality'      ; Code:'1:Economy,2:Normal,3:Fine'),
-      (TID:0;TType:0;ICode: 2;Tag: $03;   Name:'FocusingMode';  Desc:'FocusingMode' ; Code:'2:Macro,3:Auto Focus,'+
-          '4:Manual Focus,5:Infinity'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;   Name:'FlashMode';  Desc:'FlashMode'    ; Code:'1:Auto,2:On,3:Off,'+
-          '4:Red Eye Reduction'),
-      (TID:0;TType:0;ICode: 2;Tag: $05;   Name:'FlashIntensity';  Desc:'FlashIntensity'; Code:'11:Weak,13:Normal,15:Strong'),
-      (TID:0;TType:0;ICode: 2;Tag: $06;   Name:'ObjectDistance';  Desc:'ObjectDistance'),
-      (TID:0;TType:0;ICode: 2;Tag: $07;   Name:'WhiteBalance'  ;  Desc:'WhiteBalance'; Code:'1:Auto,2:Tungsten,'+
-          '3:Daylight,4:Fluorescent,5:Shade,129:Manual'),
-      (TID:0;TType:0;ICode: 2;Tag: $08;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $09;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0A;   Name:'DigitalZoom'; Desc:'DigitalZoom'; Code:'65536:Off,65537:2X Digital Zoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $0B;   Name:'Sharpness';   Desc:'Sharpness'; Code:'0:Normal,1:Soft,2:Hard'),
-      (TID:0;TType:0;ICode: 2;Tag: $0C;   Name:'Contrast';    Desc:'Contrast'; Code:'0:Normal,1:Low,2:High'),
-      (TID:0;TType:0;ICode: 2;Tag: $0D;   Name:'Saturation';  Desc:'Saturation'; Code:'0:Normal,1:Low,2:High'),
-      (TID:0;TType:0;ICode: 2;Tag: $0E;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $10;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $11;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $12;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $13;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $14;   Name:'CCDSensitivity';  Desc:'CCDSensitivity'; Code:'64:Normal,125:+1.0,250:+2.0,'+
-          '244:+3.0,80:Normal,100:High'),
-      (TID:0;TType:0;ICode: 2;Tag: $15;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $16;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $17;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $18;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $19;   Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $1A;   Name:'Skip';  Desc:'Skip'));
+     ((TID:0; TType:0; ICode:0; Tag: $01;   Name:'RecordingMode';  Desc:'RecordingMode';
+        Code:'1:Single Shutter,2:Panorama,3:Night Scene,4:Portrait,5:Landscape'),
+      (TID:0; TType:0; ICode:0; Tag: $02;   Name:'Quality'      ;  Desc:'Quality';
+        Code:'1:Economy,2:Normal,3:Fine'),
+      (TID:0; TType:0; ICode:0; Tag: $03;   Name:'FocusingMode' ;  Desc:'FocusingMode';
+        Code:'2:Macro,3:Auto Focus,4:Manual Focus,5:Infinity'),
+      (TID:0; TType:0; ICode:0; Tag: $04;   Name:'FlashMode';      Desc:'FlashMode';
+        Code:'1:Auto,2:On,3:Off,4:Red Eye Reduction'),
+      (TID:0; TType:0; ICode:0; Tag: $05;   Name:'FlashIntensity'; Desc:'FlashIntensity';
+        Code:'11:Weak,13:Normal,15:Strong'),
+      (TID:0; TType:0; ICode:0; Tag: $06;   Name:'ObjectDistance'; Desc:'ObjectDistance'),
+      (TID:0; TType:0; ICode:0; Tag: $07;   Name:'WhiteBalance'  ; Desc:'WhiteBalance';
+        Code:'1:Auto,2:Tungsten,3:Daylight,4:Fluorescent,5:Shade,129:Manual'),
+      (TID:0; TType:0; ICode:0; Tag: $08;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $09;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0A;   Name:'DigitalZoom';    Desc:'DigitalZoom';
+        Code:'65536:Off,65537:2X Digital Zoom'),
+      (TID:0; TType:0; ICode:0; Tag: $0B;   Name:'Sharpness';      Desc:'Sharpness';
+        Code:'0:Normal,1:Soft,2:Hard'),
+      (TID:0; TType:0; ICode:0; Tag: $0C;   Name:'Contrast';       Desc:'Contrast';
+        Code:'0:Normal,1:Low,2:High'),
+      (TID:0; TType:0; ICode:0; Tag: $0D;   Name:'Saturation';     Desc:'Saturation';
+        Code:'0:Normal,1:Low,2:High'),
+      (TID:0; TType:0; ICode:0; Tag: $0E;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0F;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $10;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $11;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $12;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $13;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $14;   Name:'CCDSensitivity'; Desc:'CCDSensitivity';
+        Code:'64:Normal,125:+1.0,250:+2.0,244:+3.0,80:Normal,100:High'),
+      (TID:0; TType:0; ICode:0; Tag: $15;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $16;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $17;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $18;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $19;   Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $1A;   Name:'Skip';           Desc:'Skip'));
 
      Casio2Table : array [0..44] of TTagEntry =
      (
-      (TID:0;TType:0;ICode: 2;Tag: $02;   Name:'ThumbnailDimensions';  Desc:'Thumbnail Dimensions'),
-      (TID:0;TType:0;ICode: 2;Tag: $03;   Name:'ThumbnailSize'; Desc:'Thumbnail Size'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;   Name:'ThumbnailOffset'; Desc:'Thumbnail OffSet'),
-      (TID:0;TType:0;ICode: 2;Tag: $08;   Name:'Quality'; Desc:'Quality'; Code:'1:Fine,2:Super Fine'),
-
-      (TID:0;TType:0;ICode: 2;Tag: $09;   Name:'ImageSize'; Desc:'ImageSize';
+      (TID:0; TType:0; ICode:0; Tag: $02;   Name:'ThumbnailDimensions';  Desc:'Thumbnail Dimensions'),
+      (TID:0; TType:0; ICode:0; Tag: $03;   Name:'ThumbnailSize';        Desc:'Thumbnail Size'),
+      (TID:0; TType:0; ICode:0; Tag: $04;   Name:'ThumbnailOffset';      Desc:'Thumbnail OffSet'),
+      (TID:0; TType:0; ICode:0; Tag: $08;   Name:'Quality';              Desc:'Quality';
+        Code:'1:Fine,2:Super Fine'),
+      (TID:0; TType:0; ICode:0; Tag: $09;   Name:'ImageSize'; Desc:'ImageSize';
         Code:'0:640 x 480,4:1600 x 1200,5:2048 x 1536,20:2288 x 1712,'+
              '21:2592 x 1944,22:2304 x 1728,36:3008 x 2008'),
-      (TID:0;TType:0;ICode: 2;Tag: $0D;   Name:'FocusMode'; Desc:'FocusMode'; Code:'0:Normal,1:Macro'),
-      (TID:0;TType:0;ICode: 2;Tag: $14;   Name:'IsoSensitivity'; Desc:'IsoSensitivity';
+      (TID:0; TType:0; ICode:0; Tag: $0D;   Name:'FocusMode'; Desc:'FocusMode';
+        Code:'0:Normal,1:Macro'),
+      (TID:0; TType:0; ICode:0; Tag: $14;   Name:'IsoSensitivity'; Desc:'IsoSensitivity';
         Code:'3:50,4:64,6:100,9:200'),
-      (TID:0;TType:0;ICode: 2;Tag: $19;   Name:'WhiteBalance'; Desc:'WhiteBalance';
+      (TID:0; TType:0; ICode:0; Tag: $19;   Name:'WhiteBalance'; Desc:'WhiteBalance';
         Code:'0:Auto,1:Daylight,2:Shade,3:Tungsten,4:Fluorescent,5:Manual'),
-      (TID:0;TType:0;ICode: 2;Tag: $1D;   Name:'FocalLength'; Desc:'Focal Length (.1 mm)'),
+      (TID:0; TType:0; ICode:0; Tag: $1D;   Name:'FocalLength'; Desc:'Focal Length (.1 mm)'),
 
-      (TID:0;TType:0;ICode: 2;Tag: $1F;    Name:'Saturation'; Desc:'Saturation'; Code:'0:-1,1:Normal,2:+1'),
-      (TID:0;TType:0;ICode: 2;Tag: $20;    Name:'Contrast'; Desc:'Contrast'; Code:'0:-1,1:Normal,2:+1'),
-      (TID:0;TType:0;ICode: 2;Tag: $21;    Name:'Sharpness'; Desc:'Sharpness'; Code:'0:-1,1:Normal,2:+1'),
-      (TID:0;TType:0;ICode: 2;Tag: $E00;   Name:'PIM'; Desc:'	Print Image Matching Info'),
-//      (TID:0;TType:0;ICode: 2;Tag: $2000;  Name:'CasioPreviewThumbnail'; Desc:'Casio Preview Thumbnail'),
-      (TID:0;TType:0;ICode: 2;Tag: $2000;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2001;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2002;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2003;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $1F;    Name:'Saturation'; Desc:'Saturation';
+        Code:'0:-1,1:Normal,2:+1'),
+      (TID:0; TType:0; ICode:0; Tag: $20;    Name:'Contrast'; Desc:'Contrast';
+        Code:'0:-1,1:Normal,2:+1'),
+      (TID:0; TType:0; ICode:0; Tag: $21;    Name:'Sharpness'; Desc:'Sharpness';
+        Code:'0:-1,1:Normal,2:+1'),
+      (TID:0; TType:0; ICode:0; Tag: $E00;   Name:'PIM'; Desc:'	Print Image Matching Info'),
+//      (TID:0; TType:0; ICode:0; Tag: $2000;  Name:'CasioPreviewThumbnail'; Desc:'Casio Preview Thumbnail'),
+      (TID:0; TType:0; ICode:0; Tag: $2000;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2001;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2002;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2003;  Name:'Skip'; Desc:'Skip'),
 
-      (TID:0;TType:0;ICode: 2;Tag: $2011;  Name:'WhiteBalanceBias'; Desc:'White Balance Bias'),
-      (TID:0;TType:0;ICode: 2;Tag: $2013;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2012;  Name:'WhiteBalance'; Desc:'White Balance'; Code:'0:Manual,1:Auto,4:Flash,12:Flash'),
-      (TID:0;TType:0;ICode: 2;Tag: $2021;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2022;  Name:'ObjectDistance'; Desc:'Object Distance (mm)'),
-      (TID:0;TType:0;ICode: 2;Tag: $2023;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2031;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2032;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2033;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $2034;  Name:'FlashDistance'; Desc:'Flash Distance'),
-      (TID:0;TType:0;ICode: 2;Tag: $3000;  Name:'RecordMode'; Desc:'Record Mode'; Code:'2:Normal'),
-
-      (TID:0;TType:0;ICode: 2;Tag: $3001;   Name:'SelfTimer'; Desc:'Self Timer'; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $3002;   Name:'Quality'; Desc:'Quality'; Code:'1:Economy,2:Normal,3:Fine'),
-      (TID:0;TType:0;ICode: 2;Tag: $3003;   Name:'FocusMode'; Desc:'Focus Mode'; Code:'1:Fixed,3:Auto Focus,6:Multi-Area Auto Focus'),
-      (TID:0;TType:0;ICode: 2;Tag: $3005;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $3006;   Name:'TimeZone'; Desc:'Time Zone'),
-      (TID:0;TType:0;ICode: 2;Tag: $3007;   Name:'BestshotMode'; Desc:'Bestshot Mode'; Code:'0:Off,1:On'),
-
-      (TID:0;TType:0;ICode: 2;Tag: $3011;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $3012;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $3013;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $3014;   Name:'CCDSensitivity'; Desc:'CCD Sensitivity'),
-      (TID:0;TType:0;ICode: 2;Tag: $3015;   Name:'ColorMode'; Desc:'Color Mode'; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $3016;   Name:'Enhancement'; Desc:'Enhancement'; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $3017;   Name:'Filter'; Desc:'Filter'; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $3018;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $3019;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $301A;  Name:'Skip'; Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $301B;  Name:'Skip'; Desc:'Skip')
-
+      (TID:0; TType:0; ICode:0; Tag: $2011;  Name:'WhiteBalanceBias'; Desc:'White Balance Bias'),
+      (TID:0; TType:0; ICode:0; Tag: $2013;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2012;  Name:'WhiteBalance'; Desc:'White Balance';
+        Code:'0:Manual,1:Auto,4:Flash,12:Flash'),
+      (TID:0; TType:0; ICode:0; Tag: $2021;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2022;  Name:'ObjectDistance'; Desc:'Object Distance (mm)'),
+      (TID:0; TType:0; ICode:0; Tag: $2023;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2031;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2032;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2033;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $2034;  Name:'FlashDistance'; Desc:'Flash Distance'),
+      (TID:0; TType:0; ICode:0; Tag: $3000;  Name:'RecordMode'; Desc:'Record Mode';
+        Code:'2:Normal'),
+      (TID:0; TType:0; ICode:0; Tag: $3001;  Name:'SelfTimer'; Desc:'Self Timer';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $3002;  Name:'Quality'; Desc:'Quality';
+        Code:'1:Economy,2:Normal,3:Fine'),
+      (TID:0; TType:0; ICode:0; Tag: $3003;  Name:'FocusMode'; Desc:'Focus Mode';
+        Code:'1:Fixed,3:Auto Focus,6:Multi-Area Auto Focus'),
+      (TID:0; TType:0; ICode:0; Tag: $3005;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $3006;  Name:'TimeZone'; Desc:'Time Zone'),
+      (TID:0; TType:0; ICode:0; Tag: $3007;  Name:'BestshotMode'; Desc:'Bestshot Mode';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $3011;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $3012;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $3013;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $3014;  Name:'CCDSensitivity'; Desc:'CCD Sensitivity'),
+      (TID:0; TType:0; ICode:0; Tag: $3015;  Name:'ColorMode'; Desc:'Color Mode';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $3016;  Name:'Enhancement'; Desc:'Enhancement';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $3017;  Name:'Filter'; Desc:'Filter';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $3018;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $3019;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $301A;  Name:'Skip'; Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $301B;  Name:'Skip'; Desc:'Skip')
 );
 
      Fuji1Table : array [0..17] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $0000;    Name:'Version';    Desc:'Version'),
-      (TID:0;TType:0;ICode: 2;Tag: $1000;    Name:'Quality';    Desc:'Quality'     ; Code:''),
-      (TID:0;TType:0;ICode: 2;Tag: $1001;    Name:'Sharpness';  Desc:'Sharpness'   ; Code:'1:Soft,2:Soft,3:Normal,'+
-            '4:Hard,5:Hard'),
-      (TID:0;TType:0;ICode: 2;Tag: $1002;    Name:'WhiteBalance';  Desc:'WhiteBalance'; Code:'0:Auto,256:Daylight,'+
-            '512:Cloudy,768:DaylightColor-fluorescence,'+
+     ((TID:0; TType:0; ICode:0; Tag: $0000;    Name:'Version';      Desc:'Version'),
+      (TID:0; TType:0; ICode:0; Tag: $1000;    Name:'Quality';      Desc:'Quality';
+        Code:''),
+      (TID:0; TType:0; ICode:0; Tag: $1001;    Name:'Sharpness';    Desc:'Sharpness';
+        Code:'1:Soft,2:Soft,3:Normal,4:Hard,5:Hard'),
+      (TID:0; TType:0; ICode:0; Tag: $1002;    Name:'WhiteBalance'; Desc:'WhiteBalance';
+        Code:'0:Auto,256:Daylight,512:Cloudy,768:DaylightColor-fluorescence,'+
             '769:DaywhiteColor-fluorescence,770:White-fluorescence,'+
             '1024:Incandenscense,3840:Custom white balance.'),
-      (TID:0;TType:0;ICode: 2;Tag: $1003;    Name:'Color'    ;  Desc:'Color'    ; Code:'0:Normal,256:High,512:Low'),
-      (TID:0;TType:0;ICode: 2;Tag: $1004;    Name:'Tone'     ;  Desc:'Tone'     ; Code:'0:Normal,256:High,512:Low'),
-      (TID:0;TType:0;ICode: 2;Tag: $1010;    Name:'FlashMode';  Desc:'FlashMode'; Code:'0:Auto,1:On,2:Off,'+
-            '3:Red-eye reduction'),
-      (TID:0;TType:0;ICode: 2;Tag: $1011;    Name:'FlashStrength';  Desc:'FlashStrength'; Code:''),
-      (TID:0;TType:0;ICode: 2;Tag: $1020;    Name:'Macro'        ;  Desc:'Macro'        ; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $1021;    Name:'Focusmode'    ;  Desc:'Focusmode'    ; Code:'0:Auto Focus,1:Manual Focus'),
-      (TID:0;TType:0;ICode: 2;Tag: $1030;    Name:'SlowSync'     ;  Desc:'SlowSync'     ; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $1031;    Name:'PictureMode'  ;  Desc:'PictureMode'  ; Code:'0:Auto,1:Portrait scene,'+
-            '2:Landscape scene,4:Sports scene,5:Night scene,6:Program AE,'+
-            '256:Aperture prior AE,512:Shutter prior AE,768:Manual exposure'),
-      (TID:0;TType:0;ICode: 2;Tag: $1032;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $1100;    Name:'ContTake/Bracket';  Desc:'ContTake/Bracket'; Code:'0:Off,1:On'),
-      (TID:0;TType:0;ICode: 2;Tag: $1200;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $1300;    Name:'BlurWarning';  Desc:'BlurWarning'     ; Code:'0:No blur warning,'+
-            '1:Blur warning'),
-      (TID:0;TType:0;ICode: 2;Tag: $1301;    Name:'FocusWarning';  Desc:'FocusWarning'    ; Code:'0:Auto Focus good,'+
-            '1:Out of focus'),
-      (TID:0;TType:0;ICode: 2;Tag: $1302;    Name:'AEWarning';  Desc:'AEWarning'       ; Code:'0:AE good,1:Over exposure')) ;
+      (TID:0; TType:0; ICode:0; Tag: $1003;    Name:'Color'    ;    Desc:'Color';
+        Code:'0:Normal,256:High,512:Low'),
+      (TID:0; TType:0; ICode:0; Tag: $1004;    Name:'Tone'     ;    Desc:'Tone';
+        Code:'0:Normal,256:High,512:Low'),
+      (TID:0; TType:0; ICode:0; Tag: $1010;    Name:'FlashMode';    Desc:'FlashMode';
+        Code:'0:Auto,1:On,2:Off,3:Red-eye reduction'),
+      (TID:0; TType:0; ICode:0; Tag: $1011;    Name:'FlashStrength';Desc:'FlashStrength';
+        Code:''),
+      (TID:0; TType:0; ICode:0; Tag: $1020;    Name:'Macro'       ; Desc:'Macro';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $1021;    Name:'Focusmode'   ; Desc:'Focusmode';
+        Code:'0:Auto Focus,1:Manual Focus'),
+      (TID:0; TType:0; ICode:0; Tag: $1030;    Name:'SlowSync'    ; Desc:'SlowSync';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $1031;    Name:'PictureMode' ; Desc:'PictureMode';
+        Code:'0:Auto,1:Portrait scene,2:Landscape scene,4:Sports scene,'+
+             '5:Night scene,6:Program AE,256:Aperture prior AE,512:Shutter prior AE,768:Manual exposure'),
+      (TID:0; TType:0; ICode:0; Tag: $1032;    Name:'Skip';  Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $1100;    Name:'ContTake/Bracket';  Desc:'ContTake/Bracket';
+        Code:'0:Off,1:On'),
+      (TID:0; TType:0; ICode:0; Tag: $1200;    Name:'Skip';         Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $1300;    Name:'BlurWarning';  Desc:'BlurWarning';
+        Code:'0:No blur warning,1:Blur warning'),
+      (TID:0; TType:0; ICode:0; Tag: $1301;    Name:'FocusWarning'; Desc:'FocusWarning';
+        Code:'0:Auto Focus good,1:Out of focus'),
+      (TID:0; TType:0; ICode:0; Tag: $1302;    Name:'AEWarning';    Desc:'AEWarning';
+        Code:'0:AE good,1:Over exposure')) ;
 
      Canon1Table : array [0..15] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $00;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $01;    Name:'ExposureInfo1';    Desc:'ExposureInfo1'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonExp1),
-      (TID:0;TType:0;ICode: 2;Tag: $02;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $03;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;    Name:'ExposureInfo2';    Desc:'ExposureInfo2'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonExp2),
-      (TID:0;TType:0;ICode: 2;Tag: $06;    Name:'ImageType';        Desc:'ImageType'),
-      (TID:0;TType:0;ICode: 2;Tag: $07;    Name:'FirmwareVersion';  Desc:'FirmwareVersion'),
-      (TID:0;TType:0;ICode: 2;Tag: $08;    Name:'ImageNumber';      Desc:'ImageNumber'),
-      (TID:0;TType:0;ICode: 2;Tag: $09;    Name:'OwnerName';        Desc:'OwnerName'),
-      (TID:0;TType:0;ICode: 2;Tag: $0A;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0B;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0C;    Name:'CameraSerialNumber';  Desc:'CameraSerialNumber'),
-      (TID:0;TType:0;ICode: 2;Tag: $0D;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0E;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F;    Name:'CustomFunctions';  Desc:'CustomFunctions'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonCustom1),
-      (TID:0;TType:0;ICode: 2;Tag: $10;    Name:'Skip';   Desc:'Skip'));
+     ((TID:0; TType:0; ICode:0; Tag: $00;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $01;    Name:'ExposureInfo1';    Desc:'ExposureInfo1'; Callback:CanonExp1),
+      (TID:0; TType:0; ICode:0; Tag: $02;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $03;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $04;    Name:'ExposureInfo2';    Desc:'ExposureInfo2'; Callback:CanonExp2),
+      (TID:0; TType:0; ICode:0; Tag: $06;    Name:'ImageType';        Desc:'ImageType'),
+      (TID:0; TType:0; ICode:0; Tag: $07;    Name:'FirmwareVersion';  Desc:'FirmwareVersion'),
+      (TID:0; TType:0; ICode:0; Tag: $08;    Name:'ImageNumber';      Desc:'ImageNumber'),
+      (TID:0; TType:0; ICode:0; Tag: $09;    Name:'OwnerName';        Desc:'OwnerName'),
+      (TID:0; TType:0; ICode:0; Tag: $0A;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0B;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0C;    Name:'CameraSerialNumber';  Desc:'CameraSerialNumber'),
+      (TID:0; TType:0; ICode:0; Tag: $0D;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0E;    Name:'Skip';             Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0F;    Name:'CustomFunctions';  Desc:'CustomFunctions'; Callback:CanonCustom1),
+      (TID:0; TType:0; ICode:0; Tag: $10;    Name:'Skip';             Desc:'Skip'));
 
      Epson1Table : array [0..11] of TTagEntry =           //For Epson pc850Z     Lucas P.
-     ((TID:0;TType:0;ICode: 2;Tag: $0200;    Name:'Special Mode';  Desc:'Special Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $0201;    Name:'JpegQuality';   Desc:'JpegQuality'),
-      (TID:0;TType:0;ICode: 2;Tag: $0202;    Name:'Macro';     Desc:'Macro'),
-      (TID:0;TType:0;ICode: 2;Tag: $0203;    Name:'Skip';      Desc:'Skip'),     // ??
-      (TID:0;TType:0;ICode: 2;Tag: $0204;    Name:'DigiZoom';  Desc:'DigiZoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $0209;    Name:'CameraID';  Desc:'CameraID'),
-      (TID:0;TType:0;ICode: 2;Tag: $020a;    Name:'Comments';  Desc:'Comments'),
-      (TID:0;TType:0;ICode: 2;Tag: $020b;    Name:'Width';     Desc:'Width'),
-      (TID:0;TType:0;ICode: 2;Tag: $020c;    Name:'Height';    Desc:'Height'),
-      (TID:0;TType:0;ICode: 2;Tag: $020d;    Name:'SoftRelease';  Desc:'SoftRelease'),
-      (TID:0;TType:0;ICode: 2;Tag: $0300;    Name:'??';        Desc:'??'),       // ??
-      (TID:0;TType:0;ICode: 2;Tag: $0f00;    Name:'skip';      Desc:'skip'));
+     ((TID:0; TType:0; ICode:0; Tag: $0200;    Name:'Special Mode';   Desc:'Special Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $0201;    Name:'JpegQuality';    Desc:'JpegQuality'),
+      (TID:0; TType:0; ICode:0; Tag: $0202;    Name:'Macro';          Desc:'Macro'),
+      (TID:0; TType:0; ICode:0; Tag: $0203;    Name:'Skip';           Desc:'Skip'),     // ??
+      (TID:0; TType:0; ICode:0; Tag: $0204;    Name:'DigiZoom';       Desc:'DigiZoom'),
+      (TID:0; TType:0; ICode:0; Tag: $0209;    Name:'CameraID';       Desc:'CameraID'),
+      (TID:0; TType:0; ICode:0; Tag: $020a;    Name:'Comments';       Desc:'Comments'),
+      (TID:0; TType:0; ICode:0; Tag: $020b;    Name:'Width';          Desc:'Width'),
+      (TID:0; TType:0; ICode:0; Tag: $020c;    Name:'Height';         Desc:'Height'),
+      (TID:0; TType:0; ICode:0; Tag: $020d;    Name:'SoftRelease';    Desc:'SoftRelease'),
+      (TID:0; TType:0; ICode:0; Tag: $0300;    Name:'??';             Desc:'??'),       // ??
+      (TID:0; TType:0; ICode:0; Tag: $0f00;    Name:'skip';           Desc:'skip'));
 
      Sanyo1Table : array [0..5] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $0200;    Name:'Special Mode';  Desc:'Special Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $0201;    Name:'JpegQuality';  Desc:'JpegQuality'),
-      (TID:0;TType:0;ICode: 2;Tag: $0202;    Name:'Macro';  Desc:'Macro'),
-      (TID:0;TType:0;ICode: 2;Tag: $0203;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0204;    Name:'DigiZoom';  Desc:'DigiZoom'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F00;    Name:'DataDump';  Desc:'DataDump' ));
+     ((TID:0; TType:0; ICode:0; Tag: $0200;    Name:'Special Mode';   Desc:'Special Mode'),
+      (TID:0; TType:0; ICode:0; Tag: $0201;    Name:'JpegQuality';    Desc:'JpegQuality'),
+      (TID:0; TType:0; ICode:0; Tag: $0202;    Name:'Macro';          Desc:'Macro'),
+      (TID:0; TType:0; ICode:0; Tag: $0203;    Name:'Skip';           Desc:'Skip'),
+      (TID:0; TType:0; ICode:0; Tag: $0204;    Name:'DigiZoom';       Desc:'DigiZoom'),
+      (TID:0; TType:0; ICode:0; Tag: $0F00;    Name:'DataDump';       Desc:'DataDump' ));
 
      MinoltaTable : array [0..1] of TTagEntry =
-     ((TID:0;TType:0;ICode: 2;Tag: $00;      Name:'ModelID';  Desc:'ModelID'),
-      (TID:0;TType:0;ICode: 2;Tag: $0E00;    Name:'PIMdata';  Desc:'PIMdata')) ;
+     ((TID:0; TType:0; ICode:0; Tag: $00;      Name:'ModelID';        Desc:'ModelID'),
+      (TID:0; TType:0; ICode:0; Tag: $0E00;    Name:'PIMdata';        Desc:'PIMdata')) ;
 
-function StrBefore( xx,target : ansistring):ansistring;
-function StrAfter( xx,target : ansistring):ansistring;
-function StrNth( xx:ansistring ; delim:ansistring ; n:integer ):ansistring;
-function StrCount( xx:ansistring ; delim:ansistring ):integer;
+function StrBefore( xx,target : string):string;
+function StrAfter( xx,target : string):string;
+function StrNth( xx:string ; delim:string ; n:integer ):string;
+function StrCount( xx:string ; delim:string ):integer;
 
 implementation
 
@@ -318,7 +346,7 @@ implementation
 //
 //  Ok, Ok, usually you'd have a parser do the
 //  work but hey - this is just a simple example
-Function NikonColorMode(instr:ansistring) :ansistring;
+Function NikonColorMode(instr:string) :string;
 begin
   instr := copy(instr,2,5);
   result := instr;
@@ -332,50 +360,47 @@ begin
     result := 'Mode 3 (sRGB): higher saturation'
 end;
 
-Function NikonLens(instr:ansistring) :ansistring;
+Function NikonLens(instr:string) :string;
 var i,sl:integer;
-    tb:ansistring;
+    tb:string;
     MaxSp,MinSp,MaxFL,MinFL:double;
 begin
    sl := length(DexifDataSep);
    result := instr;                     // if error return input string
-   i := Pos(DexifDataSep,instr);
+   i := pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get first irrational number
    MinFL := CvtIrrational(tb);          // bottom of lens speed range
    instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
+   i := pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get second irrational number
    MaxFL := CvtIrrational(tb);          // top of lens speed range
    instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
+   i := pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get third irrational number
    MinSp := CvtIrrational(tb);          // minimum focal length
    instr := copy(instr,i+sl-1,64);
    MaxSp := CvtIrrational(instr);       // maximum focal length
-   result := AnsiString(format('%0.1f-%0.1f(mm)  F%0.1f-F%0.1f',
-                        [MinFl,MaxFl,MinSp,MaxSp]));
+   result := format('%0.1f-%0.1f(mm)  F%0.1f-F%0.1f',
+       [MinFl,MaxFl,MinSp,MaxSp]);
 end;
 
-const
-  crlf: ansistring = #13#10;
+const cr = #13#10;
+type strArray = array of string;
 
-type
-  strArray = array of ansistring;
-
-function StrBefore( xx,target : ansistring):ansistring;
+function StrBefore( xx,target : string):string;
 var i:integer;
 begin
-  i := Pos(target,xx);
+  i := pos(target,xx);
   if i = 0 then
     result := xx
   else
     result := copy(xx,1,i-1)
 end;
 
-function StrAfter( xx,target : ansistring):ansistring;
+function StrAfter( xx,target : string):string;
 var i:integer;
 begin
-  i := Pos(target,xx);
+  i := pos(target,xx);
   if i = 0 then
   begin
     if target = ''
@@ -386,7 +411,7 @@ begin
     result := copy(xx,i+length(target),length(xx)-length(target)-i+1)
 end;
 
-function StrNth( xx:ansistring ; delim:ansistring ; n:integer ):ansistring;
+function StrNth( xx:string ; delim:string ; n:integer ):string;
 var i:integer;
 begin
   for i := 2 to n do
@@ -394,11 +419,11 @@ begin
   Result := strBefore(xx,delim);
 end;
 
-function StrCount( xx:ansistring ; delim:ansistring ):integer;
+function StrCount( xx:string ; delim:string ):integer;
 var i:integer;
 begin
   i := 0;
-  while Pos(delim,xx) <> 0 do
+  while pos(delim,xx) <> 0 do
   begin
     xx := StrAfter(xx,delim);
     inc(i);
@@ -406,8 +431,8 @@ begin
   Result := i;
 end;
 
-Function aPick(info:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var s,r:ansistring;
+Function aPick(info:string; item:integer; decodeStr:string):string;
+var s,r:string;
 begin
   try
     s := StrNth(info,',',item+1);
@@ -418,68 +443,68 @@ begin
   result := r;
 end;
 
-Function CustBld(fname:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var valStr:ansistring;
+Function CustBld(fname:string; item:integer; decodeStr:string):string;
+var valStr:string;
 begin
-  valStr := DecodeField(decodeStr, AnsiString(inttostr(item)));
-  if trim(string(valStr)) <> '' then
+  valStr := DecodeField(decodeStr,inttostr(item));
+  if trim(valStr) <> '' then
   begin
     curTagArray.AddMSTag(fname,valStr,FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    result := cr+fname+DexifDelim+valStr;
   end
   else
     result := '';
 end;
 
-Function CustNth(instr, fname:ansistring; item:integer):ansistring;
-var valStr:ansistring;
+Function CustNth(instr, fname:string; item:integer):string;
+var valStr:string;
 begin
   valStr := StrNth(instr,DexifDecodeSep,item);
-  if trim(string(valStr)) <> '' then
+  if trim(valStr) <> '' then
   begin
     curTagArray.AddMSTag(fname,valStr,FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    result := cr+fname+DexifDelim+valStr;
   end
   else
     result := '';
 end;
 
-Function CustAPick(instr, fname:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var valStr:ansistring;
+Function CustAPick(instr, fname:string; item:integer; decodeStr:string):string;
+var valStr:string;
 begin
   valStr := aPick(instr, item, decodeStr);
-  if trim(string(valStr)) <> '' then
+  if trim(valStr) <> '' then
   begin
     curTagArray.AddMSTag(fname,valStr,FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    result := cr+fname+DexifDelim+valStr;
   end
   else
     result := '';
 end;
 
 const
-  CanonGen     : ansistring = '65535:Low,0:Normal,1:High';
-  CanonMacro   : ansistring = '1:Macro,2:Normal';
-  CanonCompress: ansistring = '0:SuperFine,1:Fine,2:Normal,3:Basic,5:SuperFine';
-  CanonFlash   : ansistring = '0:Not fired,1:Auto,2:On,3:Red-eye,4:Slow sync,'+
-                              '5:Auto+red-eye,6:On+red eye,16:External flash';
-  CanonDrive   : ansistring = '0:Single,1:Continuous';
-  CanonFocus   : ansistring = '0:One-Shot,1:AI Servo,2:AI Focus,3:MF,4:Single,'+
-                              '5:Continuous,6:MF';
-  CanonSize    : ansistring = '0:Large,1:Medium,2:Small,4:5MPixel,5:2 MPixel,6:1.5 MPixel';
-  CanonEasy    : ansistring = '0:Full Auto,1:Manual,2:Landscape,3:Fast Shutter,'+
-                              '4:Slow Shutter,5:Night,6:B&W,7:Sepia,8:Portrait,9:Sports,'+
-                              '10:Macro/Close-Up,11:Pan Focus';
-  CanonISO     : ansistring = '0:Not used,15:auto,16:50,17:100,18:200,19:400';
-  CanonMeter   : ansistring = '3:Evaluative,4:Partial,5:Center-weighted';
-  CanonAF      : ansistring = '12288:None (MF),12289:Auto-selected,12290:Right,'+
-                              '12291:Center,12292:Left';
-  CanonExpose  : ansistring = '0:Easy shooting,1:Program,2:Tv-priority,'+
-                              '3:Av-priority,4:Manual,5:A-DEP';
-  CanonFocus2  : ansistring = '0:Single,1:Continuous';
+  CanonGen = '65535:Low,0:Normal,1:High';
+  CanonMacro = '1:Macro,2:Normal';
+  CanonCompress = '0:SuperFine,1:Fine,2:Normal,3:Basic,5:SuperFine';
+  CanonFlash = '0:Not fired,1:Auto,2:On,3:Red-eye,4:Slow sync,'+
+      '5:Auto+red-eye,6:On+red eye,16:External flash';
+  CanonDrive = '0:Single,1:Continuous';
+  CanonFocus = '0:One-Shot,1:AI Servo,2:AI Focus,3:MF,4:Single,'+
+      '5:Continuous,6:MF';
+  CanonSize = '0:Large,1:Medium,2:Small,4:5MPixel,5:2 MPixel,6:1.5 MPixel';
+  CanonEasy = '0:Full Auto,1:Manual,2:Landscape,3:Fast Shutter,'+
+      '4:Slow Shutter,5:Night,6:B&W,7:Sepia,8:Portrait,9:Sports,'+
+      '10:Macro/Close-Up,11:Pan Focus';
+  CanonISO = '0:Not used,15:auto,16:50,17:100,18:200,19:400';
+  CanonMeter = '3:Evaluative,4:Partial,5:Center-weighted';
+  CanonAF = '12288:None (MF),12289:Auto-selected,12290:Right,'+
+      '12291:Center,12292:Left';
+  CanonExpose = '0:Easy shooting,1:Program,2:Tv-priority,'+
+      '3:Av-priority,4:Manual,5:A-DEP';
+  CanonFocus2 = '0:Single,1:Continuous';
 
-Function CanonExp1(instr:ansistring) :ansistring;
-var s:ansistring;
+Function CanonExp1(instr:string) :string;
+var s:string;
 begin
   rawDefered := true;
 //  s := instr;
@@ -508,16 +533,16 @@ begin
 end;
 
 const
-  CanonWhite: ansistring = '0:Auto,1:Sunny,2:Cloudy,3:Tungsten,4:Flourescent,'+
-                           '5:Flash,6:Custom';
-  CanonBias : ansistring = '65472:-2 EV,65484:-1.67 EV,65488:-1.50 EV,65492:-1.33 EV,'+
-                           '65504:-1 EV,65516:-0.67 EV,65520:-0.50 EV,65524:-0.33 EV,'+
-                           '0:0 EV,12:0.33 EV,16:0.50 EV,20:0.67 EV,'+
-                           '32:1 EV,44:1.33 EV,48:1.50 EV,52:1.67 EV,'+
-                           '64:2 EV';
+  CanonWhite = '0:Auto,1:Sunny,2:Cloudy,3:Tungsten,4:Flourescent,'+
+      '5:Flash,6:Custom';
+  CanonBias = '65472:-2 EV,65484:-1.67 EV,65488:-1.50 EV,65492:-1.33 EV,'+
+              '65504:-1 EV,65516:-0.67 EV,65520:-0.50 EV,65524:-0.33 EV,'+
+              '0:0 EV,12:0.33 EV,16:0.50 EV,20:0.67 EV,'+
+              '32:1 EV,44:1.33 EV,48:1.50 EV,52:1.67 EV,'+
+              '64:2 EV';
 
-Function CanonExp2(instr:ansistring) :ansistring;
-var s:ansistring;
+Function CanonExp2(instr:string) :string;
+var s:string;
 begin
   rawDefered := true;
 //  s := instr;
@@ -532,24 +557,24 @@ begin
 end;
 
 Const
-  CanonOpt1    : ansistring = '0:Disable,1:Enable';
-  CanonOpt2    : ansistring = '0:Enable,1:Disable';
-  CanonNR      : ansistring = '0: Off,1: On';
-  CanonYR      : ansistring = '0: On,1: Off';
-  CanonAEBtn   : ansistring = '0:AF/AE lock,1:AE lock/AF,2:AF/AF lock,3:AE+release/AE+AF';
-  CanonExpLevel: ansistring = '0:1/2 stop,1:1/3 stop';
-  CanonAFassist: ansistring = '0:On (auto),1:Off';
-  CanonAvSpeed : ansistring = '0:Automatic,1: 1/200 (fixed)';
-  CanonAEB     : ansistring = '0:0, -, + / Enabled1: 0, -, + / Disabled,'+
-                              '2: -, 0, + / Enabled,3: -, 0, + / Disabled';
-  CanonSCS     : ansistring = '0:1st-curtain sync,1: 2nd-curtain sync';
-  CanonAFBtn   : ansistring = '0:AF stop,1:Operate AF,2:Lock AE and start timer';
-  CanonMenu    : ansistring = '0:Top,1:Previous (volatile),2:Previous';
-  CanonSetBtn  : ansistring = '0:Not assigned,1:Change quality,2:Change ISO speed,'+
-                              '3:Select parameters';
+  CanonOpt1 = '0:Disable,1:Enable';
+  CanonOpt2 = '0:Enable,1:Disable';
+  CanonNR = '0: Off,1: On';
+  CanonYR = '0: On,1: Off';
+  CanonAEBtn = '0:AF/AE lock,1:AE lock/AF,2:AF/AF lock,3:AE+release/AE+AF';
+  CanonExpLevel = '0:1/2 stop,1:1/3 stop';
+  CanonAFassist = '0:On (auto),1:Off';
+  CanonAvSpeed = '0:Automatic,1: 1/200 (fixed)';
+  CanonAEB = '0:0, -, + / Enabled1: 0, -, + / Disabled,'+
+             '2: -, 0, + / Enabled,3: -, 0, + / Disabled';
+  CanonSCS = '0:1st-curtain sync,1: 2nd-curtain sync';
+  CanonAFBtn = '0:AF stop,1:Operate AF,2:Lock AE and start timer';
+  CanonMenu = '0:Top,1:Previous (volatile),2:Previous';
+  CanonSetBtn = '0:Not assigned,1:Change quality,2:Change ISO speed,'+
+                 '3:Select parameters';
 
-Function CanonCustom1(instr:ansistring) :ansistring;
-var fn,s,r:ansistring;
+Function CanonCustom1(instr:string) :string;
+var fn,s,r:string;
     fnct,data,i,j:integer;
 begin
 //  s := instr;
@@ -559,7 +584,7 @@ begin
   begin
     try
       fn := StrNth(instr,',',i);
-      j  := StrToInt(string(fn));
+      j := StrToInt(fn);
       fnct := j div 256;  // upper 8 bits
       data := j mod 256;  // Lower 8 bits
       case fnct of
@@ -581,9 +606,9 @@ begin
       else
         continue;  // unknown value;
       end
-    except
-    end;
-    s := s+r;
+      except
+      end;
+      s := s+r;
   end;
   result := s;
 end;
@@ -610,11 +635,11 @@ begin
 end;
 
 function TmsInfo.ReadMSData(var DR:TImageInfo):boolean;
-var UCMaker,tmp,tmp2:ansistring;
+var UCMaker,tmp,tmp2:string;
     MMode:boolean;
     x:integer;
 begin
-  UCMaker := Copy(AnsiString(AnsiUpperCase(DR.CameraMake)),1,5);
+  UCMaker := Copy(Uppercase(DR.CameraMake),1,5);
   gblUCMaker := '';
   curTagArray := IMGparent;
   result := true;
@@ -625,7 +650,7 @@ begin
     if (UCMaker = 'NIKON') then
     begin
       tmp := copy(MakerNote,1,5);
-      x := max(0,Pos(' ', imgParent.CameraModel));
+      x := max(0,pos(' ',imgParent.CameraModel));
       tmp2 := imgParent.CameraModel[x+1];
       if (imgParent.exifVersion > '0210') or
           ((imgParent.exifVersion = '') and
@@ -642,7 +667,7 @@ begin
     end
     else if (UCMaker = 'CASIO') then
     begin
-      if Pos('QVC', MakerNote) <> 1 then // newer style: unknown format
+      if Pos('QVC',MakerNote) <> 1 then // newer style: unknown format
         ProcessHWSpecific(MakerNote,Casio1Table,0,MakerOffset-8)
       else
       begin
@@ -679,4 +704,4 @@ begin
     gblUCMaker := DR.CameraMake;   //only if there's a match
 end;
 
-end.
+end.
