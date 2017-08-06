@@ -2957,8 +2957,13 @@ begin
   try
     AJpeg.Position := 0;                          // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
+{$IFDEF ver2}
+      //imgSize.Y:= TFPReaderJpeg.MinHeight;
+      //imgSize.X:= TFPReaderJPEG.MinWidth;
+{$ELSE}
       imgSize := TFPReaderJpeg.ImageSize(AJpeg);  // Read image size from stream
       EXIFobj.AdjExifSize(imgSize.Y, imgSize.X);  // Adjust EXIF to image size
+{$ENDIF FPC_VERSION}
       AJpeg.Position := 0;                        // Rewind stream
     end;
   //  SaveExif(jfs);
