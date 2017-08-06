@@ -114,11 +114,11 @@ type
     Comments: ansistring;
     CommentPosn: integer;
     CommentSize: integer;
-// DateTime tag locations
+    // DateTime tag locations
     dt_oset:integer;
     dt_orig_oset:integer;
     dt_digi_oset:integer;
-// Add support for thumbnail
+    // Add support for thumbnail
     ThumbTrace:ansistring;
     ThumbStart: integer;
     ThumbLength: integer;
@@ -126,8 +126,8 @@ type
     FIThumbArray: array of tTagEntry;
     FIThumbCount: integer;
     MaxThumbTag: integer;
-//  Added the following elements to make the
-//  structure a little more code-friendly
+    //  Added the following elements to make the
+    //  structure a little more code-friendly
     TraceLevel: integer;
     TraceStr: ansistring;
     msTraceStr: ansistring;
@@ -141,11 +141,11 @@ type
 
     Constructor Create( p:timgdata; buildCode:integer =GenAll);
     procedure Assign(source:TImageInfo);
-//  The following functions format this structure into a string
+    //  The following functions format this structure into a string
     function  toShortString:ansistring;   //  Summarizes in a single line
     function  toLongString:ansistring;
     procedure SetExifComment(newComment: ansistring);
-//  The following functions manage the date
+    //  The following functions manage the date
     function  GetImgDateTime: TDateTime;
     function  ExtrDateTime(oset: integer): TDateTime;
     function  ExifDateToDateTime(dstr: ansistring): TDateTime;
@@ -174,6 +174,9 @@ type
     function AddTagToArray(nextTag: iTag): integer;
     function AddTagToThumbArray(nextTag: iTag): integer;
     Procedure ResetIterator;
+    // Iterate throug the Tags
+    //   True: a next Tag is available
+    //   False: no more Tag available
     Function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
     Function GetTagByDesc(SearchStr: ansistring): TTagEntry;
     Function HasThumbnail:boolean;
@@ -205,7 +208,8 @@ type
  // TTagTableArray = array of TTagEntry;
   TGpsFormat = (gf_DD,gf_DM,gf_DMS);
 
-    TImgData = class(tEndInd) // One per image object
+    // One per image object
+    TImgData = class(tEndInd)
         sections: array [1..21] of tSection;
         TiffFmt: boolean;
         BuildList: integer;
@@ -217,12 +221,19 @@ type
         Filename: ansistring;
         FileDateTime: tDateTime;
         FileSize: longint;
+        // Give the last Error back
         ErrStr: ansistring;
         ExifObj: TImageInfo;
         IptcObj: TIPTCData;
         TraceLevel: integer;
+        // Clear the internal information
         procedure reset;
+        // Set the basic fileinfo eg. filename, filedate and filesize
         procedure SetFileInfo(fname:ansistring);
+        // Create the TImgData object
+        //   bulidCode:  (build in list)
+        //     GenAll = all codes are scanned  (255)
+        //     GenNone= no code is scanned     (0)
         constructor Create(buildCode: integer = GenAll);
         function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
           freshExifBlock: Boolean=false): longint;
@@ -231,21 +242,35 @@ type
         Procedure MakeCommentSegment(buff:ansistring);
         function  GetCommentStr:ansistring;
         Function  GetCommentSegment:ansistring;
+        // Reads the file and and set the EXIF or IPTC information
+        //  true  = file is readable and is a valid format eg. jpg or tiff act.
+        //  false = file is not readable or an not supported type or has no metadata
         function ProcessFile(const AFileName: string):boolean;
         function ReadJpegSections (var f: tstream):boolean;
         function ReadJpegFile(const AFileName: string):boolean;
         function ReadTiffSections (var f: tstream):boolean;
         function ReadTiffFile(const AFileName: string):boolean;
         procedure ClearSections;
+        // Clear the EXIF information
+        //   not written to the file yet
         procedure ClearEXIF;
+        // Clear the IPTC information
+        //   not written to the file yet
         procedure ClearIPTC;
+        // Clear the comment
+        //   not written to the file yet
         procedure ClearComments;
         procedure ProcessEXIF;
         procedure CreateIPTCObj;
+        // EXIF, IPTC or Comment found in file
         function  HasMetaData:boolean;
+        // EXIF header found in file
         function HasEXIF: boolean;
+        // IPTC header found in file
         function HasIPTC: boolean;
+        // Comment found in file
         function HasComment: boolean;
+        // EXIF information about Thumbnail found in file
         function HasThumbnail: boolean;
         function ReadIPTCStrings(fname: ansistring):tstringlist;
         function ExtractThumbnailBuffer: ansistring;
@@ -270,6 +295,7 @@ type
         function MetaDataToXML: tstringlist;
         function FillInIptc:boolean;
   public
+    // Destroy the TImgData object an give the internal objects free
     destructor Destroy; override;
 
     end; // TImgData

@@ -4,17 +4,12 @@
 
 unit dexif_package;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  dIPTC, msData, dEXIF, LazarusPackageIntf;
+  dEXIF, dIPTC, msData;
 
 implementation
 
-procedure Register;
-begin
-end;
-
-initialization
-  RegisterPackage('dexif_package', @Register);
 end.
