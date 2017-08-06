@@ -57,7 +57,7 @@ var
 begin
   DUT:= TImgData.Create();
   CheckTrue(DUT.ProcessFile(co_DUTPicName01),'TImgData cannot process file:'+co_DUTPicName01);
-  CheckTrue(DUT.ProcessFile(co_DUTPicName02),'TImgData cannot process file:'+co_DUTPicName02);
+  CheckFALSE(DUT.ProcessFile(co_DUTPicName02),'TImgData cannot process file:'+co_DUTPicName02);
   DUT.Free;
 end;
 

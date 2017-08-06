@@ -43,7 +43,6 @@ Const
    GenericEXIF = 0;
    CustomEXIF = 1;
    AllEXIF = -1;
-   crlf: ansistring = #13#10;
    GenNone = 0;
    GenAll = 255;
    GenString = 2;
@@ -52,6 +51,11 @@ Const
    VLMax = 1;
    ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
    EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
+   {$IFDEF DELPHI}
+   crlf: ansistring = #13#10;
+   {$ELSE}
+   crlf = LineEnding;
+   {$ENDIF}
 
 type
 
@@ -105,7 +109,7 @@ type
     exifVersion : string[ 6];
     CameraMake:   string[32];
     CameraModel:  string[40];
-    DateTime:     string[20];    
+    DateTime:     string[20];
     Height,Width,HPosn,WPosn: integer;
     FlashUsed: integer;
     BuildList: integer;
@@ -114,11 +118,11 @@ type
     Comments: ansistring;
     CommentPosn: integer;
     CommentSize: integer;
-    // DateTime tag locations
+// DateTime tag locations
     dt_oset:integer;
     dt_orig_oset:integer;
     dt_digi_oset:integer;
-    // Add support for thumbnail
+// Add support for thumbnail
     ThumbTrace:ansistring;
     ThumbStart: integer;
     ThumbLength: integer;
@@ -126,8 +130,8 @@ type
     FIThumbArray: array of tTagEntry;
     FIThumbCount: integer;
     MaxThumbTag: integer;
-    //  Added the following elements to make the
-    //  structure a little more code-friendly
+//  Added the following elements to make the
+//  structure a little more code-friendly
     TraceLevel: integer;
     TraceStr: ansistring;
     msTraceStr: ansistring;
@@ -141,11 +145,11 @@ type
 
     Constructor Create( p:timgdata; buildCode:integer =GenAll);
     procedure Assign(source:TImageInfo);
-    //  The following functions format this structure into a string
+//  The following functions format this structure into a string
     function  toShortString:ansistring;   //  Summarizes in a single line
     function  toLongString:ansistring;
     procedure SetExifComment(newComment: ansistring);
-    //  The following functions manage the date
+//  The following functions manage the date
     function  GetImgDateTime: TDateTime;
     function  ExtrDateTime(oset: integer): TDateTime;
     function  ExifDateToDateTime(dstr: ansistring): TDateTime;
@@ -174,9 +178,6 @@ type
     function AddTagToArray(nextTag: iTag): integer;
     function AddTagToThumbArray(nextTag: iTag): integer;
     Procedure ResetIterator;
-    // Iterate throug the Tags
-    //   True: a next Tag is available
-    //   False: no more Tag available
     Function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
     Function GetTagByDesc(SearchStr: ansistring): TTagEntry;
     Function HasThumbnail:boolean;
@@ -208,8 +209,17 @@ type
  // TTagTableArray = array of TTagEntry;
   TGpsFormat = (gf_DD,gf_DM,gf_DMS);
 
-    // One per image object
-    TImgData = class(tEndInd)
+    TImgData = class(tEndInd) // One per image object
+    private
+      FHeight: Integer;
+      FWidth: Integer;
+      function GetWidth: Integer;
+      function GetHeight: Integer;
+      function GetResolutionUnit: String;
+      function GetXResolution: Integer;
+      function GetYResolution: Integer;
+
+    public
         sections: array [1..21] of tSection;
         TiffFmt: boolean;
         BuildList: integer;
@@ -221,19 +231,12 @@ type
         Filename: ansistring;
         FileDateTime: tDateTime;
         FileSize: longint;
-        // Give the last Error back
         ErrStr: ansistring;
         ExifObj: TImageInfo;
         IptcObj: TIPTCData;
         TraceLevel: integer;
-        // Clear the internal information
         procedure reset;
-        // Set the basic fileinfo eg. filename, filedate and filesize
         procedure SetFileInfo(fname:ansistring);
-        // Create the TImgData object
-        //   bulidCode:  (build in list)
-        //     GenAll = all codes are scanned  (255)
-        //     GenNone= no code is scanned     (0)
         constructor Create(buildCode: integer = GenAll);
         function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
           freshExifBlock: Boolean=false): longint;
@@ -242,35 +245,21 @@ type
         Procedure MakeCommentSegment(buff:ansistring);
         function  GetCommentStr:ansistring;
         Function  GetCommentSegment:ansistring;
-        // Reads the file and and set the EXIF or IPTC information
-        //  true  = file is readable and is a valid format eg. jpg or tiff act.
-        //  false = file is not readable or an not supported type or has no metadata
         function ProcessFile(const AFileName: string):boolean;
         function ReadJpegSections (var f: tstream):boolean;
         function ReadJpegFile(const AFileName: string):boolean;
         function ReadTiffSections (var f: tstream):boolean;
         function ReadTiffFile(const AFileName: string):boolean;
         procedure ClearSections;
-        // Clear the EXIF information
-        //   not written to the file yet
         procedure ClearEXIF;
-        // Clear the IPTC information
-        //   not written to the file yet
         procedure ClearIPTC;
-        // Clear the comment
-        //   not written to the file yet
         procedure ClearComments;
         procedure ProcessEXIF;
         procedure CreateIPTCObj;
-        // EXIF, IPTC or Comment found in file
         function  HasMetaData:boolean;
-        // EXIF header found in file
         function HasEXIF: boolean;
-        // IPTC header found in file
         function HasIPTC: boolean;
-        // Comment found in file
         function HasComment: boolean;
-        // EXIF information about Thumbnail found in file
         function HasThumbnail: boolean;
         function ReadIPTCStrings(fname: ansistring):tstringlist;
         function ExtractThumbnailBuffer: ansistring;
@@ -295,10 +284,15 @@ type
         function MetaDataToXML: tstringlist;
         function FillInIptc:boolean;
   public
-    // Destroy the TImgData object an give the internal objects free
     destructor Destroy; override;
 
-    end; // TImgData
+    property Height: Integer read GetHeight;
+    property Width: Integer read GetWidth;
+    property XResolution: Integer read GetXResolution;
+    property YResolution: Integer read GetYResolution;
+    property ResolutionUnit: String read GetResolutionUnit;
+
+  end; // TImgData
 
   // these function variables can be overridden to
   // alter the default formatting for various data types
@@ -315,6 +309,8 @@ type
   function getbyte( var f : tstream) : byte;
   function DecodeField(DecodeStr, idx: ansistring): ansistring;
   function CvtTime(instr: ansistring): ansistring;
+
+  function FindExifTag(ATag: Word): PTagEntry;
 
 Var
    DexifDataSep   : ansistring = ', ';
@@ -514,7 +510,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 17;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 12;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -548,14 +544,14 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $10F;   Name:'Make'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $110;   Name:'Model'                  ),
   (TID:0;TType:0;ICode: 2;Tag: $111;   Name:'StripOffsets'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $112;   Name:'Orientation'            ;Desc:''; Code:'1:Normal,3:Rotated 180°,6:CounterClockwise 90°,8:Clockwise 90°'),
+  (TID:0;TType:0;ICode: 2;Tag: $112;   Name:'Orientation'            ; Desc:''; Code:'1:Normal,3:Rotated 180°,6:CounterClockwise 90°,8:Clockwise 90°'),
   (TID:0;TType:0;ICode: 2;Tag: $115;   Name:'SamplesPerPixel'        ),
   (TID:0;TType:0;ICode: 2;Tag: $116;   Name:'RowsPerStrip'           ),
   (TID:0;TType:0;ICode: 2;Tag: $117;   Name:'StripByteCounts'        ),
   (TID:0;TType:0;ICode: 2;Tag: $118;   Name:'MinSampleValue'         ),         {20}
   (TID:0;TType:0;ICode: 2;Tag: $119;   Name:'MaxSampleValue'         ),
-//  (TID:0;TType:0;ICode: 2;Tag: $11A;   Name:'XResolution'            ; FormatS:'%5.2f'),
-//  (TID:0;TType:0;ICode: 2;Tag: $11B;   Name:'YResolution'            ; FormatS:'%5.2f'),
+  (TID:0;TType:0;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
+  (TID:0;TType:0;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
   (TID:0;TType:0;ICode: 2;Tag: $11C;   Name:'PlanarConfiguration'    ),
   (TID:0;TType:0;ICode: 2;Tag: $11D;   Name:'PageName'               ),
   (TID:0;TType:0;ICode: 2;Tag: $11E;   Name:'XPosition'              ),
@@ -566,8 +562,8 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $123;   Name:'GrayReponseCurve'       ),
   (TID:0;TType:0;ICode: 2;Tag: $124;   Name:'T4Options'              ),
   (TID:0;TType:0;ICode: 2;Tag: $125;   Name:'T6Options'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $128;   Name:'ResolutionUnit'         ;Desc:''; Code:'1:None Specified,2:Inch,3:Centimeter'),        // ; Code:''
-  (TID:0;TType:0;ICode: 2;Tag: $129;   Name:'PageNumber'             ),        // ; Code:''
+  (TID:0;TType:0;ICode: 2;Tag: $128;   Name:'ResolutionUnit'         ;Desc:''; Code:'1:None Specified,2:Inch,3:Centimeter'),
+  (TID:0;TType:0;ICode: 2;Tag: $129;   Name:'PageNumber'             ),
   (TID:0;TType:0;ICode: 2;Tag: $12D;   Name:'TransferFunction'       ),
   (TID:0;TType:0;ICode: 2;Tag: $131;   Name:'Software'               ),
   (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTime'               ),
@@ -692,8 +688,8 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $828E;  Name:'CFAPattern'             ),
   (TID:0;TType:0;ICode: 2;Tag: $828F;  Name:'BatteryLevel'           ),
   (TID:0;TType:0;ICode: 2;Tag: $8298;  Name:'Copyright'              ),
-//  (TID:0;TType:0;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Formats:'%s sec'),   {160}
-//  (TID:0;TType:0;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; FormatS:'F%0.1f'),
+  (TID:0;TType:0;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%s sec'),   {160}
+  (TID:0;TType:0;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $83BB;  Name:'IPTC/NAA'                 ; Desc:'IPTC/NAA'),
   (TID:0;TType:0;ICode: 2;Tag: $84E3;  Name:'IT8RasterPadding'         ),
   (TID:0;TType:0;ICode: 2;Tag: $84E5;  Name:'IT8ColorTable'            ),
@@ -725,7 +721,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
 //  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; CallBack:FlashCallBack),
-//  (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; FormatS:'%5.2f mm'),   {190}
+  (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
   (TID:0;TType:0;ICode: 2;Tag: $920D;  Name:'Noise'                   ),
@@ -826,6 +822,18 @@ var
   );
 
   tagInit : boolean = false;
+
+function FindExifTag(ATag: word): PTagEntry;
+var
+  i: Integer;
+begin
+  for i:=0 to High(TagTable) do begin
+    Result := @TagTable[i];
+    if Result^.Tag = ATag then
+      exit;
+  end;
+  Result := nil;
+end;
 
 Procedure FixTagTable(var tags:array of TTagEntry);
 var i:integer;
@@ -1783,7 +1791,7 @@ begin
             FreeAndNil(msinfo);
           end;
        TAG_FLASH:
-                FlashUsed := round(getNumber(RawStr, TFormat));
+          FlashUsed := round(getNumber(RawStr, TFormat));
        TAG_IMAGELENGTH,
        TAG_EXIF_IMAGELENGTH:
            begin
@@ -2559,6 +2567,7 @@ begin
   result := buff;
 end;
 
+
 function getbyte( var f : tstream) : byte;
 var a : byte;
 begin
@@ -3144,6 +3153,7 @@ end;
 function TImgData.ReadJpegSections (var f: tstream):boolean;
 var a,b:byte;
     ll,lh,itemlen,marker:integer;
+    pw: PWord;
 begin
   a := getbyte(f);
   b := getbyte(f);
@@ -3225,7 +3235,14 @@ begin
                   dec(SectionCnt);
                 end;
               end;
-      M_SOF0..M_SOF15: begin
+      M_SOF0: with Sections[SectionCnt] do begin
+                pw := @data[4];
+                FHeight := BEToN(pw^);
+                pw := @data[6];
+                FWidth := BEToN(pw^);
+                dec(SectionCnt);
+              end;
+      M_SOF1..M_SOF15: begin
                  // process_SOFn(Data, marker);
              end;
     else
@@ -3365,6 +3382,64 @@ begin
   FreeAndNil(ExifObj);
   FreeAndNil(IptcObj);
   MotorolaOrder := false;
+end;
+
+function TImgData.GetHeight: Integer;
+begin
+  if (EXIFObj <> nil) and (ExifObj.Height > 0) then
+    Result := ExifObj.Height
+  else
+    Result := FHeight;
+end;
+
+function TImgData.GetResolutionUnit: String;
+var
+  b: Byte;
+begin
+  Result := '';
+  if ExifObj <> nil then
+    Result := ExifObj.LookupTagVal('ResolutionUnit');
+  if Result = '' then begin
+    b := byte(HeaderSegment^.Data[10]);
+    case b of
+      1: Result := 'Inches';
+      2: Result := 'mm';
+    end;
+  end;
+end;
+
+function TImgData.GetWidth: Integer;
+begin
+  if (ExifObj <> nil) and (ExifObj.Width > 0) then
+    Result := ExifObj.Width
+  else
+    Result := FWidth;
+end;
+
+function TImgData.GetXResolution: Integer;
+var
+  pw: PWord;
+begin
+  Result := 0;
+  if (ExifObj <> nil) then
+    Result := ExifObj.LookupTagInt('XResolution');
+  if Result < 0 then begin
+    pw := @HeaderSegment^.Data[11];
+    Result := BEToN(pw^);
+  end;
+end;
+
+function TImgData.GetYResolution: Integer;
+var
+  pw: PWord;
+begin
+  Result := 0;
+  if ExifObj <> nil then
+    Result := ExifObj.LookupTagInt('YResolution');
+  if Result < 0 then begin
+    pw := @HeaderSegment^.Data[13];
+    Result := BEToN(pw^);
+  end;
 end;
 
 function TImgData.HasMetaData: boolean;

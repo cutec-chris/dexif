@@ -189,6 +189,7 @@ function IPTCReadTransFile(fname:ansistring):boolean;
 procedure InitTagEntry(out ATagEntry: TTagEntry);
 procedure InitITag(out ATag: ITag);
 
+
 implementation
 
 uses dEXIF;
