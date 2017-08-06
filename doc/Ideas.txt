@@ -1,0 +1,25 @@
+That is not correct, I use Gerry McGuirez EXIF modules together with Mike Lischke's http://www.delphipages.com/threads/thread.cfm?ID=122007&G=120995 
+in my own Delphi software.
+I load an image via LoadFromFile(FileSpec), rotate the image and write the result back to the JPEG file with the following code:
+Code:
+Uses jpeg, dEXIF; 
+
+procedure TfrmViewer.btnSaveMcClick(Sender: TObject); 
+Var OrgFileSize, Quality: integer; 
+begin 
+  OrgFileSize:= FileSize(FileSpec); 
+  FImgData.ProcessFile(FileSpec); // Get EXIF data, see Gerry McGuirez EXIF modules 
+  FJPegImage.Assign(Image1.Picture.Bitmap); 
+  CalcJPEGCompression(FJPegImage,OrgFileSize,Quality); 
+  FImgData.WriteEXIFJpeg(FJPegImage,FileSpec); // Write Image + EXIF data 
+end;
+This works fine for jpg files, but not for tif files.
+For TIFF files is indeed a write function not implemented.
+
+André Wolff
+
+Email: ac_wolff@hotmail.com
+URL: www.andrewolff.nl
+
+
+
