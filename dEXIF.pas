@@ -510,7 +510,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 12;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 11;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -775,7 +775,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $A402;  Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
   (TID:0;TType:0;ICode: 2;Tag: $A403;  Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
   (TID:0;TType:0;ICode: 2;Tag: $A404;  Name:'DigitalZoomRatio'        ),        {240}
-//  (TID:0;TType:0;ICode: 2;Tag: $A405;  Name:'FocalLengthin35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; FormatS:'%5.2f mm'),
+  (TID:0;TType:0;ICode: 2;Tag: $A405;  Name:'FocalLengthin35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
   (TID:0;TType:0;ICode: 2;Tag: $A406;  Name:'SceneCaptureType'        ;  Desc:'';Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
   (TID:0;TType:0;ICode: 2;Tag: $A407;  Name:'GainControl'             ; Desc:''; Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
   (TID:0;TType:0;ICode: 2;Tag: $A408;  Name:'Contrast'                ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
@@ -2515,11 +2515,15 @@ begin
     exit;
 
   tmp := GetRawInt('FocalPlaneXResolution');
-  if (tmp > 0) then
-    CCDWidth := Width * fpu / tmp;
+  if (tmp <= 0) then
+    exit;
+  CCDWidth := Width * fpu / tmp;
+
   tmp := GetRawInt('FocalPlaneYResolution');
-  if (tmp > 0) then
-    CCDHeight := Height * fpu / tmp;
+  if (tmp <= 0) then
+    exit;
+
+  CCDHeight := Height * fpu / tmp;
 
   if CCDWidth*CCDHeight <= 0 then  // if either is zero
   begin
@@ -2534,6 +2538,8 @@ begin
 
 // now load it into the tag array
     tmp := LookupTagDefn('FocalLengthIn35mmFilm');
+    if tmp = -1 then
+      exit;
     LookUpE := TagTable[tmp];
     NewE := LookupE;
     NewE.Data := ansistring(Format('%5.2f',[fl35]));
@@ -2942,6 +2948,52 @@ begin
   Result := false;
 end;
 
+{$IF FPC_FULLVERSION < 30000}
+function JPGImageSize(AStream: TStream): TPoint;
+type
+  TJPGHeader = array[0..1] of Byte; //FFD8 = StartOfImage (SOI)
+  TJPGRecord = packed record
+    Marker: Byte;
+    RecType: Byte;
+    RecSize: Word;
+  end;
+var
+  n: integer;
+  hdr: TJPGHeader;
+  rec: TJPGRecord = (Marker: $FF; RecType: 0; RecSize: 0);
+  p: Int64;
+  savedPos: Int64;
+begin
+  savedPos := AStream.Position;
+
+  Result := Point(0, 0);
+  // Check for SOI (start of image) record
+  n := AStream.Read(hdr{%H-}, SizeOf(hdr));
+  if (n < SizeOf(hdr)) or (hdr[0] <> $FF) or (hdr[1] <> $D8) then
+    exit;
+
+  while (AStream.Position < AStream.Size) and (rec.Marker = $FF) do begin
+    if AStream.Read(rec, SizeOf(rec)) < SizeOf(rec) then exit;
+    rec.RecSize := BEToN(rec.RecSize);
+    p := AStream.Position - 2;
+    case rec.RecType of
+      $C0..$C3:
+        if (rec.RecSize >= 4) then // Start of frame markers
+        begin
+          AStream.Seek(1, soFromCurrent);  // Skip "bits per sample"
+          Result.Y := BEToN(AStream.ReadWord);
+          Result.X := BEToN(AStream.ReadWord);
+          exit;
+        end;
+      $D9:  // end of image;
+        break;
+    end;
+    AStream.Position := p + rec.RecSize;
+  end;
+  AStream.Position := savedPos;
+end;
+{$ENDIF}
+
 { A jpeg image has been written to a stream. The current EXIF data will be
   merged with this stream and saved to the specified file.
   NOTE: It is in the responsibility of the programmer to make sure that
@@ -2957,13 +3009,12 @@ begin
   try
     AJpeg.Position := 0;                          // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
-{$IFDEF ver2}
-      //imgSize.Y:= TFPReaderJpeg.MinHeight;
-      //imgSize.X:= TFPReaderJPEG.MinWidth;
+{$IF FPC_FULLVERSION < 30000}
+      imgSize := JPGImageSize(AJpeg);
 {$ELSE}
       imgSize := TFPReaderJpeg.ImageSize(AJpeg);  // Read image size from stream
+{$ENDIF}
       EXIFobj.AdjExifSize(imgSize.Y, imgSize.X);  // Adjust EXIF to image size
-{$ENDIF FPC_VERSION}
       AJpeg.Position := 0;                        // Rewind stream
     end;
   //  SaveExif(jfs);
