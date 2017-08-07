@@ -62,6 +62,7 @@ type
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
+    procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
@@ -86,6 +87,7 @@ type
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
+    procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
@@ -800,6 +802,19 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_ImageSize;
 begin
   Test_ImageSize(co_DUTPicName02, 3264, 1832);
+end;
+
+
+{ Image type }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ImageType;
+begin
+  StdStringTest(co_DUTPicName01, 'ImageType', '', 'ImageType mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ImageType;
+begin
+  StdStringTest(co_DUTPicName02, 'ImageType', 'IMG:PowerShot S5 IS JPEG', 'ImageType mismatch');
 end;
 
 
