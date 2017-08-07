@@ -48,17 +48,21 @@ type
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
 //    procedure TstReadFile_ApertureValue;
+//    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+    procedure TstReadFile_Compression;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureTime;
+//    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
+    procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
@@ -66,6 +70,7 @@ type
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_SceneCaptureType;
     procedure TstReadFile_SensingMethod;
 //    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
@@ -77,17 +82,21 @@ type
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
   published
 //    procedure TstReadFile_ApertureValue;
+//    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+//    procedure TstReadFile_Compression;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureTime;
+//    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
+    procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
@@ -96,6 +105,7 @@ type
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
+    procedure TstReadfile_SceneCaptureType;
 //    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
     procedure TstReadFile_YCbCrPositioning;
@@ -503,7 +513,22 @@ begin
 //  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
   StdFloatFromStringTest(co_DUTPicName02, 'ApertureValue', '2.7', 1, 'Aperature value mismatch');
 end;
-     *)
+*)
+
+     (*
+{ Bits per sample }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_BitsPerSample;
+begin
+  StdIntTest(co_DUTPicName01, 'BitsPerSample', 8, 'BitsPerSample usage mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_BitsPerSample;
+begin
+  StdIntTest(co_DUTPicName02, 'BitsPerSample', 8, 'BitsPerSample mismatch');
+    // "Auto" --> 0
+end;
+*)
 
 { Byte order }
 
@@ -572,6 +597,22 @@ begin
   StdStringTest(co_DUTPicName02, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
 end;
 
+
+{ Compression }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
+begin
+  StdIntTest(co_DUTPicName01, 'Compression', -1, 'Compression usage mismatch');
+    // Tag not specified --> -1
+end;
+            (*
+procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
+begin
+  StdIntTest(co_DUTPicName02, 'Compression', 6, 'Compression mismatch');
+    // "JPEG (old style)" --> 6.
+    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
+end;
+          *)
 
 { Generic Date/time test }
 
@@ -697,6 +738,19 @@ begin
   Test_ExposureTime(co_DUTPicName02, '1/1600');
 end;
 
+   (*
+{ Firmware version }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FirmwareVersion;
+begin
+  StdStringTest(co_DUTPicName01, 'FirmwareVersion', '', 'Firmware version mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FirmwareVersion;
+begin
+  StdStringTest(co_DUTPicName01, 'FirmwareVersion', 'Firmware Version 1.01', 'Firmware version mismatch');
+end;
+    *)
 
 { Flash }
 
@@ -710,6 +764,19 @@ begin
   StdIntTest(co_DUTPicName02, 'Flash', 16, 'Flash usage mismatch');  // "Off, Did not fire"
   // see https://stackoverflow.com/questions/44579889/using-bitwise-to-enumerate-exif-flash-readable-string
   // "Off, did not fire" corresponds to Flash value = 16
+end;
+
+
+{ Flash Pix Version}
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FlashPixVersion;
+begin
+  StdStringTest(co_DUTPicName01, 'FlashPixVersion', '', 'FlashPix version mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FlashPixVersion;
+begin
+  StdStringTest(co_DUTPicName02, 'FlashPixVersion', '0100', 'FlashPix version mismatch');
 end;
 
 
@@ -886,6 +953,21 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
 begin
   Test_Resolution(co_DUTPicName02, 180, 180, 'inch');
+end;
+
+
+{ Scene capture type }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_SceneCaptureType;
+begin
+  StdIntTest(co_DUTPicName01, 'SceneCaptureType', -1, 'Scene capture type mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_SceneCaptureType;
+begin
+  StdIntTest(co_DUTPicName02, 'SceneCaptureType', 0, 'Scene capture type mismatch');
+    // "Standard"  --> 0
 end;
 
 
