@@ -66,6 +66,7 @@ type
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
   end;
 
@@ -91,6 +92,7 @@ type
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
   end;
 
@@ -878,6 +880,21 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
 begin
   Test_Resolution(co_DUTPicName02, 180, 180, 'inch');
+end;
+
+
+{ Sensing method }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_SensingMethod;
+begin
+  StdIntTest(co_DUTPicName01, 'SensingMethod', -1, 'SensingMethod mismatch');
+    // Tag not available  --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_SensingMethod;
+begin
+  StdIntTest(co_DUTPicName02, 'SensingMethod', 2, 'SensingMethod mismatch');
+    // "One-chip color area"  --> 2
 end;
 
 
