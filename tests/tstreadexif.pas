@@ -59,6 +59,7 @@ type
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ISO;
+    procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
   end;
 
@@ -79,6 +80,7 @@ type
     procedure TstReadFile_FocalLength;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ISO;
+    procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
   end;
 
@@ -86,7 +88,7 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, StrUtils, Math;
+  FileUtil, DateUtils, Math;
 
 { Output of ExifTool for DUTPic01.jpeg:
 
@@ -692,6 +694,21 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_ISO;
 begin
   StdStringTest(co_DUTPicName02, 'ISOSpeedRatings', '160', 'ISO mismatch');
+end;
+
+
+{ Orientation }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Orientation;
+begin
+  StdIntTest(co_DUTPicName01, 'Orientation', -1, 'Orientation mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_Orientation;
+begin
+  StdIntTest(co_DUTPicName02, 'Orientation', 1, 'Orientation mismatch');
+    // "Horizontal (normal)" --> 1
 end;
 
 

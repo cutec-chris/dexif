@@ -484,13 +484,14 @@ const
    TAG_EXIFVER          = $9000;
    TAG_DATETIME_MODIFY  = $0132;
 
+   TAG_APERTURE         = $9202;
+   TAG_FOCALLENGTH      = $920A;
+
 (*
    TAG_EXPOSURETIME     = $829A;
    TAG_FNUMBER          = $829D;
    TAG_SHUTTERSPEED     = $9201;
-   TAG_APERTURE         = $9202;
    TAG_MAXAPERTURE      = $9205;
-   TAG_FOCALLENGTH      = $920A;
    TAG_FOCALLENGTH35MM  = $A405;             // added by M. Schwaiger
    TAG_SUBJECT_DISTANCE = $9206;
    TAG_LIGHT_SOURCE     = $9208;
