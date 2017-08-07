@@ -31,7 +31,7 @@ type
 
     procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
-      AExpectedDateTime: TDateTime; const AMismatchMsg: string);
+      AExpectedDateTime: TDateTime);
     procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
     procedure Test_FNumber(const AFilename: String; AExpected: Double);
     procedure Test_FocalLength(const AFilename: String; AExpected: Double);
@@ -48,6 +48,9 @@ type
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_DateTime;
+    procedure TstReadFile_DateTime_Original;
+    procedure TstReadFile_DateTime_Digitized;
+    procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FNumber;
@@ -64,6 +67,9 @@ type
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_DateTime;
+    procedure TstReadFile_DateTime_Original;
+    procedure TstReadFile_DateTime_Digitized;
+    procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FNumber;
@@ -415,7 +421,7 @@ end;
 { Generic Date/time test }
 
 procedure TTstReadFile_dEXIF.Test_DateTime(const AFileName: String; AKind: Integer;
-  AExpectedDateTime: TDateTime; const AMismatchMsg: String);
+  AExpectedDateTime: TDateTime);
 var
   DUT: TImgData;
   currValue: TDateTime;
@@ -425,11 +431,12 @@ begin
     DUT.ProcessFile(AFilename);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
     case AKind of
-      0: currValue := DUT.EXIFObj.GetImgDateTime;  // any date/time
+      0: currValue := DUT.EXIFObj.GetImgDateTime;       // any date/time available
+      1: currValue := DUT.EXIFObj.GetDateTimeOriginal;  // Tag "DateTimeOriginal"
+      2: currValue := DUT.EXIFObj.GetDateTimeDigitized; // Tag "DateTimeDigitized"
+      3: currValue := Dut.EXIFObj.GetDateTimeModify;    // Tag "DateTimeModify"
     end;
-    CheckEquals(AExpectedDateTime, currValue, AMismatchMsg); //'Date/time mismatch (GetImgDateTime)');
-//    currvalue := ScanDateTime('yyyy-mm-dd hh:nn:ss', DUT.ExifObj.DateTime);
-//    CheckEquals(ExpectedDateTime, currValue, 'Date/time mismatch (ExifObj.DateTime)');
+    CheckEquals(AExpectedDateTime, currValue, 'Date/time mismatch');
   finally
     DUT.Free;
   end;
@@ -437,15 +444,52 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime;
 begin
-  Test_DateTime(co_DUTPicName01, 0, EncodeDateTime(2017,03,15, 10,35,11,0), 'Date/time mismatch');
+  Test_DateTime(co_DUTPicName01, 0, EncodeDateTime(2017,03,15, 10,35,11,0));
     // 2017:03:15 10:35:11
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime;
 begin
-  Test_DateTime(co_DUTPicName02, 0, EncodeDateTime(2017,02,11, 15,09,39,0), 'Date/time mismatch');
+  Test_DateTime(co_DUTPicName02, 0, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
 end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Original;
+begin
+  Test_DateTime(co_DUTPicName01, 1, EncodeDateTime(2017,03,15, 10,35,11,0));
+    // 2017:03:15 10:35:11
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Original;
+begin
+  Test_DateTime(co_DUTPicName02, 1, EncodeDateTime(2017,02,11, 15,09,39,0));
+    // 2017:02:11 15:09:39
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Digitized;
+begin
+  Test_DateTime(co_DUTPicName01, 2, 0.0);
+    // Tag not available --> 0.0
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Digitized;
+begin
+  Test_DateTime(co_DUTPicName02, 2, EncodeDateTime(2017,02,11, 15,09,39,0));
+    // 2017:02:11 15:09:39
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Modified;
+begin
+  Test_DateTime(co_DUTPicName01, 3, 0.0);
+    // Tag not available --> 0.0
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Modified;
+begin
+  Test_DateTime(co_DUTPicName02, 3, EncodeDateTime(2017,02,11, 15,09,39,0));
+    // 2017:02:11 15:09:39
+end;
+
 
 
 { Exposure time }

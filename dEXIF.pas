@@ -119,7 +119,7 @@ type
     CommentPosn: integer;
     CommentSize: integer;
 // DateTime tag locations
-    dt_oset:integer;
+    dt_modify_oset:integer;
     dt_orig_oset:integer;
     dt_digi_oset:integer;
 // Add support for thumbnail
@@ -151,11 +151,14 @@ type
     procedure SetExifComment(newComment: ansistring);
 //  The following functions manage the date
     function  GetImgDateTime: TDateTime;
+    function  GetDateTimeOriginal: TDateTime;
+    function  GetDateTimeDigitized: TDateTime;
+    function  GetDateTimeModify: TDateTime;
     function  ExtrDateTime(oset: integer): TDateTime;
     function  ExifDateToDateTime(dstr: ansistring): TDateTime;
     procedure SetDateTimeStr(oset: integer; TimeIn: TDateTime);
     procedure AdjDateTime(days, hours, mins, secs: integer);
-    procedure OverwriteDateTime(InTime: tdatetime);   //  Contains embedded CR/LFs
+    procedure OverwriteDateTime(ADateTime: TDateTime);   //  Contains embedded CR/LFs
     procedure ProcessHWSpecific(MakerBuff:ansistring;
                   TagTbl:Array of TTagEntry;
                   DirStart:longint;
@@ -479,7 +482,7 @@ const
    TAG_MAKE             = $010F;
    TAG_MODEL            = $0110;
    TAG_EXIFVER          = $9000;
-   TAG_DATETIME         = $0132;
+   TAG_DATETIME_MODIFY  = $0132;
 
 (*
    TAG_EXPOSURETIME     = $829A;
@@ -1208,17 +1211,40 @@ begin
     parent.ExifSegment^.data[oset+i-1] := tmp[i];
 end;
 
-function TImageInfo.GetImgDateTime:TDateTime;
-var x: TDateTime;
+function TImageInfo.GetImgDateTime: TDateTime;
 begin
-  x := 0.0;
-  if dt_oset > 0 then
-    x := ExtrDateTime(dt_oset)
-  else if dt_orig_oset > 0 then
-    x := ExtrDateTime(dt_orig_oset)
+  if dt_orig_oset > 0 then
+    Result := ExtrDateTime(dt_orig_oset)
   else if dt_digi_oset > 0 then
-    x := ExtrDateTime(dt_digi_oset);
-  result := x;
+    Result := ExtrDateTime(dt_digi_oset)
+  else if dt_modify_oset > 0 then
+    Result := ExtrDateTime(dt_modify_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeDigitized: TDateTime;
+begin
+  if dt_digi_oset > 0 then
+    Result := ExtrDateTime(dt_digi_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeOriginal: TDateTime;
+begin
+  if dt_orig_oset > 0 then
+    Result := ExtrDateTime(dt_orig_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeModify:TDateTime;
+begin
+  if dt_modify_oset > 0 then
+    Result := ExtrDateTime(dt_modify_oset)
+  else
+    Result := 0.0;
 end;
 
 Procedure TImageInfo.AdjDateTime(days,hours,mins,secs:integer);
@@ -1227,10 +1253,10 @@ var delta:double;
 begin
   //                hrs/day     min/day        sec/day
   delta := days + (hours/24)+ (mins/1440) + (secs/86400);
-  if dt_oset > 0 then
+  if dt_modify_oset > 0 then
   begin
-    x := ExtrDateTime(dt_oset);
-    SetDateTimeStr(dt_oset,x+delta);
+    x := ExtrDateTime(dt_modify_oset);
+    SetDateTimeStr(dt_modify_oset, x+delta);
   end;
   if dt_orig_oset > 0 then
   begin
@@ -1244,14 +1270,14 @@ begin
   end;
 end;
 
-Procedure TImageInfo.OverwriteDateTime(InTime:tdatetime);
+Procedure TImageInfo.OverwriteDateTime(ADateTime: TDateTime);
 begin
-  if dt_oset > 0 then
-    SetDateTimeStr(dt_oset,InTime);
+  if dt_modify_oset > 0 then
+    SetDateTimeStr(dt_modify_oset, ADateTime);
   if dt_orig_oset > 0 then
-    SetDateTimeStr(dt_orig_oset,InTime);
+    SetDateTimeStr(dt_orig_oset, ADateTime);
   if dt_digi_oset > 0 then
-    SetDateTimeStr(dt_digi_oset,InTime);
+    SetDateTimeStr(dt_digi_oset, ADateTime);
 end;
 
 Function CvtTime(instr:ansistring) :ansistring;
@@ -1729,7 +1755,7 @@ begin
 //           CommentPosn := ValuePtr;
 //           CommentSize := ByteCount-9;
          end;
-       TAG_DATETIME, //Umwandlung vom EXIF-Format 2009:01:02 12:10:12 nach 2009-01-02 12:10:12
+       TAG_DATETIME_MODIFY, //Umwandlung vom EXIF-Format 2009:01:02 12:10:12 nach 2009-01-02 12:10:12
        TAG_DATETIME_ORIGINAL,
        TAG_DATETIME_DIGITIZED:
          begin
@@ -1784,9 +1810,9 @@ begin
        TAG_MAKE: CameraMake := fstr;
        TAG_MODEL: CameraModel := fstr;
        TAG_EXIFVER: ExifVersion := rawstr;
-       TAG_DATETIME:
+       TAG_DATETIME_MODIFY:
          begin
-           dt_oset := ValuePtr;
+           dt_modify_oset := ValuePtr;
            DateTime := fstr;
          end;
        TAG_DATETIME_ORIGINAL:
