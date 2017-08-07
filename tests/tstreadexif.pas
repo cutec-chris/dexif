@@ -24,6 +24,8 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
 
+    procedure StdFloatTest(const AFileName, ATestTag: String;
+      const AExpectedResult: Double; ADecimals: Integer; const AMismatchMsg: String);
     procedure StdIntTest(const AFileName, ATestTag: String;
       const AExpectedResult:Integer; const AMismatchMsg: String);
     procedure StdStringTest(const AFileName, ATestTag: String;
@@ -33,7 +35,6 @@ type
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
       AExpectedDateTime: TDateTime);
     procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
-    procedure Test_FNumber(const AFilename: String; AExpected: Double);
     procedure Test_FocalLength(const AFilename: String; AExpected: Double);
     procedure Test_ImageSize(const AFileName: String;
       AExpectedWidth, AExpectedHeight: Integer);
@@ -44,6 +45,7 @@ type
   { Tests for image DUTPic01, taken by SAMSUNG camera }
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
+    procedure TstReadFile_ApertureValue;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
@@ -63,6 +65,7 @@ type
   { Tests for image DUTPic02, taken by CANON camera }
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
   published
+    procedure TstReadFile_ApertureValue;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
@@ -117,7 +120,7 @@ uses
     Bits Per Sample                 : 8
     Color Components                : 3
     Y Cb Cr Sub Sampling            : YCbCr4:2:0 (2 2)
-+   Aperture                        : 2.2                                       Tag "FNumber"
++   Aperture                        : 2.2
     Image Size                      : 4608x2592
     Megapixels                      : 11.9
 +   Shutter Speed                   : 1/3376                                    Tag "ExposureTime"
@@ -322,6 +325,28 @@ end;
 
 { Generic tests }
 
+procedure TTstReadFile_dEXIF.StdFloatTest(const AFileName, ATestTag: String;
+  const AExpectedResult: Double; ADecimals: Integer;
+  const AMismatchMsg: String);
+var
+  DUT: TImgData;
+  currFloatValue: Double;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currFloatValue := DUT.ExifObj.GetRawFloat(ATestTag);
+    CheckEquals(
+      RoundTo(AExpectedResult, ADecimals),
+      RoundTo(currFloatValue, ADecimals),
+      AMismatchMsg
+    );
+  finally
+    DUT.Free;
+  end;
+end;
+
 procedure TTstReadFile_dEXIF.StdIntTest(const AFileName, ATestTag: String;
   const AExpectedResult: Integer; const AMismatchMsg: String);
 var
@@ -361,6 +386,19 @@ begin
   finally
     DUT.Free;
   end;
+end;
+
+
+{ Aperture value }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
+begin
+  StdFloatTest(co_DUTPicName01, 'ApertureValue', 2.2, 1, 'Aperature value mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ApertureValue;
+begin
+  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
 end;
 
 
@@ -546,44 +584,14 @@ end;
 
 { F Number }
 
-procedure TTstReadFile_dEXIF.Test_FNumber(const AFilename: String;
-  AExpected: Double);         // Use NaN if not specified in EXIF tool output
-var
-  DUT: TImgData;
-  currStrValue: String;
-  F: Double;
-  res: Integer;
-begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(AFileName);
-    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal('FNumber');
-    while (currstrValue <> '') and (currStrValue[1] in ['F', 'f', ' ']) do
-      Delete(currStrValue, 1, 1);
-    currStrValue := StringReplace(trim(currStrValue), ',', '.', []);
-    if IsNaN(AExpected) then begin
-      CheckTrue(currStrValue <> '', 'FNumber found, but not expected.')
-    end else begin
-      val(currStrValue, F, res);
-      if res = 0 then
-        CheckEquals(FormatFloat('0.0', AExpected), FormatFloat('0.0', F), 'FNumber mismatch')
-      else
-        Fail('Cannot read FNumber');
-    end;
-  finally
-    DUT.Free;
-  end;
-end;
-
 procedure TTstReadFile_dEXIF_01.TstReadFile_FNumber;
 begin
-  Test_FNumber(co_DUTPicName01, 2.2);
+  StdFloatTest(co_DUTPicName01, 'FNumber', 2.2, 1, 'F number mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FNumber;
 begin
-  Test_FNumber(co_DUTPicName02, 2.7);
+  StdFloatTest(co_DUTPicName02, 'FNumber', 2.7, 1, 'F number mismatch');
 end;
 
 
