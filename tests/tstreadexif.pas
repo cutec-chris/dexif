@@ -56,6 +56,7 @@ type
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
+    procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FNumber;
@@ -79,6 +80,7 @@ type
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
+    procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FNumber;
@@ -633,6 +635,20 @@ begin
     // 2017:02:11 15:09:39
 end;
 
+
+{ Exposure mode }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureMode;
+begin
+  StdIntTest(co_DUTPicName01, 'ExposureMode', -1, 'ExposureMode usage mismatch');
+    // Tag not specified --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureMode;
+begin
+  StdIntTest(co_DUTPicName02, 'ExposureMode', 0, 'ExposreMode mismatch');
+    // "Auto" --> 0
+end;
 
 
 { Exposure time }
