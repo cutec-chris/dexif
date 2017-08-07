@@ -47,7 +47,7 @@ type
   { Tests for image DUTPic01, taken by SAMSUNG camera }
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
-    procedure TstReadFile_ApertureValue;
+//    procedure TstReadFile_ApertureValue;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
@@ -67,14 +67,16 @@ type
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
-    procedure TstReadFile_ShutterSpeedValue;
+//    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_YCbCrPositioning;
+//  procedure TstReadFile_YCbCrSubsampling;
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
   published
-    procedure TstReadFile_ApertureValue;
+//    procedure TstReadFile_ApertureValue;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
@@ -94,8 +96,10 @@ type
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
-    procedure TstReadFile_ShutterSpeedValue;
+//    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_YCbCrPositioning;
+//    procedure TstReadFile_YCbCrSubsampling;
   end;
 
 
@@ -485,7 +489,7 @@ begin
   end;
 end;
 
-
+  (*
 { Aperture value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
@@ -499,7 +503,7 @@ begin
 //  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
   StdFloatFromStringTest(co_DUTPicName02, 'ApertureValue', '2.7', 1, 'Aperature value mismatch');
 end;
-
+     *)
 
 { Byte order }
 
@@ -899,7 +903,7 @@ begin
     // "One-chip color area"  --> 2
 end;
 
-
+  (*
 { Shutter speed value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ShutterSpeedValue;
@@ -916,7 +920,7 @@ begin
   StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', 1/1614, 8, 'Shutter speed value mismatch');
 //  StdFloatFromStringTest(co_DUTPicName02, 'ShutterSpeedValue', '1/1614', 8, 'Shutter speed value mismatch');
 end;
-
+*)
 
 { White balance }
 
@@ -932,6 +936,35 @@ begin
     // "Auto"  --> 0
 end;
 
+
+{ YCbCr Positioning }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_YCbCrPositioning;
+begin
+  StdIntTest(co_DUTPicName01, 'YCbCrPositioning', -1, 'YCbCrPositioning mismatch');
+    // Tag not specified  --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_YCbCrPositioning;
+begin
+  StdIntTest(co_DUTPicName02, 'YCbCrPositioning', 1, 'YCbCrPositioning mismatch');
+    // "centered" --> 1
+end;
+
+
+(*
+{ YCbCr Subsampling }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_YCbCrSubsampling;
+begin
+  StdStringTest(co_DUTPicName01, 'YCbCrSubsampling', 'YCbCr4:2:0 (2 2)', 'YCbCrSubsampling mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_YCbCrSubsampling;
+begin
+  StdStringTest(co_DUTPicName02, 'YCbCrSubsampling', 'YCbCr4:2:2 (2 1)', 'YCbCrsubsampling mismatch');
+end;
+*)
 
 initialization
   RegisterTest(TTstReadFile_dEXIF_01);
