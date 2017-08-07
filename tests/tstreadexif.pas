@@ -51,6 +51,7 @@ type
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
+    procedure TstReadFile_ColorSpace;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
@@ -73,6 +74,7 @@ type
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
+    procedure TstReadFile_ColorSpace;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
@@ -542,6 +544,20 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_CameraModel;
 begin
   StdStringTest(co_DUTPicName02, 'Model', 'Canon PowerShot S5 IS', 'Camera model mismatch');
+end;
+
+
+{ Color space }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ColorSpace;
+begin
+  StdStringTest(co_DUTPicName01, 'ColorSpace', '', 'ColorSpace mismatch');
+    // Tag not available
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ColorSpace;
+begin
+  StdStringTest(co_DUTPicName02, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
 end;
 
 
