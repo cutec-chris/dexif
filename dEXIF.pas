@@ -992,17 +992,33 @@ begin
    end;
 end;
 
-//  This function returns the data value for a
-//  given tag name.
+//  This function returns the integer data value for a given tag name.
 Function TImageInfo.LookupTagInt(SearchStr:ansistring):integer;
-var i: integer;
+var
+  i: integer;
+  x: Double;
+  fs: TFormatSettings;
 begin
  SearchStr := AnsiString(AnsiUpperCase(SearchStr));
  result := -1;
  for i := 0 to fiTagCount-1 do
    if AnsiString(AnsiUpperCase(fiTagArray[i].Name)) = SearchStr then
    begin
-     result := strtoint(string(fiTagArray[i].Data));
+     if not TryStrToInt(fiTagArray[i].Data, Result) then
+     begin
+       if TryStrToFloat(fiTagArray[i].Data, x) then
+         Result := Round(x)
+       else
+       begin
+         fs := DefaultFormatSettings;
+         if fs.DecimalSeparator = '.' then fs.DecimalSeparator := ',' else
+            fs.DecimalSeparator := ',';
+         if TryStrToFloat(fiTagArray[i].Data, x, fs) then
+           Result := Round(x)
+         else
+           Result := -1;
+       end;
+     end;
      break;
    end;
 end;

@@ -8,14 +8,13 @@ uses
   Classes, SysUtils, fpcunit, testutils, testregistry, dEXIF;
 
 const
-  // Picture with EXIF Data
+  // Picture with EXIF data taken from SAMSUNG camera
   co_TestPic01 = './testpictures/original/with_exif_large.jpeg';
   co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
 
+  // Picture with EXIF data taken from CANON camera
   co_TestPic02 = './testpictures/original/img_9438.jpg';
   co_DUTPicName02 = './testpictures/DUTPic03.jpeg';
-
-  TEST_PIC = co_DUTPicName01;
 
 type
   { TTsTBasic_dEXIF }
@@ -25,17 +24,30 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
 
-    procedure StdStringTest(
-      const AFileName, ATestTag, AExpectedResult, AMismatchMsg: String);
+    procedure StdIntTest(const AFileName, ATestTag: String;
+      const AExpectedResult:Integer; const AMismatchMsg: String);
+    procedure StdStringTest(const AFileName, ATestTag: String;
+      const AExpectedResult, AMismatchMsg: String);
+
     procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
+    procedure Test_DateTime(const AFileName: String; AKind: Integer;
+      AExpectedDateTime: TDateTime; const AMismatchMsg: string);
+    procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
+    procedure Test_FNumber(const AFilename: String; AExpected: Double);
+    procedure Test_FocalLength(const AFilename: String; AExpected: Double);
+    procedure Test_ImageSize(const AFileName: String;
+      AExpectedWidth, AExpectedHeight: Integer);
+    procedure Test_Resolution(const AFileName: String;
+      AExpectedXResolution, AExpectedYResolution: Integer; AExpectedUnits: String);
+  end;
 
+  { Tests for image DUTPic01, taken by SAMSUNG camera }
+  TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
-
-    { Tests for image DUTPic01 }
-    procedure TstReadFile_ByteOrder_01;
-    procedure TstReadFile_CameraMake_01;
-    procedure TstReadFile_CameraModel_01;
-    procedure TstReadFile_Date;
+    procedure TstReadFile_ByteOrder;
+    procedure TstReadFile_CameraMake;
+    procedure TstReadFile_CameraModel;
+    procedure TstReadFile_DateTime;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FNumber;
@@ -43,19 +55,29 @@ type
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ISO;
     procedure TstReadFile_Resolution;
+  end;
 
-    { Tests for image DUTPic02 }
-    procedure TstReadFile_ByteOrder_02;
-    procedure TstReadFile_CameraMake_02;
-    procedure TstReadFile_CameraModel_02;
-
+  { Tests for image DUTPic02, taken by CANON camera }
+  TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
+  published
+    procedure TstReadFile_ByteOrder;
+    procedure TstReadFile_CameraMake;
+    procedure TstReadFile_CameraModel;
+    procedure TstReadFile_DateTime;
+    procedure TstReadFile_ExposureTime;
+    procedure TstReadFile_Flash;
+    procedure TstReadFile_FNumber;
+    procedure TstReadFile_FocalLength;
+    procedure TstReadFile_ImageSize;
+    procedure TstReadFile_ISO;
+    procedure TstReadFile_Resolution;
   end;
 
 
 implementation
 
 uses
-  FileUtil, DateUtils, StrUtils;
+  FileUtil, DateUtils, StrUtils, Math;
 
 { Output of ExifTool for DUTPic01.jpeg:
 
@@ -278,17 +300,37 @@ procedure TTstReadFile_dEXIF.SetUp;
 begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
-      CopyFile(co_TestPic01,co_DUTPicName01);
+      CopyFile(co_TestPic01, co_DUTPicName01);
 
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
-      CopyFile(co_TestPic01,co_DUTPicName02);
+      CopyFile(co_TestPic02, co_DUTPicName02);
 end;
 
 procedure TTstReadFile_dEXIF.TearDown;
 begin
   //if FileExists(co_DUTPicName01) then
   //  DeleteFile(co_DUTPicName01);
+end;
+
+
+{ Generic tests }
+
+procedure TTstReadFile_dEXIF.StdIntTest(const AFileName, ATestTag: String;
+  const AExpectedResult: Integer; const AMismatchMsg: String);
+var
+  DUT: TImgData;
+  currIntValue: Integer;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFilename);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currIntValue := DUT.ExifObj.GetRawInt(ATestTag); //LookupTagInt(ATestTag);
+    CheckEquals(AExpectedResult, currIntValue, AMismatchMsg);
+  finally
+    DUT.Free;
+  end;
 end;
 
 procedure TTstReadFile_dEXIF.StdStringTest(
@@ -302,6 +344,13 @@ begin
     DUT.ProcessFile(AFilename);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+
+    // dEXIF strings sometimes are quoted...
+    if (currStrValue <> '') and (currStrValue[1] = '"') then
+      Delete(currStrValue, 1,1);
+    if (currStrValue <> '') and (currStrValue[Length(currStrValue)] = '"') then
+      Delete(currStrValue, Length(currStrValue), 1);
+
     CheckEquals(AExpectedResult, currStrValue, AMismatchMsg);
   finally
     DUT.Free;
@@ -326,12 +375,12 @@ begin
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ByteOrder_01;
+procedure TTstReadFile_dEXIF_01.TstReadFile_ByteOrder;
 begin
   Test_ByteOrder(co_DUTPicName01, true);
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ByteOrder_02;
+procedure TTstReadFile_dEXIF_02.TstReadFile_ByteOrder;
 begin
   Test_ByteOrder(co_DUTPicName02, false);
 end;
@@ -339,54 +388,70 @@ end;
 
 { Camera Make }
 
-procedure TTstReadFile_dEXIF.TstReadFile_CameraMake_01;
+procedure TTstReadFile_dEXIF_01.TstReadFile_CameraMake;
 begin
   StdStringTest(co_DUTPicName01, 'Make', 'SAMSUNG', 'Camera Make mismatch');
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_CameraMake_02;
+procedure TTstReadFile_dEXIF_02.TstReadFile_CameraMake;
 begin
   StdStringTest(co_DUTPicName02, 'Make', 'Canon', 'Camera Make mismatch');
 end;
 
+
 { Camera model }
 
-procedure TTstReadFile_dEXIF.TstReadFile_CameraModel_01;
+procedure TTstReadFile_dEXIF_01.TstReadFile_CameraModel;
 begin
   StdStringTest(co_DUTPicName01, 'Model', 'SM-G850F', 'Camera model mismatch');
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_CameraModel_02;
+procedure TTstReadFile_dEXIF_02.TstReadFile_CameraModel;
 begin
   StdStringTest(co_DUTPicName02, 'Model', 'Canon PowerShot S5 IS', 'Camera model mismatch');
 end;
 
 
-procedure TTstReadFile_dEXIF.TstReadFile_Date;
-const
-  EXIFTOOL_DATETIME = '2017:03:15 10:35:11';
+{ Generic Date/time test }
+
+procedure TTstReadFile_dEXIF.Test_DateTime(const AFileName: String; AKind: Integer;
+  AExpectedDateTime: TDateTime; const AMismatchMsg: String);
 var
   DUT: TImgData;
-  expectedDateTime: TDateTime;
   currValue: TDateTime;
 begin
   DUT := TImgData.Create();
   try
-    DUT.ProcessFile(TEST_PIC);
+    DUT.ProcessFile(AFilename);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
-    currValue := DUT.EXIFObj.GetImgDateTime;
-    expectedDateTime := ScanDateTime('yyyy:mm:dd hh:nn:ss', EXIFTOOL_DATETIME);
-    CheckEquals(expectedDateTime, currValue, 'Date/time mismatch (GetImgDateTime)');
-    currvalue := ScanDateTime('yyyy-mm-dd hh:nn:ss', DUT.ExifObj.DateTime);
-    CheckEquals(ExpectedDateTime, currValue, 'Date/time mismatch (ExifObj.DateTime)');
+    case AKind of
+      0: currValue := DUT.EXIFObj.GetImgDateTime;  // any date/time
+    end;
+    CheckEquals(AExpectedDateTime, currValue, AMismatchMsg); //'Date/time mismatch (GetImgDateTime)');
+//    currvalue := ScanDateTime('yyyy-mm-dd hh:nn:ss', DUT.ExifObj.DateTime);
+//    CheckEquals(ExpectedDateTime, currValue, 'Date/time mismatch (ExifObj.DateTime)');
   finally
     DUT.Free;
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ExposureTime;
-const
-  EXIFTOOL_EXPOSURE_TIME = '1/3376';
+procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime;
+begin
+  Test_DateTime(co_DUTPicName01, 0, EncodeDateTime(2017,03,15, 10,35,11,0), 'Date/time mismatch');
+    // 2017:03:15 10:35:11
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime;
+begin
+  Test_DateTime(co_DUTPicName02, 0, EncodeDateTime(2017,02,11, 15,09,39,0), 'Date/time mismatch');
+    // 2017:02:11 15:09:39
+end;
+
+
+{ Exposure time }
+
+procedure TTstReadFile_dEXIF.Test_ExposureTime(const AFilename: String;
+  const AExpected: String);
 var
   DUT: TImgData;
   currStrValue: String;
@@ -394,59 +459,91 @@ var
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
+    DUT.ProcessFile(AFilename);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.LookupTagVal('ExposureTime');
-    if currStrValue <> EXIFTOOL_EXPOSURE_TIME then begin
+    if currStrValue <> AExpected then begin
       p := pos('sec', currStrValue);
       if p <> 0 then Delete(currStrValue, p, MaxInt);
-      currStrValue := trim(currStrValue);
+      p := pos('sec', AExpected);
+      if p <> 0 then Delete(currStrValue, p, MaxInt);
     end;
-    CheckEquals(EXIFTOOL_EXPOSURE_TIME, currStrValue, 'Exposure time mismatch');
+    CheckEquals(trim(AExpected), trim(currStrValue), 'Exposure time mismatch');
   finally
     DUT.Free;
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_Flash;
-const
-  EXIFTOOL_FLASH_USED = false;  // well... at least it is not mentioned.
-var
-  DUT: TImgData;
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureTime;
 begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(TEST_PIC);
-    CheckEquals(EXIFTOOL_FLASH_USED, DUT.ExifObj.FlashUsed <> 0, 'Flash used mismatch');
-  finally
-    DUT.Free;
-  end;
+  Test_ExposureTime(co_DUTPicName01, '1/3376');
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_FNumber;
-const
-  EXIFTOOL_FNUMBER = '2.2';
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureTime;
+begin
+  Test_ExposureTime(co_DUTPicName02, '1/1600');
+end;
+
+
+{ Flash }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Flash;
+begin
+  StdIntTest(co_DUTPicName01, 'Flash', -1, 'Flash usage mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_Flash;
+begin
+  StdIntTest(co_DUTPicName02, 'Flash', 16, 'Flash usage mismatch');  // "Off, Did not fire"
+  // see https://stackoverflow.com/questions/44579889/using-bitwise-to-enumerate-exif-flash-readable-string
+  // "Off, did not fire" corresponds to Flash value = 16
+end;
+
+
+{ F Number }
+
+procedure TTstReadFile_dEXIF.Test_FNumber(const AFilename: String;
+  AExpected: Double);         // Use NaN if not specified in EXIF tool output
 var
   DUT: TImgData;
   currStrValue: String;
+  F: Double;
+  res: Integer;
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.LookupTagVal('FNumber');
-    if currStrValue <> EXIFTOOL_FNUMBER then begin
-      if Uppercase(currStrValue[1]) = 'F' then
-        Delete(currStrValue, 1,1);
-      if pos('.', EXIFTOOL_FNUMBER) > 0 then
-        currStrValue := StringReplace(currStrValue, ',', '.', [])
-      else if pos(',', EXIFTOOL_FNUMBER) > 0 then
-        currStrValue := StringReplace(currStrValue, '.', ',', []);
-      currStrValue := trim(currStrValue);
+    while (currstrValue <> '') and (currStrValue[1] in ['F', 'f', ' ']) do
+      Delete(currStrValue, 1, 1);
+    currStrValue := StringReplace(trim(currStrValue), ',', '.', []);
+    if IsNaN(AExpected) then begin
+      CheckTrue(currStrValue <> '', 'FNumber found, but not expected.')
+    end else begin
+      val(currStrValue, F, res);
+      if res = 0 then
+        CheckEquals(FormatFloat('0.0', AExpected), FormatFloat('0.0', F), 'FNumber mismatch')
+      else
+        Fail('Cannot read FNumber');
     end;
-    CheckEquals(EXIFTOOL_FNUMBER, currStrValue, 'FNumber mismatch');
   finally
     DUT.Free;
   end;
 end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FNumber;
+begin
+  Test_FNumber(co_DUTPicName01, 2.2);
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FNumber;
+begin
+  Test_FNumber(co_DUTPicName02, 2.7);
+end;
+
+
+{ Focal length }
 
 procedure StripUnits(s: String; out AValue: Double; out AUnits: String);
 var
@@ -466,99 +563,126 @@ begin
   end;
 
   val(valstr, AValue, res);
+  if res <> 0 then
+    AValue := -999;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_FocalLength;
-const
-  EXIFTOOL_FOCAL_LENGTH = '4.1 mm';
+procedure TTstReadFile_dEXIF.Test_FocalLength(const AFilename: String;
+  AExpected: Double);  // assuming focal length to be given in mm
 var
   DUT: TImgData;
   currStrValue: String;
-  exp_val: double;
-  exp_units: String;
   curr_val: double;
   curr_units: String;
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.LookupTagVal('FocalLength');
-    if currStrValue =  EXIFTOOL_FOCAL_LENGTH then
-      CheckEquals(EXIFTOOL_FOCAL_LENGTH, currStrValue, 'Focal length mismatch')
-    else begin
-      StripUnits(EXIFTOOL_FOCAL_LENGTH, exp_val, exp_units);
-      StripUnits(currStrValue, curr_val, curr_units);
-      if (exp_units = curr_units) and (exp_units = 'mm') then begin
-        CheckEquals(FormatFloat('0.0', exp_val), FormatFloat('0.0', curr_val),
-          'Focal length mismatch');
-      end else
-        Ignore('Different focal length units.');
-    end;
+    StripUnits(currStrValue, curr_val, curr_units);
+    if (curr_units = '') or (curr_units = 'mm') then
+      CheckEquals(FormatFloat('0.0', AExpected), FormatFloat('0.0', curr_val), 'Focal length mismatch')
+    else
+      Ignore('Focal length expected to be given in mm.');
   finally
     DUT.Free;
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ImageSize;
-const
-  EXIFTOOL_IMAGE_WIDTH = 4608;
-  EXIFTOOL_IMAGE_HEIGHT = 2592;
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLength;
+begin
+  Test_FocalLength(co_DUTPicName01, 4.1);
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLength;
+begin
+  Test_Focallength(co_DUTPicName02, 6.0);
+end;
+
+
+{ Image width and image height }
+
+procedure TTstReadFile_dEXIF.Test_ImageSize(const AFileName: String;
+  AExpectedWidth, AExpectedHeight: Integer);
 var
   DUT: TImgData;
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
-    CheckEquals(EXIFTOOL_IMAGE_WIDTH, DUT.Width, 'Image width mismatch');
-    CheckEquals(EXIFTOOL_IMAGE_HEIGHT, DUT.Height, 'Imgae height mismatch');
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    CheckEquals(AExpectedWidth,  DUT.Width,  'Image width mismatch');
+    CheckEquals(AExpectedHeight, DUT.Height, 'Image height mismatch');
   finally
     DUT.Free;
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ISO;
-const
-  EXIFTOOL_ISO = '40, 0';   // "hat does the ", 0" mean ???
-var
-  DUT: TImgData;
-  currStrValue: String;
+procedure TTstReadFile_dEXIF_01.TstReadFile_ImageSize;
 begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(TEST_PIC);
-    currStrValue := DUT.ExifObj.LookupTagVal('ISOSpeedRatings');
-    CheckEquals(EXIFTOOL_ISO, currStrValue, 'ISO mismatch');
-  finally
-    DUT.Free;
-  end;
+  Test_ImageSize(co_DUTPicName01, 4608, 2592);
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_Resolution;
-const
-  EXIFTOOL_X_RESOLUTION = 300;
-  EXIFTOOL_Y_RESOLUTION = 300;
-  EXIFTOOL_RESOLUTION_UNIT = 'inches';
+procedure TTstReadFile_dEXIF_02.TstReadFile_ImageSize;
+begin
+  Test_ImageSize(co_DUTPicName02, 3264, 1832);
+end;
+
+
+{ ISO }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ISO;
+begin
+  StdStringTest(co_DUTPicName01, 'ISOSpeedRatings', '40, 0', 'ISO mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ISO;
+begin
+  StdStringTest(co_DUTPicName02, 'ISOSpeedRatings', '160', 'ISO mismatch');
+end;
+
+
+{ Resolution }
+
+procedure TTstReadFile_dEXIF.Test_Resolution(const AFileName: String;
+  AExpectedXResolution, AExpectedYResolution: Integer; AExpectedUnits: String);
 var
   DUT: TImgData;
   currIntValue: Integer;
   currStrValue: String;
 begin
-  DUT:= TImgData.Create();
-  DUT.ProcessFile(TEST_PIC);
-  CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
-  currIntValue := DUT.XResolution;
-  CheckEquals(EXIFTOOL_X_RESOLUTION, currIntValue, 'X resolution mismatch');
-  currIntValue := DUT.YResolution;
-  CheckEquals(EXIFTOOL_Y_RESOLUTION, currIntValue, 'Y resolution mismatch');
-  currStrValue := DUT.ResolutionUnit;
-  CheckEquals(Uppercase(EXIFTOOL_RESOLUTION_UNIT), Uppercase(currStrValue), 'Resolution unit mismatch');
-  DUT.Free;
+  DUT := TImgData.Create();
+  try
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currIntValue := DUT.XResolution;
+    CheckEquals(AExpectedXRESOLUTION, currIntValue, 'X resolution mismatch');
+    currIntValue := DUT.YResolution;
+    CheckEquals(AExpectedYRESOLUTION, currIntValue, 'Y resolution mismatch');
+    currStrValue := DUT.ResolutionUnit;
+    CheckEquals(lowercase(AExpectedUnits), lowercase(currStrValue), 'Resolution unit mismatch');
+  finally
+    DUT.Free;
+  end;
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Resolution;
+begin
+  Test_Resolution(co_DUTPicName01, 300, 300, 'inches');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
+begin
+  Test_Resolution(co_DUTPicName02, 180, 180, 'inch');
 end;
 
 
-initialization
 
-  RegisterTest(TTstReadFile_dEXIF);
+
+initialization
+  RegisterTest(TTstReadFile_dEXIF_01);
+  RegisterTest(TTstReadFile_dEXIF_02);
 
 end.
 
