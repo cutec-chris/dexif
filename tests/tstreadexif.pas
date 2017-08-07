@@ -68,6 +68,7 @@ type
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
+    procedure TstReadFile_WhiteBalance;
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
@@ -94,6 +95,7 @@ type
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
+    procedure TstReadFile_WhiteBalance;
   end;
 
 
@@ -913,6 +915,21 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_ShutterSpeedValue;
 begin
   StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', 1/1614, 8, 'Shutter speed value mismatch');
 //  StdFloatFromStringTest(co_DUTPicName02, 'ShutterSpeedValue', '1/1614', 8, 'Shutter speed value mismatch');
+end;
+
+
+{ White balance }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_WhiteBalance;
+begin
+  StdIntTest(co_DUTPicName01, 'WhiteBalance', -1, 'WhiteBalance mismatch');
+    // Tag not available  --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_WhiteBalance;
+begin
+  StdIntTest(co_DUTPicName02, 'WhiteBalance', 0, 'WhiteBalance mismatch');
+    // "Auto"  --> 0
 end;
 
 
