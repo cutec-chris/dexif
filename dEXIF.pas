@@ -510,7 +510,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 11;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 9;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -713,14 +713,14 @@ var
 //  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Callback: GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
 //  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Callback: SSpeedCallBack),
-//  (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; FormatS:'F%0.1f'),
+  (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9203;  Name:'BrightnessValue'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9204;  Name:'ExposureBiasValue'      ),
 //  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
-//  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; CallBack:FlashCallBack),
+  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:@FlashCallBack),
   (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
@@ -2486,8 +2486,14 @@ begin
 end;
 
 function TImageInfo.GetRawInt( tagName:ansistring ):integer;
+var
+  tiq: TTagEntry;
 begin
-  result := round(GetRawFloat(tagName));
+  tiq := GetTagByName(tagName);
+  if tiq.Tag = 0 then  // EmptyEntry
+    Result := -1
+  else
+    result := round(GetNumber(tiq.Raw, tiq.TType));
 end;
 
 //  Unfortunatly if we're calling this function there isn't
