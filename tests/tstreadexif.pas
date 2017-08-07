@@ -12,6 +12,9 @@ const
   co_TestPic01 = './testpictures/original/with_exif_large.jpeg';
   co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
 
+  co_TestPic02 = './testpictures/original/img_9438.jpg';
+  co_DUTPicName02 = './testpictures/DUTPic03.jpeg';
+
   TEST_PIC = co_DUTPicName01;
 
 type
@@ -21,10 +24,17 @@ type
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+
+    procedure StdStringTest(
+      const AFileName, ATestTag, AExpectedResult, AMismatchMsg: String);
+    procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
+
   published
-    procedure TstReadFile_ByteOrder;
-    procedure TstReadFile_CameraMake;
-    procedure TstReadFile_CameraModel;
+
+    { Tests for image DUTPic01 }
+    procedure TstReadFile_ByteOrder_01;
+    procedure TstReadFile_CameraMake_01;
+    procedure TstReadFile_CameraModel_01;
     procedure TstReadFile_Date;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_Flash;
@@ -33,6 +43,12 @@ type
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ISO;
     procedure TstReadFile_Resolution;
+
+    { Tests for image DUTPic02 }
+    procedure TstReadFile_ByteOrder_02;
+    procedure TstReadFile_CameraMake_02;
+    procedure TstReadFile_CameraModel_02;
+
   end;
 
 
@@ -80,6 +96,180 @@ uses
 +   Focal Length                    : 4.1 mm                                    Tag "FocalLength"
     Light Value                     : 15.3
 
+--------------------------------------------------------------------------------
+
+Output of EXIFTool for DUTPic03.jpeg
+
+    ExifTool Version Number         : 10.60
+    File Name                       : DUTPic03.jpeg
+    Directory                       : .
+    File Size                       : 1478 kB
+    File Modification Date/Time     : 2017:02:15 18:53:32+01:00
+    File Access Date/Time           : 2017:08:07 09:51:19+02:00
+    File Creation Date/Time         : 2017:08:07 09:51:19+02:00
+    File Permissions                : rw-rw-rw-
+    File Type                       : JPEG
+    File Type Extension             : jpg
+    MIME Type                       : image/jpeg
+    Exif Byte Order                 : Little-endian (Intel, II)
+    Make                            : Canon
+    Camera Model Name               : Canon PowerShot S5 IS
+    Orientation                     : Horizontal (normal)
+    X Resolution                    : 180
+    Y Resolution                    : 180
+    Resolution Unit                 : inches
+    Modify Date                     : 2017:02:11 15:09:39
+    Y Cb Cr Positioning             : Centered
+    Exposure Time                   : 1/1600
+    F Number                        : 2.7
+    ISO                             : 160
+    Exif Version                    : 0220
+    Date/Time Original              : 2017:02:11 15:09:39
+    Create Date                     : 2017:02:11 15:09:39
+    Components Configuration        : Y, Cb, Cr, -
+    Compressed Bits Per Pixel       : 3
+    Shutter Speed Value             : 1/1614
+    Aperture Value                  : 2.7
+    Max Aperture Value              : 2.7
+    Flash                           : Off, Did not fire
+    Focal Length                    : 6.0 mm
+    Macro Mode                      : Normal
+    Self Timer                      : Off
+    Quality                         : Fine
+    Canon Flash Mode                : Off
+    Continuous Drive                : Single
+    Focus Mode                      : Single
+    Record Mode                     : JPEG
+    Canon Image Size                : Widescreen
+    Easy Mode                       : Full auto
+    Digital Zoom                    : None
+    Contrast                        : Normal
+    Saturation                      : Normal
+    Sharpness                       : 0
+    Camera ISO                      : Auto High
+    Metering Mode                   : Evaluative
+    Focus Range                     : Auto
+    AF Point                        : Manual AF point selection
+    Canon Exposure Mode             : Easy
+    Lens Type                       : n/a
+    Max Focal Length                : 72 mm
+    Min Focal Length                : 6 mm
+    Focal Units                     : 100/mm
+    Max Aperture                    : 2.7
+    Min Aperture                    : 8
+    Flash Activity                  : 0
+    Flash Bits                      : (none)
+    Focus Continuous                : Continuous
+    AE Setting                      : Normal AE
+    Image Stabilization             : On
+    Display Aperture                : 2.7
+    Zoom Source Width               : 3264
+    Zoom Target Width               : 3264
+    Spot Metering Mode              : Center
+    Manual Flash Output             : n/a
+    Focal Type                      : Zoom
+    Focal Plane X Size              : 5.84 mm
+    Focal Plane Y Size              : 4.39 mm
+    Auto ISO                        : 161
+    Base ISO                        : 100
+    Measured EV                     : 13.38
+    Target Aperture                 : 2.7
+    Target Exposure Time            : 1/1614
+    Exposure Compensation           : 0
+    White Balance                   : Auto
+    Slow Shutter                    : Off
+    Shot Number In Continuous Burst : 0
+    Optical Zoom Code               : 6
+    Flash Guide Number              : 0
+    Flash Exposure Compensation     : 0
+    Auto Exposure Bracketing        : Off
+    AEB Bracket Value               : 0
+    Control Mode                    : Camera Local Control
+    Focus Distance Upper            : 65.53 m
+    Focus Distance Lower            : 0 m
+    Bulb Duration                   : 0
+    Camera Type                     : Compact
+    Auto Rotate                     : None
+    ND Filter                       : Off
+    Self Timer 2                    : 0
+    Flash Output                    : 0
+    Canon Image Type                : IMG:PowerShot S5 IS JPEG
+    Canon Firmware Version          : Firmware Version 1.01
+    File Number                     : 100-9438
+    Owner Name                      :
+    Rotation                        : 0
+    Camera Temperature              : 16 C
+    Canon Model ID                  : PowerShot S5 IS
+    AF Area Mode                    : Single-point AF
+    Num AF Points                   : 9
+    Valid AF Points                 : 1
+    Canon Image Width               : 3264
+    Canon Image Height              : 1832
+    AF Image Width                  : 1088
+    AF Image Height                 : 245
+    AF Area Widths                  : 196 0 0 0 0 0 0 0 0
+    AF Area Heights                 : 44 0 0 0 0 0 0 0 0
+    AF Area X Positions             : 0 0 0 0 0 0 0 0 0
+    AF Area Y Positions             : 0 0 0 0 0 0 0 0 0
+    AF Points In Focus              : 0
+    Primary AF Point                : 0
+    Thumbnail Image Valid Area      : 0 159 15 104
+    Super Macro                     : Off
+    Date Stamp Mode                 : Off
+    My Color Mode                   : Off
+    Firmware Revision               : 1.01 rev 2.00
+    Categories                      : (none)
+    Face Detect Frame Size          : 0 0
+    Face Width                      : 35
+    Faces Detected                  : 0
+    Image Unique ID                 : 80304b30b8ff9067a4c6cab0bda0c784
+    User Comment                    :
+    Flashpix Version                : 0100
+    Color Space                     : sRGB
+    Exif Image Width                : 3264
+    Exif Image Height               : 1832
+    Interoperability Index          : R98 - DCF basic file (sRGB)
+    Interoperability Version        : 0100
+    Related Image Width             : 3264
+    Related Image Height            : 1832
+    Focal Plane X Resolution        : 14506.66667
+    Focal Plane Y Resolution        : 10840.23669
+    Focal Plane Resolution Unit     : inches
+    Sensing Method                  : One-chip color area
+    File Source                     : Digital Camera
+    Custom Rendered                 : Normal
+    Exposure Mode                   : Auto
+    Digital Zoom Ratio              : 1
+    Scene Capture Type              : Standard
+    Compression                     : JPEG (old-style)
+    Thumbnail Offset                : 5120
+    Thumbnail Length                : 4734
+    Image Width                     : 3264
+    Image Height                    : 1832
+    Encoding Process                : Baseline DCT, Huffman coding
+    Bits Per Sample                 : 8
+    Color Components                : 3
+    Y Cb Cr Sub Sampling            : YCbCr4:2:2 (2 1)
+    Aperture                        : 2.7
+    Drive Mode                      : Single-frame Shooting
+    Image Size                      : 3264x1832
+    Lens                            : 6.0 - 72.0 mm
+    Lens ID                         : Unknown 6-72mm
+    Megapixels                      : 6.0
+    Scale Factor To 35 mm Equivalent: 6.1
+    Shooting Mode                   : Full auto
+    Shutter Speed                   : 1/1600
+    Thumbnail Image                 : (Binary data 4734 bytes, use -b option to extract)
+    Circle Of Confusion             : 0.005 mm
+    Depth Of Field                  : inf (2.48 m - inf)
+    Field Of View                   : 52.7 deg
+    Focal Length                    : 6.0 mm (35 mm equivalent: 36.3 mm)
+    Hyperfocal Distance             : 2.69 m
+    Lens                            : 6.0 - 72.0 mm (35 mm equivalent: 36.3 - 435.8 mm)
+    Light Value                     : 12.8
+
+--------------------------------------------------------------------------------
+
 +  <--- test is passed
 -  <--- test fails, Tag not found by dExif
 }
@@ -89,6 +279,10 @@ begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
       CopyFile(co_TestPic01,co_DUTPicName01);
+
+  if not FileExists(co_DUTPicName02) then
+    if FileExists(co_TestPic02) then
+      CopyFile(co_TestPic01,co_DUTPicName02);
 end;
 
 procedure TTstReadFile_dEXIF.TearDown;
@@ -97,54 +291,76 @@ begin
   //  DeleteFile(co_DUTPicName01);
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_ByteOrder;
-const
-  EXIFTOOL_BYTEORDER = true;  // Big-endian (Motorola, MM)
-var
-  DUT: TImgData;
-begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(TEST_PIC);
-    CheckEquals(EXIFTOOL_BYTEORDER, DUT.ExifObj.MotorolaOrder, 'ByteOrder mismatch');
-  finally
-    DUT.Free;
-  end;
-end;
-
-procedure TTstReadFile_dEXIF.TstReadFile_CameraMake;
-const
-  EXIFTOOL_MAKE = 'SAMSUNG';
+procedure TTstReadFile_dEXIF.StdStringTest(
+  const AFileName, ATestTag, AExpectedResult, AMismatchMsg: String);
 var
   DUT: TImgData;
   currStrValue: String;
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
-    currStrValue := DUT.ExifObj.LookupTagVal('Make');
-    CheckEquals(EXIFTOOL_MAKE, currStrValue, 'Camera Make mismatch');
+    DUT.ProcessFile(AFilename);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    CheckEquals(AExpectedResult, currStrValue, AMismatchMsg);
   finally
     DUT.Free;
   end;
 end;
 
-procedure TTstReadFile_dEXIF.TstReadFile_CameraModel;
-const
-  EXIFTOOL_MODEL = 'SM-G850F';
+
+{ Byte order }
+
+procedure TTstReadFile_dEXIF.Test_ByteOrder(const AFilename: String;
+  AExpected: Boolean);
 var
   DUT: TImgData;
-  currStrValue: String;
 begin
   DUT := TImgData.Create;
   try
-    DUT.ProcessFile(TEST_PIC);
-    currStrValue := DUT.ExifObj.LookupTagVal('Model');
-    CheckEquals(EXIFTOOL_MODEL, currStrValue, 'Camera model mismatch');
+    DUT.ProcessFile(AFilename);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    CheckEquals(AExpected, DUT.ExifObj.MotorolaOrder, 'ByteOrder mismatch');
   finally
     DUT.Free;
   end;
 end;
+
+procedure TTstReadFile_dEXIF.TstReadFile_ByteOrder_01;
+begin
+  Test_ByteOrder(co_DUTPicName01, true);
+end;
+
+procedure TTstReadFile_dEXIF.TstReadFile_ByteOrder_02;
+begin
+  Test_ByteOrder(co_DUTPicName02, false);
+end;
+
+
+{ Camera Make }
+
+procedure TTstReadFile_dEXIF.TstReadFile_CameraMake_01;
+begin
+  StdStringTest(co_DUTPicName01, 'Make', 'SAMSUNG', 'Camera Make mismatch');
+end;
+
+procedure TTstReadFile_dEXIF.TstReadFile_CameraMake_02;
+begin
+  StdStringTest(co_DUTPicName02, 'Make', 'Canon', 'Camera Make mismatch');
+end;
+
+{ Camera model }
+
+procedure TTstReadFile_dEXIF.TstReadFile_CameraModel_01;
+begin
+  StdStringTest(co_DUTPicName01, 'Model', 'SM-G850F', 'Camera model mismatch');
+end;
+
+procedure TTstReadFile_dEXIF.TstReadFile_CameraModel_02;
+begin
+  StdStringTest(co_DUTPicName02, 'Model', 'Canon PowerShot S5 IS', 'Camera model mismatch');
+end;
+
 
 procedure TTstReadFile_dEXIF.TstReadFile_Date;
 const
