@@ -26,6 +26,8 @@ type
 
     procedure StdFloatTest(const AFileName, ATestTag: String;
       const AExpectedResult: Double; ADecimals: Integer; const AMismatchMsg: String);
+    procedure StdFloatFromStringTest(const AFilename, ATestTag: String;
+      const AExpectedResult: String; ADecimals: Integer; const AMismatchMsg: String);
     procedure StdIntTest(const AFileName, ATestTag: String;
       const AExpectedResult:Integer; const AMismatchMsg: String);
     procedure StdStringTest(const AFileName, ATestTag: String;
@@ -61,6 +63,7 @@ type
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ShutterSpeedValue;
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
@@ -82,6 +85,7 @@ type
     procedure TstReadFile_ISO;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ShutterSpeedValue;
   end;
 
 
@@ -302,10 +306,59 @@ Output of EXIFTool for DUTPic03.jpeg
     Light Value                     : 12.8
 
 --------------------------------------------------------------------------------
-
 +  <--- test is passed
 -  <--- test fails, Tag not found by dExif
-}
+-------------------------------------------------------------------------------}
+
+function ExtractFloat(s: String): Double;
+const
+  NUMERIC_CHARS = ['0'..'9', '.', ',', '/'];
+var
+  p: PChar;
+  n, m: Integer;
+  s1, s2: String;
+  a, b: Integer;
+begin
+  p := PChar(@s[1]);
+  n := 0;
+  while (p^ <> #0) and not (p^ in NUMERIC_CHARS) do begin
+    inc(p);
+    inc(n);
+  end;
+  Delete(s, 1, n);
+  if s = '' then begin
+    Result := 0.0;
+    exit;
+  end;
+
+  p := PChar(@s[1]);
+  n := 0;
+  m := 0;
+  while (p^ <> #0) and (p^ in NUMERIC_CHARS) do begin
+    case p^ of
+      ',': p^ := '.';
+      '/': begin
+             s1 := Copy(s, 1, n);
+             m := n+2;
+           end;
+    end;
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  if m > 0 then begin
+    s2 := copy(s, m, MaxInt);
+    a := StrToInt(s1);
+    b := StrToInt(s2);
+    Result := a/b;
+  end else begin
+    val(s, Result, n);
+    if n <> 0 then Result := 0.0;
+  end;
+end;
+
+
+{ Test methods }
 
 procedure TTstReadFile_dEXIF.SetUp;
 begin
@@ -333,17 +386,49 @@ procedure TTstReadFile_dEXIF.StdFloatTest(const AFileName, ATestTag: String;
 var
   DUT: TImgData;
   currFloatValue: Double;
+  currVal, expVal: Double;
 begin
   DUT := TImgData.Create;
   try
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currFloatValue := DUT.ExifObj.GetRawFloat(ATestTag);
-    CheckEquals(
-      RoundTo(AExpectedResult, ADecimals),
-      RoundTo(currFloatValue, ADecimals),
-      AMismatchMsg
-    );
+    currVal := RoundTo(currFloatValue, -ADecimals);
+    expVal := RoundTo(AExpectedResult, -ADecimals);
+    CheckEquals(expval, currval, AMismatchMsg);
+  finally
+    DUT.Free;
+  end;
+end;
+
+{ Compares float values passed as strings. The routine takes care of
+  different decimal separators, non-numerical characters before or after the
+  number, and rounds the result to the specified decimal places. }
+procedure TTstReadFile_dEXIF.StdFloatFromStringTest(const AFilename, ATestTag: String;
+  const AExpectedResult: String; ADecimals: Integer; const AMismatchMsg: String);
+var
+  DUT: TImgData;
+  currStrValue: String;
+  currval, expVal: Double;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    if currStrValue = '' then
+      currVal := 0.0
+    else begin
+      currVal := ExtractFloat(currStrValue);
+      currVal := RoundTo(currVal, -ADecimals);
+    end;
+    if AExpectedResult = '' then
+      expVal := 0.0
+    else begin
+      expVal := ExtractFloat(AExpectedResult);
+      expVal := RoundTo(expVal, -ADecimals);
+    end;
+    CheckEquals(expval, currval, AMismatchMsg);
   finally
     DUT.Free;
   end;
@@ -395,12 +480,14 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ApertureValue', 2.2, 1, 'Aperature value mismatch');
+//  StdFloatTest(co_DUTPicName01, 'ApertureValue', 2.2, 1, 'Aperature value mismatch');
+  StdFloatFromStringTest(co_DUTPicName01, 'ApertureValue', '', 1, 'Aperture value mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ApertureValue;
 begin
-  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
+//  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
+  StdFloatFromStringTest(co_DUTPicName02, 'ApertureValue', '2.7', 1, 'Aperature value mismatch');
 end;
 
 
@@ -747,6 +834,22 @@ begin
 end;
 
 
+{ Shutter speed value }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ShutterSpeedValue;
+begin
+  StdFloatTest(co_DUTPicName01, 'ShutterSpeedValue', 0.0, 8, 'Shutter speed value mismatch');
+//  StdFloatFromStringTest(co_DUTPicName01, 'ShutterSpeedValue', '', 8, 'Shutter speed value mismatch');
+    // Tag not available (EXIFTool does list a "Shutter Speed", but the tag is
+    // not in the file, the value is probably taken from tag "ExposureTime")
+    // --> 0.0
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ShutterSpeedValue;
+begin
+  StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', 1/1614, 8, 'Shutter speed value mismatch');
+//  StdFloatFromStringTest(co_DUTPicName02, 'ShutterSpeedValue', '1/1614', 8, 'Shutter speed value mismatch');
+end;
 
 
 initialization

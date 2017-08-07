@@ -481,16 +481,16 @@ const
 
    TAG_MAKE             = $010F;
    TAG_MODEL            = $0110;
-   TAG_EXIFVER          = $9000;
    TAG_DATETIME_MODIFY  = $0132;
 
+   TAG_EXIFVER          = $9000;
+   TAG_SHUTTERSPEED     = $9201;
    TAG_APERTURE         = $9202;
    TAG_FOCALLENGTH      = $920A;
 
 (*
    TAG_EXPOSURETIME     = $829A;
    TAG_FNUMBER          = $829D;
-   TAG_SHUTTERSPEED     = $9201;
    TAG_MAXAPERTURE      = $9205;
    TAG_FOCALLENGTH35MM  = $A405;             // added by M. Schwaiger
    TAG_SUBJECT_DISTANCE = $9206;
@@ -514,7 +514,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 9;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 8;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -570,7 +570,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $129;   Name:'PageNumber'             ),
   (TID:0;TType:0;ICode: 2;Tag: $12D;   Name:'TransferFunction'       ),
   (TID:0;TType:0;ICode: 2;Tag: $131;   Name:'Software'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTime'               ),
+  (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTimeModify'         ),
   (TID:0;TType:0;ICode: 2;Tag: $13B;   Name:'Artist'                 ),
   (TID:0;TType:0;ICode: 2;Tag: $13C;   Name:'HostComputer'           ),         {40}
   (TID:0;TType:0;ICode: 2;Tag: $13D;   Name:'Predictor'              ),
@@ -716,7 +716,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
 //  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Callback: GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
-//  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Callback: SSpeedCallBack),
+  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@SSpeedCallBack),
   (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9203;  Name:'BrightnessValue'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9204;  Name:'ExposureBiasValue'      ),
@@ -1518,8 +1518,10 @@ begin
                        tmp2 := CvtInt(copy(buffer,5,4));
                        os := tmp / tmp2;
                      end;
-      FMT_SINGLE: os := dbl;
-      FMT_DOUBLE: os := dbl;
+      FMT_SINGLE: os := PSingle(@buffer[1])^;
+      FMT_DOUBLE: os := PDouble(@buffer[1])^;
+//    FMT_SINGLE: os := dbl;   // wp: This can't be correct! tmp is indefined here, and single and double ARE different!
+//    FMT_DOUBLE: os := dbl;
     else
       os := 0;
     end;
