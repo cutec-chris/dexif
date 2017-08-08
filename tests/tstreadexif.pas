@@ -57,13 +57,15 @@ type
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
-    procedure TstReadFile_Compression;
+//    procedure TstReadFile_Compression;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureMode;
+    procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
+    procedure TstReadFile_FileSource;
 //    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
@@ -97,7 +99,9 @@ type
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
     procedure TstReadFile_ExposureMode;
+    procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
+    procedure TstReadFile_FileSource;
 //    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
@@ -620,6 +624,7 @@ begin
   StdStringTest(co_DUTPicName02, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
 end;
 
+  {   wp: not found
 
 { Compression }
 
@@ -628,14 +633,14 @@ begin
   StdIntTest(co_DUTPicName01, 'Compression', -1, 'Compression usage mismatch');
     // Tag not specified --> -1
 end;
-            (*
+
 procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
 begin
   StdIntTest(co_DUTPicName02, 'Compression', 6, 'Compression mismatch');
     // "JPEG (old style)" --> 6.
     // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
 end;
-          *)
+  }
 
 { Generic Date/time test }
 
@@ -714,7 +719,7 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureMode;
 begin
-  StdIntTest(co_DUTPicName01, 'ExposureMode', -1, 'ExposureMode usage mismatch');
+  StdIntTest(co_DUTPicName01, 'ExposureMode', -1, 'ExposureMode mismatch');
     // Tag not specified --> -1
 end;
 
@@ -722,6 +727,21 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureMode;
 begin
   StdIntTest(co_DUTPicName02, 'ExposureMode', 0, 'ExposreMode mismatch');
     // "Auto" --> 0
+end;
+
+
+{ Exposure program }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureProgram;
+begin
+  StdIntTest(co_DUTPicName01, 'ExposureProgram', -1, 'Exposure program mismatch');
+    // Tag not specified --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureProgram;
+begin
+  StdIntTest(co_DUTPicName02, 'ExposureProgram', -1, 'Exposure program mismatch');
+    // Tag not available --> -1
 end;
 
 
@@ -761,7 +781,22 @@ begin
   Test_ExposureTime(co_DUTPicName02, '1/1600');
 end;
 
-   (*
+
+{ File source }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FileSource;
+begin
+  StdIntTest(co_DUTPicName01, 'FileSource', -1, 'File source mismatch');
+    // Tag not specified --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FileSource;
+begin
+  StdIntTest(co_DUTPicName02, 'FileSource', 3, 'File source mismatch');
+    // "Digigal camera" --> 3
+end;
+
+(*                   wp: is not found..., ccr-exif EXITList lists it in MakerNotes
 { Firmware version }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FirmwareVersion;
@@ -773,7 +808,7 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_FirmwareVersion;
 begin
   StdStringTest(co_DUTPicName01, 'FirmwareVersion', 'Firmware Version 1.01', 'Firmware version mismatch');
 end;
-    *)
+*)
 
 { Flash }
 

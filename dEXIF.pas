@@ -772,7 +772,7 @@ var
     '2:OneChipColorArea,3:TwoChipColorArea,4:ThreeChipColorArea,'+
     '5:ColorSequentialArea,6:MonochromeLinear,7:TriLinear,'+
     '8:ColorSequentialLinear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $A300;  Name:'FileSource'              ;  Desc:'';Code:'1:Unknown,3:Digital Still Camera'),
+  (TID:0;TType:0;ICode: 2;Tag: $A300;  Name:'FileSource'              ;  Desc:'';Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
   (TID:0;TType:0;ICode: 2;Tag: $A301;  Name:'SceneType'               ;  Desc:'';Code:'0:Unknown,1:Directly Photographed'),
   (TID:0;TType:0;ICode: 2;Tag: $A302;  Name:'CFAPattern'              ),
   (TID:0;TType:0;ICode: 2;Tag: $A401;  Name:'CustomRendered'          ;  Desc:'';Code:'0:Normal process,1:Custom process'),
@@ -2521,6 +2521,9 @@ begin
   tiq := GetTagByName(tagName);
   if tiq.Tag = 0 then  // EmptyEntry
     Result := -1
+  else
+  if (tiq.TType = FMT_UNDEFINED) and (tiq.Size = 1) then
+    Result := byte(tiq.Raw[1])
   else
     result := round(GetNumber(tiq.Raw, tiq.TType));
 end;
