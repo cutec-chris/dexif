@@ -1555,83 +1555,101 @@ var
   size, pDat, p : Cardinal;
   head : String;
 
-function check (const t : TTagEntry; pid : word) : Boolean; inline;
-var i : integer;
-begin
- if (t.parentID <> pid) or (t.TType >= Length(BytesPerFormat)) or (BytesPerFormat[t.TType] = 0) then Result := false
- else begin
-  Result := Length(whitelist) = 0;
-  for i := 0 to Length(whitelist)-1 do if (whitelist[i] = t.Tag) then begin Result := true; break; end;
- end;
-end;
+  function check (const t : TTagEntry; pid : word) : Boolean; inline;
+  var
+    i : integer;
+  begin
+    if (t.parentID <> pid) or (t.TType >= Length(BytesPerFormat)) or (BytesPerFormat[t.TType] = 0) then Result := false
+    else begin
+      Result := Length(whitelist) = 0;
+      for i := 0 to Length(whitelist)-1 do if (whitelist[i] = t.Tag) then begin
+        Result := true;
+        break;
+      end;
+    end;
+  end;
 
-function calcSubIFDSize(pid : integer) : integer;
-var i : integer;
+  function calcSubIFDSize(pid : integer) : integer;
+  var
+    i : integer;
+  begin
+    Result := 6;
+    for i := 0 to Length(fiTagArray)-1 do begin
+      if (not check(fiTagArray[i], pid)) then continue;
+      Result := Result + 12;
+      if (fiTagArray[i].id <> 0) then
+        Result := Result + calcSubIFDSize(fiTagArray[i].id)
+      else
+        if (Length(fiTagArray[i].Raw) > 4) then
+          Result := Result + Length(fiTagArray[i].Raw);  // calc size
+    end;
+  end;
+
 begin
- Result := 6;
- for i := 0 to Length(fiTagArray)-1 do begin
-  if (not check(fiTagArray[i], pid)) then continue;
-  Result := Result + 12;
-  if (fiTagArray[i].id <> 0) then Result := Result + calcSubIFDSize(fiTagArray[i].id)
-  else if (Length(fiTagArray[i].Raw) > 4) then Result := Result + Length(fiTagArray[i].Raw);  // calc size
- end;
-end;
-begin
- {$ifdef CreateExifBufDebug}if (parentID = 0) then CreateExifBufDebug := '';{$endif}
- if (parentID = 0) then head := #0#0                 // APP1 block size (calculated later)
+  {$ifdef CreateExifBufDebug}if (parentID = 0) then CreateExifBufDebug := '';{$endif}
+  if (parentID = 0) then head := #0#0                 // APP1 block size (calculated later)
         + 'Exif' + #$00+#$00                         // Exif Header
         + 'II' + #$2A+#$00 + #$08+#$00+#$00+#$00     // TIFF Header (Intel)
- else head := '';
- n := 0;
- size := 0;
- for i := 0 to Length(fiTagArray)-1 do begin
-  if (not check(fiTagArray[i], parentID)) then continue;
-  n := n + 1; // calc number of Tags in current IFD
-  if (fiTagArray[i].id <> 0) then size := size + calcSubIFDSize(fiTagArray[i].id)
-  else if (Length(fiTagArray[i].Raw) > 4) then size := size + Length(fiTagArray[i].Raw);  // calc size
- end;
- pDat := Length(head) + 2 + n*12 + 4; // position of DataArea
- p := pDat;
- size := size + pDat;
- SetLength(Result, size);
- if (parentID = 0) then begin
-  head[1] := char(size div 256);
-  head[2] := char(size mod 256);
-  move(head[1], Result[1], Length(head));             // write header
- end;
- PWord(@Result[1+Length(head)])^ := n;                // write tag count
- PCardinal(@Result[1+Length(head)+2+12*n])^ := 0;     // write offset to next IFD (0, because just IFD0 is included)
- n := 0;
- for f := 0 to 1 do for i := 0 to Length(fiTagArray)-1 do begin          // write tags
-  if (not check(fiTagArray[i], parentID)) then continue;
-  if (f = 0) and (fiTagArray[i].Tag <> TAG_EXIF_OFFSET) then continue; // Sub-IFD must be first data block... more or less (WTF)
-  if (f = 1) and (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then continue;
-  PWord(@Result[1+Length(head)+2+12*n+0])^ := fiTagArray[i].Tag;
-  if (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then begin
-   PWord(@Result[1+Length(head)+2+12*n+2])^ := 4;  // Exif-Pointer is not a real data block but really a pointer (WTF)
-   PCardinal(@Result[1+Length(head)+2+12*n+4])^ := 1;
-  end else begin
-   PWord(@Result[1+Length(head)+2+12*n+2])^ := fiTagArray[i].TType;
-   PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BytesPerFormat[fiTagArray[i].TType];
+  else head := '';
+  n := 0;
+  size := 0;
+  for i := 0 to Length(fiTagArray)-1 do begin
+    if (not check(fiTagArray[i], parentID)) then
+      continue;
+    n := n + 1; // calc number of Tags in current IFD
+    if (fiTagArray[i].id <> 0) then
+      size := size + calcSubIFDSize(fiTagArray[i].id)
+    else
+      if (Length(fiTagArray[i].Raw) > 4) then
+        size := size + Length(fiTagArray[i].Raw);  // calc size
   end;
-  {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + '  ' + fiTagArray[i].Name;{$endif}
-  if (Length(fiTagArray[i].Raw) <= 4) and (fiTagArray[i].id = 0) then begin
-   PCardinal(@Result[1+Length(head)+2+12*n+8])^ := 0;
-   if (Length(fiTagArray[i].Raw) > 0) then move(fiTagArray[i].Raw[1], Result[1+Length(head)+2+12*n+8], Length(fiTagArray[i].Raw));
-  end else begin
-   PCardinal(@Result[1+Length(head)+2+12*n+8])^ := p - 8 + offsetBase;
-   if (fiTagArray[i].id <> 0) then begin
-    {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' { ';{$endif}
-    fiTagArray[i].Raw := CreateExifBuf(fiTagArray[i].id, p); // create sub IFD
-    fiTagArray[i].Size := Length(fiTagArray[i].Raw);
-    {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' } ';{$endif}
-   end;
-   move(fiTagArray[i].Raw[1], Result[1+p], Length(fiTagArray[i].Raw));
-   p := p + Length(fiTagArray[i].Raw);
+  pDat := Length(head) + 2 + n*12 + 4; // position of DataArea
+  p := pDat;
+  size := size + pDat;
+  SetLength(Result, size);
+  if (parentID = 0) then begin
+    head[1] := char(size div 256);
+    head[2] := char(size mod 256);
+    move(head[1], Result[1], Length(head));             // write header
   end;
-  n := n+1;
- end;
- {$ifdef CreateExifBufDebug}if (parentID = 0) then ShowMessage(CreateExifBufDebug);{$endif}
+  PWord(@Result[1+Length(head)])^ := n;                // write tag count
+  PCardinal(@Result[1+Length(head)+2+12*n])^ := 0;     // write offset to next IFD (0, because just IFD0 is included)
+  n := 0;
+  for f := 0 to 1 do for i := 0 to Length(fiTagArray)-1 do begin          // write tags
+  if (not check(fiTagArray[i], parentID)) then continue;
+    if (f = 0) and (fiTagArray[i].Tag <> TAG_EXIF_OFFSET) then
+      continue; // Sub-IFD must be first data block... more or less (WTF)
+    if (f = 1) and (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then
+      continue;
+    PWord(@Result[1+Length(head)+2+12*n+0])^ := fiTagArray[i].Tag;
+    if (fiTagArray[i].Tag = TAG_EXIF_OFFSET) then begin
+      PWord(@Result[1+Length(head)+2+12*n+2])^ := 4;  // Exif-Pointer is not a real data block but really a pointer (WTF)
+      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := 1;
+    end
+    else begin
+      PWord(@Result[1+Length(head)+2+12*n+2])^ := fiTagArray[i].TType;
+      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BytesPerFormat[fiTagArray[i].TType];
+    end;
+    {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + '  ' + fiTagArray[i].Name;{$endif}
+    if (Length(fiTagArray[i].Raw) <= 4) and (fiTagArray[i].id = 0) then begin
+      PCardinal(@Result[1+Length(head)+2+12*n+8])^ := 0;
+      if (Length(fiTagArray[i].Raw) > 0) then
+        move(fiTagArray[i].Raw[1], Result[1+Length(head)+2+12*n+8], Length(fiTagArray[i].Raw));
+    end
+    else begin
+      PCardinal(@Result[1+Length(head)+2+12*n+8])^ := p - 8 + offsetBase;
+      if (fiTagArray[i].id <> 0) then begin
+        {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' { ';{$endif}
+        fiTagArray[i].Raw := CreateExifBuf(fiTagArray[i].id, p); // create sub IFD
+        fiTagArray[i].Size := Length(fiTagArray[i].Raw);
+        {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + ' } ';{$endif}
+      end;
+      move(fiTagArray[i].Raw[1], Result[1+p], Length(fiTagArray[i].Raw));
+      p := p + Length(fiTagArray[i].Raw);
+    end;
+    n := n+1;
+  end;
+  {$ifdef CreateExifBufDebug}if (parentID = 0) then ShowMessage(CreateExifBufDebug);{$endif}
 end;
 
 //--------------------------------------------------------------------------

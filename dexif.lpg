@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectGroup FileVersion="1">
-    <Targets Count="5">
+    <Targets Count="6">
       <Target0 FileName="samples\00_Basic\BaseSample.lpi">
         <BuildModes Count="2"/>
         <Mode1 Name="Debug" Compile="True"/>
@@ -21,6 +21,10 @@
         <BuildModes Count="1"/>
         <Mode1 Name="Default"/>
       </Target4>
+      <Target5 FileName="samples\01_CreateImage\CreateImageEXIF.lpi">
+        <BuildModes Count="1"/>
+        <Mode1 Name="Default"/>
+      </Target5>
     </Targets>
   </ProjectGroup>
 </CONFIG>
