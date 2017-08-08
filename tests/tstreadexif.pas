@@ -76,7 +76,7 @@ type
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SceneCaptureType;
     procedure TstReadFile_SensingMethod;
-//    procedure TstReadFile_ShutterSpeedValue;
+    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
     procedure TstReadFile_YCbCrPositioning;
 //  procedure TstReadFile_YCbCrSubsampling;
@@ -110,7 +110,7 @@ type
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
     procedure TstReadfile_SceneCaptureType;
-//    procedure TstReadFile_ShutterSpeedValue;
+    procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
     procedure TstReadFile_YCbCrPositioning;
 //    procedure TstReadFile_YCbCrSubsampling;
@@ -1008,24 +1008,35 @@ begin
     // "One-chip color area"  --> 2
 end;
 
-  (*
 { Shutter speed value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ShutterSpeedValue;
 begin
   StdFloatTest(co_DUTPicName01, 'ShutterSpeedValue', 0.0, 8, 'Shutter speed value mismatch');
-//  StdFloatFromStringTest(co_DUTPicName01, 'ShutterSpeedValue', '', 8, 'Shutter speed value mismatch');
     // Tag not available (EXIFTool does list a "Shutter Speed", but the tag is
     // not in the file, the value is probably taken from tag "ExposureTime")
     // --> 0.0
 end;
 
+{ BE CAREFUL WITH THIS TEST: IT REQUIRES TRANSFORMATION OF THE EXPECTED VALUE
+  SHOWN BY THE EXIF REFERENCE PROGRAM. }
 procedure TTstReadFile_dEXIF_02.TstReadFile_ShutterSpeedValue;
+const
+  EPS = 0.01;   // Allow 1% tolerance for rounding errors etc.
+var
+  expectedExposureTime: Double;
+  expectedShutterSpeed: Double;
+  allowedDigits: Integer;
 begin
-  StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', 1/1614, 8, 'Shutter speed value mismatch');
-//  StdFloatFromStringTest(co_DUTPicName02, 'ShutterSpeedValue', '1/1614', 8, 'Shutter speed value mismatch');
+  // Note: ShutterSpeedValue is stored as -log2 of exposure time.
+  // see Annex C in EXIF specification
+  expectedExposureTime := 1/1614;
+  expectedShutterSpeed := -log2(expectedExposureTime);
+  allowedDigits := round(abs(log10(EPS * expectedShutterspeed)));
+  StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', expectedShutterSpeed,
+    allowedDigits, 'Shutter speed value mismatch');
 end;
-*)
+
 
 { White balance }
 
