@@ -36,7 +36,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="TestGUIdEXIF.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -50,6 +50,10 @@
         <Filename Value="tstreadexif.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="tstselfimage.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
