@@ -41,7 +41,6 @@ type
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
       AExpectedDateTime: TDateTime);
     procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
-    procedure Test_FocalLength(const AFilename: String; AExpected: Double);
     procedure Test_ImageSize(const AFileName: String;
       AExpectedWidth, AExpectedHeight: Integer);
     procedure Test_Resolution(const AFileName: String;
@@ -49,6 +48,9 @@ type
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
+
+  { TTstReadFile_dEXIF_01 }
+
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
     procedure TstReadFile_ApertureValue;
@@ -57,11 +59,17 @@ type
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+    procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
+    procedure TstReadFile_DigitalZoomRatio;
+    procedure TstReadFile_ExifImageLength;
+    procedure TstReadFile_ExifImageWidth;
+    procedure TstReadFile_ExifVersion;
+    procedure TstReadFile_ExposureBiasValue;
     procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
@@ -71,6 +79,7 @@ type
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
+//    procedure TstReadFile_FocalLengthIn35mm;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
@@ -93,11 +102,17 @@ type
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+    procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
     procedure TstReadFile_DateTime_Modified;
+    procedure TstReadFile_DigitalZoomRatio;
+    procedure TstReadFile_ExifImageLength;
+    procedure TstReadFile_ExifImageWidth;
+    procedure TstReadFile_ExifVersion;
+    procedure TstReadFile_ExposureBiasValue;
     procedure TstReadFile_ExposureMode;
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
@@ -107,6 +122,7 @@ type
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
+//    procedure TstReadFile_FocalLengthIn35mm;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
@@ -430,11 +446,13 @@ end;
 
 { Generic tests }
 
+{ Use NaN as AExpectedResult if the Tag does not exist in the image }
 procedure TTstReadFile_dEXIF.StdFloatTest(const AFileName, ATestTag: String;
   const AExpectedResult: Double; ADecimals: Integer;
   const AMismatchMsg: String);
 var
   DUT: TImgData;
+  currStrValue: String;
   currFloatValue: Double;
   currVal, expVal: Double;
 begin
@@ -443,9 +461,15 @@ begin
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currFloatValue := DUT.ExifObj.GetRawFloat(ATestTag);
-    currVal := RoundTo(currFloatValue, -ADecimals);
-    expVal := RoundTo(AExpectedResult, -ADecimals);
-    CheckEquals(expval, currval, AMismatchMsg);
+    if IsNaN(AExpectedResult) then begin
+      currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+      CheckEquals('', currStrValue, AMismatchMsg);
+    end else
+    begin
+      currVal := RoundTo(currFloatValue, -ADecimals);
+      expVal := RoundTo(AExpectedResult, -ADecimals);
+      CheckEquals(expval, currval, AMismatchMsg);
+    end;
   finally
     DUT.Free;
   end;
@@ -529,9 +553,9 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ApertureValue', 0.0, 1, 'Aperature value mismatch');
+  StdFloatTest(co_DUTPicName01, 'ApertureValue', NaN, 1, 'Aperature value mismatch');
   // It is listed in EXIFTool output, but not in CCR.EXIF Tag List, and
-  // is not found by EXIFSpy. --> 0.0
+  // is not found by EXIFSpy. --> NaN
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ApertureValue;
@@ -624,13 +648,28 @@ begin
   StdStringTest(co_DUTPicName02, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
 end;
 
-  {   wp: not found
+
+{ Compressed Bits per Pixel }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_CompressedBitsPerPixel;
+begin
+  StdIntTest(co_DUTPicName01, 'CompressedBitsPerPixel', -1, 'Compressed bits per pixel mismatch');
+    // Tag not specified --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CompressedBitsPerPixel;
+begin
+  StdIntTest(co_DUTPicName02, 'CompressedBitsPerPixel', 3, 'Compressed bits per pixel mismatch');
+end;
+
+
+{   wp: not found
 
 { Compression }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
 begin
-  StdIntTest(co_DUTPicName01, 'Compression', -1, 'Compression usage mismatch');
+  StdIntTest(co_DUTPicName01, 'Compression', -1, 'Compression mismatch');
     // Tag not specified --> -1
 end;
 
@@ -712,6 +751,76 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Modified;
 begin
   Test_DateTime(co_DUTPicName02, 3, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
+end;
+
+
+{ Digital zoom ratio }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_DigitalZoomRatio;
+begin
+  StdIntTest(co_DUTPicName01, 'DigitalZoomRatio', -1, 'Digital zoom ratio mismatch');
+  // Tag not available in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_DigitalZoomRatio;
+begin
+  StdIntTest(co_DUTPicName02, 'DigitalZoomRatio', 1, 'Digital zoom ratio mismatch');
+end;
+
+
+{ Exif image length }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExifImageLength;
+begin
+  StdIntTest(co_DUTPicName01, 'ExifImageLength', -1, 'Exif image length mismatch');
+  // Tag not available in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageLength;
+begin
+  StdIntTest(co_DUTPicName02, 'ExifImageLength', 1832, 'Exif image length mismatch');
+end;
+
+
+{ Exif image width }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExifImageWidth;
+begin
+  StdIntTest(co_DUTPicName01, 'ExifImageWidth', -1, 'Exif image width mismatch');
+  // Tag not available in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageWidth;
+begin
+  StdIntTest(co_DUTPicName02, 'ExifImageWidth', 3264, 'Exif image width mismatch');
+end;
+
+
+{ Exif version }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExifVersion;
+begin
+  StdStringTest(co_DUTPicName01, 'ExifVersion', '', 'Exif version mismatch');
+  // Tag not available in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExifVersion;
+begin
+  StdStringTest(co_DUTPicName02, 'ExifVersion', '0220', 'Exif version mismatch');
+end;
+
+
+{ Exposure bias value }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureBiasValue;
+begin
+  StdFloatTest(co_DUTPicName01, 'ExposureBiasValue', NaN, 2, 'Exposure bias value mismatch');
+  // Tag not available in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureBiasValue;
+begin
+  StdFloatTest(co_DUTPicName02, 'ExposureBiasValue', 0.0, 2, 'Exposure bias value mismatch');
 end;
 
 
@@ -853,60 +962,30 @@ end;
 
 { Focal length }
 
-procedure StripUnits(s: String; out AValue: Double; out AUnits: String);
-var
-  i: Integer;
-  valStr: String;
-  res: Integer;
-begin
-  valStr := '';
-  AUnits := '';
-  for i := 1 to Length(s) do begin
-    if s[i] in ['0'..'9', '.'] then
-      valStr := valstr + s[i]
-    else if s[i] = ',' then
-      valStr := valstr + '.'
-    else if s[i] <> ' ' then
-      AUnits := AUnits + s[i];
-  end;
-
-  val(valstr, AValue, res);
-  if res <> 0 then
-    AValue := -999;
-end;
-
-procedure TTstReadFile_dEXIF.Test_FocalLength(const AFilename: String;
-  AExpected: Double);  // assuming focal length to be given in mm
-var
-  DUT: TImgData;
-  currStrValue: String;
-  curr_val: double;
-  curr_units: String;
-begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(AFileName);
-    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal('FocalLength');
-    StripUnits(currStrValue, curr_val, curr_units);
-    if (curr_units = '') or (curr_units = 'mm') then
-      CheckEquals(FormatFloat('0.0', AExpected), FormatFloat('0.0', curr_val), 'Focal length mismatch')
-    else
-      Ignore('Focal length expected to be given in mm.');
-  finally
-    DUT.Free;
-  end;
-end;
-
 procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLength;
 begin
-  Test_FocalLength(co_DUTPicName01, 4.1);
+  StdFloatTest(co_DUTPicName01, 'FocalLength', 4.1, 1, 'Focal length mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLength;
 begin
-  Test_Focallength(co_DUTPicName02, 6.0);
+  StdFloatTest(co_DUTPicName02, 'FocalLength', 6.0, 1, 'Focal length mismatch');
 end;
+
+                                  (*
+                                  wp: failing because Calc35Equiv does not write Raw value
+{ Focal length in 35 mm }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLengthIn35mm;
+begin
+  StdFloatTest(co_DUTPicName01, 'FocalLengthIn35mm', NaN, 0, 'Focal length in 35mm mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLengthIn35mm;
+begin
+  StdFloatTest(co_DUTPicName02, 'FocalLengthIn35mm', 36, 0, 'Focal length in 35mm mismatch');
+end;
+                                    *)
 
 
 { Image width and image height }
@@ -1047,10 +1126,10 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ShutterSpeedValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ShutterSpeedValue', 0.0, 8, 'Shutter speed value mismatch');
+  StdFloatTest(co_DUTPicName01, 'ShutterSpeedValue', NaN, 8, 'Shutter speed value mismatch');
     // Tag not available (EXIFTool does list a "Shutter Speed", but the tag is
     // not in the file, the value is probably taken from tag "ExposureTime")
-    // --> 0.0
+    // --> NaN
 end;
 
 { BE CAREFUL WITH THIS TEST: IT REQUIRES TRANSFORMATION OF THE EXPECTED VALUE
