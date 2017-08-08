@@ -1,3 +1,7 @@
+{ Important note:
+  - Never trust a single exif extraction tool. It may just re-use other tags.
+}
+
 unit tstreadexif;
 
 {$mode objfpc}{$H+}
@@ -47,7 +51,7 @@ type
   { Tests for image DUTPic01, taken by SAMSUNG camera }
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   published
-//    procedure TstReadFile_ApertureValue;
+    procedure TstReadFile_ApertureValue;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
@@ -81,7 +85,7 @@ type
   { Tests for image DUTPic02, taken by CANON camera }
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
   published
-//    procedure TstReadFile_ApertureValue;
+    procedure TstReadFile_ApertureValue;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
@@ -156,6 +160,24 @@ uses
 +   Shutter Speed                   : 1/3376                                    Tag "ExposureTime"
 +   Focal Length                    : 4.1 mm                                    Tag "FocalLength"
     Light Value                     : 15.3
+
+----------------------
+
+output of ccr-exif Exif Tag List for DUTPic01.jpeg
+
+General
+   Byte order	Big endian
+Main IFD
+   Loaded cleanly	Yes
+   Camera make	SAMSUNG
+   Camera model	SM-G850F
+Exif sub-IFD
+   Loaded cleanly	Yes
+   Date/time original	Mittwoch, 15. März 2017 at 10:35:11
+   Exposure time	0,000296208530805687 seconds
+   F number	2,2
+   Focal length	4,09
+   ISO speed rating(s)	40,0
 
 --------------------------------------------------------------------------------
 
@@ -499,21 +521,22 @@ begin
   end;
 end;
 
-  (*
 { Aperture value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
 begin
-//  StdFloatTest(co_DUTPicName01, 'ApertureValue', 2.2, 1, 'Aperature value mismatch');
-  StdFloatFromStringTest(co_DUTPicName01, 'ApertureValue', '', 1, 'Aperture value mismatch');
+  StdFloatTest(co_DUTPicName01, 'ApertureValue', 0.0, 1, 'Aperature value mismatch');
+  // It is listed in EXIFTool output, but not in CCR.EXIF Tag List, and
+  // is not found by EXIFSpy. --> 0.0
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ApertureValue;
 begin
-//  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.7, 1, 'Aperature value mismatch');
-  StdFloatFromStringTest(co_DUTPicName02, 'ApertureValue', '2.7', 1, 'Aperature value mismatch');
+  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.875, 1, 'Aperature value mismatch');
+  // EXIFTool shows a value 2.7 here, but CCR.EXIF Tag List lists the value 2.875
+  // that is also seen by Serif PhotoPlus X7 and EXIFSpy.
+  // I suppose that EXIFTool displays the FNumber value.  --> 2.875
 end;
-*)
 
      (*
 { Bits per sample }
