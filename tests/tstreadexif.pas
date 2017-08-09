@@ -48,9 +48,6 @@ type
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
-
-  { TTstReadFile_dEXIF_01 }
-
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   public
     constructor Create; override;
@@ -93,12 +90,15 @@ type
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SceneCaptureType;
     procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_XResolution;
     procedure TstReadFile_YCbCrPositioning;
 //  procedure TstReadFile_YCbCrSubsampling;
+    procedure TstReadFile_YResolution;
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
@@ -144,12 +144,15 @@ type
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SensingMethod;
     procedure TstReadfile_SceneCaptureType;
     procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_XResolution;
     procedure TstReadFile_YCbCrPositioning;
 //    procedure TstReadFile_YCbCrSubsampling;
+    procedure TstReadFile_YResolution;
   end;
 
 
@@ -1194,6 +1197,21 @@ begin
 end;
 
 
+{ Resolution unit}
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ResolutionUnit;
+begin
+  StdIntTest(FImgFileName, 'ResolutionUnit', -1, 'Resolution unit mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ResolutionUnit;
+begin
+  StdIntTest(FImgFileName, 'ResolutionUnit', 2, 'Resolution unit mismatch');
+    // "inch" --> 2
+end;
+
+
 { Scene capture type }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_SceneCaptureType;
@@ -1269,6 +1287,20 @@ begin
 end;
 
 
+{ X Resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_XResolution;
+begin
+  StdIntTest(FImgFileName, 'XResolution', -1, 'XResolution mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_XResolution;
+begin
+  StdIntTest(FImgFileName, 'XResolution', 180, 'XResolution mismatch');
+end;
+
+
 { YCbCr Positioning }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_YCbCrPositioning;
@@ -1297,6 +1329,21 @@ begin
   StdStringTest(FImgFileName, 'YCbCrSubsampling', 'YCbCr4:2:2 (2 1)', 'YCbCrsubsampling mismatch');
 end;
 *)
+
+
+{ Y Resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_YResolution;
+begin
+  StdIntTest(FImgFileName, 'YResolution', -1, 'YResolution mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_YResolution;
+begin
+  StdIntTest(FImgFileName, 'YResolution', 180, 'YResolution mismatch');
+end;
+
 
 initialization
   RegisterTest(TTstReadFile_dEXIF_01);
