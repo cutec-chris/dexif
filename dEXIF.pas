@@ -86,9 +86,6 @@ type
     function getTag(TagID: integer; forceCreate: Boolean=false; parentID: word=
       0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
     function GetTagElement(TagID: integer): TTagEntry;
-    function ReadArtist: AnsiString;
-    function ReadComments: String;
-    function ReadImageDescription: AnsiString;
     procedure removeTag(TagID: integer; parentID: word=0);
     procedure SetTagElement(TagID: integer; const Value: TTagEntry);
     function GetTagByName(TagName: ansistring): TTagEntry;
@@ -98,9 +95,6 @@ type
     procedure pushDirStack(dirStart, offsetbase: Integer);
     function testDirStack(dirStart, offsetbase: Integer): boolean;
     procedure clearDirStack;
-    procedure WriteArtist(v: String);
-    procedure WriteComments(v: String);
-    procedure WriteImageDescription(v: AnsiString);
   public
     FITagArray: array of tTagEntry;
     FITagCount: integer;
@@ -196,6 +190,14 @@ type
     destructor Destroy; override;
     function WriteThruInt(tname: ansistring; value: Integer): boolean;
     function WriteThruString(tname, value: ansistring): boolean;
+
+    function ReadArtist: AnsiString;
+    function ReadComments: String;
+    function ReadImageDescription: AnsiString;
+    procedure WriteArtist(v: String);
+    procedure WriteComments(v: String);
+    procedure WriteImageDescription(v: AnsiString);
+
   private
     iterator:integer;
     iterThumb:integer;
@@ -512,8 +514,8 @@ const
    TAG_FOCALLENGTH35MM    = $A405;             // added by M. Schwaiger
 
 
-   GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 7;  // NOTE: was 250 before, but "count" is 251
+   GPSCnt = 31 - 4;
+   ExifTagCnt = 251 - 6;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -740,7 +742,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9217;  Name:'SensingMethod'          ),
   (TID:0;TType:0;ICode: 2;Tag: $923F;  Name:'StoNits'                ),
   (TID:0;TType:0;ICode: 2;Tag: $927C;  Name:'MakerNote'              ),
-//  (TID:0;TType:0;ICode: 2;Tag: $9286;  Name:'UserComment'            ;  Callback: ExtractComment),
+  (TID:0;TType:0;ICode: 2;Tag: $9286;  Name:'UserComment'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback: @ExtractComment),
   (TID:0;TType:0;ICode: 2;Tag: $9290;  Name:'SubSecTime'             ),
   (TID:0;TType:0;ICode: 2;Tag: $9291;  Name:'SubSecTimeOriginal'     ),
   (TID:0;TType:0;ICode: 2;Tag: $9292;  Name:'SubSecTimeDigitized'    ),
@@ -793,9 +795,9 @@ var
  GPSTable : array [0..GPSCnt-1] of TTagEntry =
  ((TID:0;TType:0;ICode: 2;Tag: $000;   Name:'GPSVersionID'           ),
   (TID:0;TType:0;ICode: 2;Tag: $001;   Name:'GPSLatitudeRef'         ),
-//  (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ;   CallBack:GpsPosn),
+  (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:@GpsPosn),
   (TID:0;TType:0;ICode: 2;Tag: $003;   Name:'GPSLongitudeRef'        ),
-//  (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ;   CallBack:GpsPosn),
+  (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:@GpsPosn),
   (TID:0;TType:0;ICode: 2;Tag: $005;   Name:'GPSAltitudeRef'         ;  Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
 //  (TID:0;TType:0;ICode: 2;Tag: $006;   Name:'GPSAltitude'            ;   CallBack:GpsAltitude),
 //  (TID:0;TType:0;ICode: 2;Tag: $007;   Name:'GPSTimeStamp'           ;   CallBack:CvtTime),
@@ -2382,20 +2384,28 @@ function TImageInfo.ReadComments : String;
 var
   p : PTagEntry;
   w : WideString;
+  n: Integer;
 begin
- Result := '';
- w := '';
- p := getTag(TAG_EXIF_OFFSET, false, 0, 4);
- if (p = nil) then exit;
- p := getTag(TAG_USERCOMMENT, false, p^.ID, 2);
- if (p = nil) or (Length(p^.Raw) <= 10) then exit;
- if (Pos('ASCII', p^.Raw) = 1) then begin
-  setLength(Result, Length(p^.Raw)-9);
-  move(p^.Raw[9], Result[1], Length(p^.Raw)-9);
- end else begin
-  setLength(w, (Length(p^.Raw)-10 div 2));
-  move(p^.Raw[9], w[1], Length(p^.Raw)-10);
-  Result := w;
+  Result := '';
+  w := '';
+  p := getTag(TAG_EXIF_OFFSET, false, 0, 4);
+  if (p = nil) then
+    exit;
+  p := getTag(TAG_USERCOMMENT, false, p^.ID, 2);
+  if (p = nil) or (Length(p^.Raw) <= 10) then
+    exit;
+  if (Pos('ASCII', p^.Raw) = 1) then begin
+    SetLength(Result, Length(p^.Raw)-9);
+    Move(p^.Raw[9], Result[1], Length(p^.Raw)-9);
+  end else begin
+    SetLength(w, ((Length(p^.Raw) - 8) div 2));
+//    Move(p^.Raw[9], w[1], Length(p^.Raw)-10);
+    Move(p^.Raw[9], w[1], Length(w)*SizeOf(WideChar));
+    {$IF FPC_FULLVERSION < 30000}
+    Result := UTF8Encode(w);
+    {$ELSE}
+    Result := w;
+    {$ENDIF}
  end;
 end;
 

@@ -16,9 +16,13 @@ const
   co_TestPic01 = './testpictures/original/with_exif_large.jpeg';
   co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
 
-  // Picture with EXIF data taken from CANON camera
+  // Picture with EXIF data taken from CANON camera with GPS
   co_TestPic02 = './testpictures/original/img_9438.jpg';
   co_DUTPicName02 = './testpictures/DUTPic03.jpeg';
+
+  // Picture with EXIF data taken from CANON camera with comment etc.
+  co_TestPic03 = './testpictures/original/Schilfgebiet.jpg';
+  co_DUTPicName03 = './testpictures/DUTPic04.jpeg';
 
 type
   { TTsTBasic_dEXIF }
@@ -39,12 +43,16 @@ type
       const AExpectedResult, AMismatchMsg: String);
 
     procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
+    procedure ReadFile_CommentSegment(const AFileName, AExpected: String);
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
       AExpectedDateTime: TDateTime);
+    procedure Test_GPSPosition(const AFileName: String; const ATagName: String;
+      AExpectedDeg, AExpectedMin, AExpectedSec: Double; const AMismatchMsg: String);
     procedure Test_ImageSize(const AFileName: String;
       AExpectedWidth, AExpectedHeight: Integer);
     procedure Test_Resolution(const AFileName: String;
       AExpectedXResolution, AExpectedYResolution: Integer; AExpectedUnits: String);
+    procedure Test_UserComment(const AFilename, AExpected: String);
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
@@ -53,11 +61,14 @@ type
     constructor Create; override;
   published
     procedure TstReadFile_ApertureValue;
+    procedure TstReadFile_Artist;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
     procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_CustomRendered;
@@ -83,6 +94,9 @@ type
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
+    procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
@@ -106,6 +120,7 @@ type
   public
     constructor Create; override;
   published
+    procedure TstReadFile_Artist;
     procedure TstReadFile_ApertureValue;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
@@ -113,6 +128,8 @@ type
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
     procedure TstReadFile_CompressedBitsPerPixel;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_CustomRendered;
     procedure TstReadFile_DateTime;
@@ -137,6 +154,9 @@ type
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
+    procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
@@ -155,6 +175,16 @@ type
     procedure TstReadFile_YResolution;
   end;
 
+  { Tests for image DUTPic03, taken by Casio camera, contains comment etc }
+  TTstReadFile_dEXIF_03 = class(TTstReadFile_dEXIF)
+  public
+    constructor Create; override;
+  published
+    procedure TstReadFile_Artist;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
+    procedure TstReadFile_ImageDescription;
+  end;
 
 implementation
 
@@ -389,6 +419,62 @@ Output of EXIFTool for DUTPic03.jpeg
     Hyperfocal Distance             : 2.69 m
     Lens                            : 6.0 - 72.0 mm (35 mm equivalent: 36.3 - 435.8 mm)
     Light Value                     : 12.8
+--------------------------------------------------------------------------------
+Output of CCR-EXIF Tag List demo for DUTPic03.jpeg
+
+General
+   Byte order	Small endian
+Main IFD
+   Loaded cleanly	Yes
+   Camera make	Canon
+   Camera model	Canon PowerShot S5 IS
+   Date/time	Samstag, 11. Februar 2017 at 15:09:39
+   Image description	MyZeil Shopping Center
+   Orientation	Normal
+   Resolution	180 x 180 inches
+Exif sub-IFD
+   Loaded cleanly	Yes
+   Exif version	2,2,0
+   Aperture value	2,875
+   Colour space	sRGB
+   Compressed bits per pixel	3
+   Date/time original	Samstag, 11. Februar 2017 at 15:09:39
+   Date/time digitised	Samstag, 11. Februar 2017 at 15:09:39
+   Digital zoom ratio	1
+   Exif image width	3264
+   Exif image height	1832
+   Exposure time	0,000625 seconds
+   Exposure bias value	0
+   File source	Digital camera
+   Flash present	Yes
+   Flash mode	Compulsory suppression
+   Flash fired	No
+   Flash red eye reduction	No
+   Flash strobe light	No detection function
+   F number	2,7
+   Focal length	6
+   Focal length in 35mm film	36
+   Focal plane resolution	14506,6666666667 x 10840,2366863905 inches
+   ISO speed rating(s)	160
+   Max aperture value	2,875
+   Metering mode	Pattern
+   Rendering	Normal
+   Scene capture type	Standard
+   Sensing method	One chip
+   Shutter speed	0,6197 milliseconds
+   White balance mode	Auto
+Interoperability sub-IFD
+   Loaded cleanly	Yes
+   Interoperability type	R98
+   Interoperability version	1,0,0
+GPS sub-IFD
+   Loaded cleanly	Yes
+   GPS version	2,3,0
+   GPS latitude	50,6,79775/1544N
+   GPS longitude	8,40,89923/1690E
+Thumbnail IFD
+   Loaded cleanly	Yes
+   Thumbnail resolution	180 x 180 inches
 
 --------------------------------------------------------------------------------
 +  <--- test is passed
@@ -442,6 +528,73 @@ begin
   end;
 end;
 
+{ dEXIF exports GPS coordinates as "d degrees m minutes s seconds" }
+procedure ExtractGPSPosition(InStr: String; out ADeg, AMin, ASec: Double);
+const
+   NUMERIC_CHARS = ['0'..'9', '.', ',', '-', '+'];
+var
+  p, p0: PChar;
+  n: Integer;
+  s: String;
+  res: Integer;
+begin
+  ADeg := NaN;
+  AMin := NaN;
+  ASec := NaN;
+
+  if InStr = '' then
+    exit;
+
+  // skip leading non-numeric characters
+  p := @InStr[1];
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract first value: degrees
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n);
+  val(s, ADeg, res);
+
+  // skip non-numeric characters between degrees and minutes
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract second value: minutes
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n);
+  val(s, AMin, res);
+
+  // skip non-numeric characters between minutes and seconds
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract third value: seconds
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLengtH(s, n);
+  Move(p0^, s[1], n);
+  val(s, ASec, res);
+end;
+
 
 { Preparation }
 
@@ -459,6 +612,13 @@ begin
   FImgFileName := co_DUTPicName02;
 end;
 
+{ Test ...03 will operate on image co_DUTPicName03 }
+constructor TTstReadFile_dEXIF_03.Create;
+begin
+  inherited;
+  FImgFileName := co_DUTPicName03;
+end;
+
 
 { Test methods }
 
@@ -471,6 +631,10 @@ begin
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
       CopyFile(co_TestPic02, co_DUTPicName02);
+
+  if not FileExists(co_DUTPicName03) then
+    if FileExists(co_TestPic03) then
+      CopyFile(co_TestPic03, co_DUTPicName03);
 end;
 
 procedure TTstReadFile_dEXIF.TearDown;
@@ -481,6 +645,35 @@ end;
 
 
 { Generic tests }
+
+procedure TTstReadFile_dEXIF.Test_GPSPosition(const AFileName: String;
+  const ATagName: String; AExpectedDeg, AExpectedMin, AExpectedSec: Double;
+  const AMismatchMsg: String);
+const
+  EPS = 1E-2;
+var
+  DUT: TImgData;
+  currStrValue: String;
+  currDeg, currMin, currSec: Double;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currStrValue := DUT.ExifObj.LookupTagVal(ATagName);
+    ExtractGPSPosition(currStrValue, currDeg, currMin, currSec);
+    if IsNaN(AExpectedDeg) and IsNaN(AExpectedMin) and IsNaN(AExpectedSec) then
+      CheckTRUE(IsNaN(currDeg) and IsNaN(currMin) and IsNaN(currSec), AMismatchMsg)
+    else
+    begin
+      CheckEquals(round(AExpectedDeg), round(currDeg), AMismatchMsg + ' (degrees)');
+      CheckEquals(round(AExpectedMin), round(currMin), AMismatchMsg + ' (minutes)');
+      CheckEquals(round(AExpectedSec), round(currSec), AMismatchMsg + ' (seconds)');
+    end;
+  finally
+    DUT.Free;
+  end;
+end;
 
 { Use NaN as AExpectedResult if the Tag does not exist in the image }
 procedure TTstReadFile_dEXIF.StdFloatTest(const AFileName, ATestTag: String;
@@ -585,6 +778,25 @@ begin
   end;
 end;
 
+
+{ Artist }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', '', 'Artist mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', 'wp', 'Artist mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', 'Mitja Stachowiak', 'Artist mismatch');
+end;
+
+
 { Aperture value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
@@ -682,6 +894,77 @@ end;
 procedure TTstReadFile_dEXIF_02.TstReadFile_ColorSpace;
 begin
   StdStringTest(FImgFileName, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
+end;
+
+
+{ Comment in Exif Segement: Tag UserComment}
+
+procedure TTstReadFile_dEXIF.Test_UserComment(const AFileName, AExpected: String);
+var
+  DUT: TImgData;
+  currStrValue: String;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    currStrValue := DUT.ExifObj.ReadComments;
+    CheckEquals(AExpected, currStrValue, 'User comment mismatch');
+  finally
+    DUT.Free;
+  end;
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_CommentExif;
+begin
+//  StdStringTest(FImgFileName, 'UserComment', '', 'Comment mismatch');
+  Test_UserComment(FImgFileName, '');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CommentExif;
+begin
+  Test_UserComment(FImgFileName, 'This is an EXIF user comment with äöü');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_CommentExif;
+begin
+  Test_UserComment(FImgFileName, 'am Reinheimer Teich - Лев Николаевич Толсто́й - End of line.');
+end;
+
+
+{ CommentSegment }
+
+procedure TTstReadFile_dEXIF.ReadFile_CommentSegment(
+  const AFileName, AExpected: String);
+var
+  DUT: TImgData;
+  currStrValue: String;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckEquals(AExpected <> '', DUT.HasComment, 'No comment segment found');
+    if Dut.HasComment then begin
+      currStrValue := DUT.GetCommentStr;
+      CheckEquals(AExpected, currStrValue, 'Comment text mismatch');
+    end;
+  finally
+    DUT.Free;
+  end;
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, '');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, 'This text is in COMMENT section');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, '');
 end;
 
 
@@ -1057,6 +1340,55 @@ begin
 end;
 
 
+{ GPS latitude }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLatitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLatitude', NaN, NaN, NaN,'GPS latitude mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLatitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLatitude', 50, 6, 51.67, 'GPS latitude mismatch');
+    // output of EXIFTool: 50 deg 6' 51.67" N
+end;
+
+
+{ GPS longitude }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLongitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLongitude', NaN, NaN, NaN, 'GPS longitude mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLongitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLongitude', 8, 40, 53.21, 'GPS longitude mismatch');
+    // output of EXIFTool: 8 deg 40' 53.21" E
+end;
+
+
+{ Image description }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', '', 'Image description mismatch');
+    // Tag not used by this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', 'MyZeil Shopping Center', 'Image description mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', 'Schilfgebiet', 'Image description mismatch');
+end;
+
+
 { Image width and image height }
 
 procedure TTstReadFile_dEXIF.Test_ImageSize(const AFileName: String;
@@ -1346,6 +1678,7 @@ end;
 initialization
   RegisterTest(TTstReadFile_dEXIF_01);
   RegisterTest(TTstReadFile_dEXIF_02);
+  RegisterTest(TTstReadFile_dEXIF_03);
 
 end.
 
