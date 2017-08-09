@@ -474,44 +474,43 @@ const
 // all others are found in tag array.
 //-------------------------------------------------------
 
-   TAG_EXIF_OFFSET      = $8769;
-   TAG_GPS_OFFSET       = $8825;
-   TAG_INTEROP_OFFSET   = $A005;
-   TAG_SUBIFD_OFFSET    = $014A;
+   TAG_EXIF_OFFSET        = $8769;
+   TAG_GPS_OFFSET         = $8825;
+   TAG_INTEROP_OFFSET     = $A005;
+   TAG_SUBIFD_OFFSET      = $014A;
 
-   TAG_MAKE             = $010F;
-   TAG_MODEL            = $0110;
-   TAG_DATETIME_MODIFY  = $0132;
-
-   TAG_EXIFVER          = $9000;
-   TAG_SHUTTERSPEED     = $9201;
-   TAG_APERTURE         = $9202;
-   TAG_MAXAPERTUREVALUE = $9205;
-   TAG_FOCALLENGTH      = $920A;
-
-(*
-   TAG_EXPOSURETIME     = $829A;
-   TAG_FNUMBER          = $829D;
-   TAG_FOCALLENGTH35MM  = $A405;             // added by M. Schwaiger
-   TAG_SUBJECT_DISTANCE = $9206;
-   TAG_LIGHT_SOURCE     = $9208;
-   TAG_FOCALPLANEXRES   = $a20E;
-   TAG_FOCALPLANEYRES   = $a20F;             // added by M. Schwaiger
-   TAG_FOCALPLANEUNITS  = $a210;
-*)
-
-   TAG_THUMBTYPE          = $0103;
-   TAG_DATETIME_ORIGINAL  = $9003;
-   TAG_DATETIME_DIGITIZED = $9004;
-   TAG_USERCOMMENT        = $9286;
-   TAG_IMAGEDESCRIPTION   = $010E;     // msta
-   TAG_ARTIST             = $013B;     // msta
-   TAG_FLASH              = $9209;
-   TAG_MAKERNOTE          = $927C;
-   TAG_EXIF_IMAGEWIDTH    = $A002;
-   TAG_EXIF_IMAGELENGTH   = $A003;
    TAG_IMAGEWIDTH         = $0100;
    TAG_IMAGELENGTH        = $0101;
+   TAG_THUMBTYPE          = $0103;
+   TAG_IMAGEDESCRIPTION   = $010E;     // msta
+   TAG_MAKE               = $010F;
+   TAG_MODEL              = $0110;
+   TAG_DATETIME_MODIFY    = $0132;
+   TAG_ARTIST             = $013B;     // msta
+
+   TAG_EXPOSURETIME       = $829A;
+   TAG_FNUMBER            = $829D;
+
+   TAG_EXIFVER            = $9000;
+   TAG_DATETIME_ORIGINAL  = $9003;
+   TAG_DATETIME_DIGITIZED = $9004;
+   TAG_SHUTTERSPEED       = $9201;
+   TAG_APERTURE           = $9202;
+   TAG_MAXAPERTUREVALUE   = $9205;
+   TAG_SUBJECT_DISTANCE   = $9206;
+   TAG_LIGHT_SOURCE       = $9208;
+   TAG_FLASH              = $9209;
+   TAG_FOCALLENGTH        = $920A;
+   TAG_MAKERNOTE          = $927C;
+   TAG_USERCOMMENT        = $9286;
+
+   TAG_EXIF_IMAGEWIDTH    = $A002;
+   TAG_EXIF_IMAGELENGTH   = $A003;
+   TAG_FOCALPLANEXRES     = $A20E;
+   TAG_FOCALPLANEYRES     = $A20F;             // added by M. Schwaiger
+   TAG_FOCALPLANEUNITS    = $A210;
+   TAG_FOCALLENGTH35MM    = $A405;             // added by M. Schwaiger
+
 
    GPSCnt = 31 - 6;
    ExifTagCnt = 251 - 7;  // NOTE: was 250 before, but "count" is 251
@@ -1501,7 +1500,7 @@ end;
 function TImageInfo.GetNumber(buffer:ansistring;fmt:integer):double;
 var os:double;
     tmp:longint;
-    dbl:double absolute tmp;
+//    dbl:double absolute tmp;
     tmp2:longint;
 begin
   try
@@ -2615,9 +2614,7 @@ begin
     LookUpE := TagTable[tmp];
     NewE := LookupE;
     NewE.Data := ansistring(Format('%5.2f',[fl35]));
-    NewE.Raw := '';
     NewE.FormatS := '%s mm';
-    NewE.TType := FMT_SRATIONAL;
     AddTagToArray(NewE);
     TraceStr := TraceStr+crlf+
           siif(ExifTrace > 0,'tag[$'+AnsiString(inttohex(tmp,4))+']: ','')+

@@ -79,7 +79,7 @@ type
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
-//    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalLengthIn35mmFilm;
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
@@ -133,7 +133,7 @@ type
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
-//    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalLengthIn35mmFilm;
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
@@ -1001,20 +1001,18 @@ begin
   StdFloatTest(FImgFileName, 'FocalLength', 6.0, 1, 'Focal length mismatch');
 end;
 
-                                  (*
-                                  wp: failing because Calc35Equiv does not write Raw value
+
 { Focal length in 35 mm }
 
-procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLengthIn35mm;
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLengthIn35mmFilm;
 begin
-  StdFloatTest(FImgFileName, 'FocalLengthIn35mm', NaN, 0, 'Focal length in 35mm mismatch');
+  StdFloatFromStringTest(FImgFileName, 'FocalLengthIn35mmFilm', '', 0, 'Focal length in 35mm film mismatch');
 end;
 
-procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLengthIn35mm;
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLengthIn35mmFilm;
 begin
-  StdFloatTest(FImgFileName, 'FocalLengthIn35mm', 36, 0, 'Focal length in 35mm mismatch');
+  StdFloatFromStringTest(FImgFileName, 'FocalLengthIn35mmFilm', '36', 0, 'Focal length in 35mm film mismatch');
 end;
-                                    *)
 
 
 { Focal plane x resolution }
