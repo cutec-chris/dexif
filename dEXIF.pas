@@ -119,7 +119,7 @@ type
     CommentPosn: integer;
     CommentSize: integer;
 // DateTime tag locations
-    dt_oset:integer;
+    dt_modify_oset:integer;
     dt_orig_oset:integer;
     dt_digi_oset:integer;
 // Add support for thumbnail
@@ -151,11 +151,14 @@ type
     procedure SetExifComment(newComment: ansistring);
 //  The following functions manage the date
     function  GetImgDateTime: TDateTime;
+    function  GetDateTimeOriginal: TDateTime;
+    function  GetDateTimeDigitized: TDateTime;
+    function  GetDateTimeModify: TDateTime;
     function  ExtrDateTime(oset: integer): TDateTime;
     function  ExifDateToDateTime(dstr: ansistring): TDateTime;
     procedure SetDateTimeStr(oset: integer; TimeIn: TDateTime);
     procedure AdjDateTime(days, hours, mins, secs: integer);
-    procedure OverwriteDateTime(InTime: tdatetime);   //  Contains embedded CR/LFs
+    procedure OverwriteDateTime(ADateTime: TDateTime);   //  Contains embedded CR/LFs
     procedure ProcessHWSpecific(MakerBuff:ansistring;
                   TagTbl:Array of TTagEntry;
                   DirStart:longint;
@@ -478,16 +481,17 @@ const
 
    TAG_MAKE             = $010F;
    TAG_MODEL            = $0110;
+   TAG_DATETIME_MODIFY  = $0132;
+
    TAG_EXIFVER          = $9000;
-   TAG_DATETIME         = $0132;
+   TAG_SHUTTERSPEED     = $9201;
+   TAG_APERTURE         = $9202;
+   TAG_MAXAPERTUREVALUE = $9205;
+   TAG_FOCALLENGTH      = $920A;
 
 (*
    TAG_EXPOSURETIME     = $829A;
    TAG_FNUMBER          = $829D;
-   TAG_SHUTTERSPEED     = $9201;
-   TAG_APERTURE         = $9202;
-   TAG_MAXAPERTURE      = $9205;
-   TAG_FOCALLENGTH      = $920A;
    TAG_FOCALLENGTH35MM  = $A405;             // added by M. Schwaiger
    TAG_SUBJECT_DISTANCE = $9206;
    TAG_LIGHT_SOURCE     = $9208;
@@ -510,7 +514,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 11;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 7;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -566,7 +570,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $129;   Name:'PageNumber'             ),
   (TID:0;TType:0;ICode: 2;Tag: $12D;   Name:'TransferFunction'       ),
   (TID:0;TType:0;ICode: 2;Tag: $131;   Name:'Software'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTime'               ),
+  (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTimeModify'         ),
   (TID:0;TType:0;ICode: 2;Tag: $13B;   Name:'Artist'                 ),
   (TID:0;TType:0;ICode: 2;Tag: $13C;   Name:'HostComputer'           ),         {40}
   (TID:0;TType:0;ICode: 2;Tag: $13D;   Name:'Predictor'              ),
@@ -712,15 +716,15 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
 //  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Callback: GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
-//  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Callback: SSpeedCallBack),
-//  (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; FormatS:'F%0.1f'),
+  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@SSpeedCallBack),
+  (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9203;  Name:'BrightnessValue'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9204;  Name:'ExposureBiasValue'      ),
-//  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; FormatS:'F%0.1f'),
+  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
-//  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; CallBack:FlashCallBack),
+  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:@FlashCallBack),
   (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
@@ -768,14 +772,14 @@ var
     '2:OneChipColorArea,3:TwoChipColorArea,4:ThreeChipColorArea,'+
     '5:ColorSequentialArea,6:MonochromeLinear,7:TriLinear,'+
     '8:ColorSequentialLinear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $A300;  Name:'FileSource'              ;  Desc:'';Code:'1:Unknown,3:Digital Still Camera'),
+  (TID:0;TType:0;ICode: 2;Tag: $A300;  Name:'FileSource'              ;  Desc:'';Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
   (TID:0;TType:0;ICode: 2;Tag: $A301;  Name:'SceneType'               ;  Desc:'';Code:'0:Unknown,1:Directly Photographed'),
   (TID:0;TType:0;ICode: 2;Tag: $A302;  Name:'CFAPattern'              ),
   (TID:0;TType:0;ICode: 2;Tag: $A401;  Name:'CustomRendered'          ;  Desc:'';Code:'0:Normal process,1:Custom process'),
   (TID:0;TType:0;ICode: 2;Tag: $A402;  Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
   (TID:0;TType:0;ICode: 2;Tag: $A403;  Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
   (TID:0;TType:0;ICode: 2;Tag: $A404;  Name:'DigitalZoomRatio'        ),        {240}
-  (TID:0;TType:0;ICode: 2;Tag: $A405;  Name:'FocalLengthin35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
+  (TID:0;TType:0;ICode: 2;Tag: $A405;  Name:'FocalLengthIn35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
   (TID:0;TType:0;ICode: 2;Tag: $A406;  Name:'SceneCaptureType'        ;  Desc:'';Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
   (TID:0;TType:0;ICode: 2;Tag: $A407;  Name:'GainControl'             ; Desc:''; Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
   (TID:0;TType:0;ICode: 2;Tag: $A408;  Name:'Contrast'                ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
@@ -1208,17 +1212,40 @@ begin
     parent.ExifSegment^.data[oset+i-1] := tmp[i];
 end;
 
-function TImageInfo.GetImgDateTime:TDateTime;
-var x: TDateTime;
+function TImageInfo.GetImgDateTime: TDateTime;
 begin
-  x := 0.0;
-  if dt_oset > 0 then
-    x := ExtrDateTime(dt_oset)
-  else if dt_orig_oset > 0 then
-    x := ExtrDateTime(dt_orig_oset)
+  if dt_orig_oset > 0 then
+    Result := ExtrDateTime(dt_orig_oset)
   else if dt_digi_oset > 0 then
-    x := ExtrDateTime(dt_digi_oset);
-  result := x;
+    Result := ExtrDateTime(dt_digi_oset)
+  else if dt_modify_oset > 0 then
+    Result := ExtrDateTime(dt_modify_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeDigitized: TDateTime;
+begin
+  if dt_digi_oset > 0 then
+    Result := ExtrDateTime(dt_digi_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeOriginal: TDateTime;
+begin
+  if dt_orig_oset > 0 then
+    Result := ExtrDateTime(dt_orig_oset)
+  else
+    Result := 0.0;
+end;
+
+function TImageInfo.GetDateTimeModify:TDateTime;
+begin
+  if dt_modify_oset > 0 then
+    Result := ExtrDateTime(dt_modify_oset)
+  else
+    Result := 0.0;
 end;
 
 Procedure TImageInfo.AdjDateTime(days,hours,mins,secs:integer);
@@ -1227,10 +1254,10 @@ var delta:double;
 begin
   //                hrs/day     min/day        sec/day
   delta := days + (hours/24)+ (mins/1440) + (secs/86400);
-  if dt_oset > 0 then
+  if dt_modify_oset > 0 then
   begin
-    x := ExtrDateTime(dt_oset);
-    SetDateTimeStr(dt_oset,x+delta);
+    x := ExtrDateTime(dt_modify_oset);
+    SetDateTimeStr(dt_modify_oset, x+delta);
   end;
   if dt_orig_oset > 0 then
   begin
@@ -1244,14 +1271,14 @@ begin
   end;
 end;
 
-Procedure TImageInfo.OverwriteDateTime(InTime:tdatetime);
+Procedure TImageInfo.OverwriteDateTime(ADateTime: TDateTime);
 begin
-  if dt_oset > 0 then
-    SetDateTimeStr(dt_oset,InTime);
+  if dt_modify_oset > 0 then
+    SetDateTimeStr(dt_modify_oset, ADateTime);
   if dt_orig_oset > 0 then
-    SetDateTimeStr(dt_orig_oset,InTime);
+    SetDateTimeStr(dt_orig_oset, ADateTime);
   if dt_digi_oset > 0 then
-    SetDateTimeStr(dt_digi_oset,InTime);
+    SetDateTimeStr(dt_digi_oset, ADateTime);
 end;
 
 Function CvtTime(instr:ansistring) :ansistring;
@@ -1491,8 +1518,10 @@ begin
                        tmp2 := CvtInt(copy(buffer,5,4));
                        os := tmp / tmp2;
                      end;
-      FMT_SINGLE: os := dbl;
-      FMT_DOUBLE: os := dbl;
+      FMT_SINGLE: os := PSingle(@buffer[1])^;
+      FMT_DOUBLE: os := PDouble(@buffer[1])^;
+//    FMT_SINGLE: os := dbl;   // wp: This can't be correct! tmp is indefined here, and single and double ARE different!
+//    FMT_DOUBLE: os := dbl;
     else
       os := 0;
     end;
@@ -1747,7 +1776,7 @@ begin
 //           CommentPosn := ValuePtr;
 //           CommentSize := ByteCount-9;
          end;
-       TAG_DATETIME, //Umwandlung vom EXIF-Format 2009:01:02 12:10:12 nach 2009-01-02 12:10:12
+       TAG_DATETIME_MODIFY, //Umwandlung vom EXIF-Format 2009:01:02 12:10:12 nach 2009-01-02 12:10:12
        TAG_DATETIME_ORIGINAL,
        TAG_DATETIME_DIGITIZED:
          begin
@@ -1802,9 +1831,9 @@ begin
        TAG_MAKE: CameraMake := fstr;
        TAG_MODEL: CameraModel := fstr;
        TAG_EXIFVER: ExifVersion := rawstr;
-       TAG_DATETIME:
+       TAG_DATETIME_MODIFY:
          begin
-           dt_oset := ValuePtr;
+           dt_modify_oset := ValuePtr;
            DateTime := fstr;
          end;
        TAG_DATETIME_ORIGINAL:
@@ -2504,8 +2533,17 @@ begin
 end;
 
 function TImageInfo.GetRawInt( tagName:ansistring ):integer;
+var
+  tiq: TTagEntry;
 begin
-  result := round(GetRawFloat(tagName));
+  tiq := GetTagByName(tagName);
+  if tiq.Tag = 0 then  // EmptyEntry
+    Result := -1
+  else
+  if (tiq.TType = FMT_UNDEFINED) and (tiq.Size = 1) then
+    Result := byte(tiq.Raw[1])
+  else
+    result := round(GetNumber(tiq.Raw, tiq.TType));
 end;
 
 //  Unfortunatly if we're calling this function there isn't
