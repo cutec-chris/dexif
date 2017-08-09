@@ -61,6 +61,7 @@ type
     procedure TstReadFile_ColorSpace;
     procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
+    procedure TstReadFile_CustomRendered;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
@@ -80,9 +81,14 @@ type
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
 //    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalPlaneXResolution;
+    procedure TstReadFile_FocalPlaneYResolution;
+    procedure TstReadFile_FocalPlaneResolutionUnit;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
+    procedure TstReadFile_MaxApertureValue;
+    procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SceneCaptureType;
@@ -104,6 +110,7 @@ type
     procedure TstReadFile_ColorSpace;
     procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
+    procedure TstReadFile_CustomRendered;
     procedure TstReadFile_DateTime;
     procedure TstReadFile_DateTime_Original;
     procedure TstReadFile_DateTime_Digitized;
@@ -123,9 +130,14 @@ type
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
 //    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalPlaneXResolution;
+    procedure TstReadFile_FocalPlaneYResolution;
+    procedure TstReadFile_FocalPlaneResolutionUnit;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
+    procedure TstReadFile_MaxApertureValue;
+    procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_SensingMethod;
@@ -681,6 +693,20 @@ begin
 end;
   }
 
+
+{ CustomRendered }
+procedure TTstReadFile_dEXIF_01.TstReadFile_CustomRendered;
+begin
+  StdIntTest(co_DUTPicName01, 'CustomRendered', -1, 'CustomRendered mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CustomRendered;
+begin
+  StdIntTest(co_DUTPicName02, 'CustomRendered', 0, 'CustomRendered mismatch');
+    // CCR ExifList: "Normal" --> 0
+end;
+
+
 { Generic Date/time test }
 
 procedure TTstReadFile_dEXIF.Test_DateTime(const AFileName: String; AKind: Integer;
@@ -988,6 +1014,48 @@ end;
                                     *)
 
 
+{ Focal plane x resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneXResolution;
+begin
+  StdFloatTest(co_DUTPicName01, 'FocalPlaneXResolution', NaN, 0, 'Focal plane X resolution mismatch');
+    // This image does not contain this tag
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneXResolution;
+begin
+  StdFloatTest(co_DUTPicName02, 'FocalPlaneXResolution', 14506.66667, 3, 'Focal plane X resolution mismatch');
+end;
+
+
+{ Focal plane y resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneYResolution;
+begin
+  StdFloatTest(co_DUTPicName01, 'FocalPlaneYResolution', NaN, 0, 'Focal plane Y resolution mismatch');
+    // This image does not contain this tag
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneYResolution;
+begin
+  StdFloatTest(co_DUTPicName02, 'FocalPlaneYResolution', 10840.23669, 3, 'Focal plane Y resolution mismatch');
+end;
+
+
+{ Focal plane resolution unit }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneResolutionUnit;
+begin
+  StdIntTest(co_DUTPicName01, 'FocalPlaneResolutionUnit', -1, 'Focal plane resolution unit mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneResolutionUnit;
+begin
+  StdIntTest(co_DUTPicName02, 'FocalPlaneResolutionUnit', 2, 'Focal plane resolution unit mismatch');
+    // 'inches' --> 2
+end;
+
+
 { Image width and image height }
 
 procedure TTstReadFile_dEXIF.Test_ImageSize(const AFileName: String;
@@ -1041,6 +1109,39 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_ISO;
 begin
   StdStringTest(co_DUTPicName02, 'ISOSpeedRatings', '160', 'ISO mismatch');
 end;
+
+
+{ Max Aperture value }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_MaxApertureValue;
+begin
+  StdFloatTest(co_DUTPicName01, 'MaxApertureValue', NaN, 1, 'Max aperature value mismatch');
+    // Tag not used
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_MaxApertureValue;
+begin
+  StdFloatTest(co_DUTPicName02, 'MaxApertureValue', 2.875, 1, 'Max aperature value mismatch');
+end;
+
+
+{ Metering mode }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_MeteringMode;
+begin
+  StdIntTest(co_DUTPicName01, 'MeteringMode', -1, 'Metering mode mismatch');
+    // Tag not used
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_MeteringMode;
+begin
+  StdIntTest(co_DUTPicName02, 'MeteringMode', 5, 'Metering mode mismatch');
+    // ccr Exif List reports it as "Pattern" corresponding to the value 5 in
+    // the EXIF documentation.
+    // IrfanView calls it "MultiSegment" which is directly the dEXIF text for 5
+    // Not idea what the "Evaluative" of ExifTool means...
+end;
+
 
 
 { Orientation }

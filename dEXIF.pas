@@ -486,12 +486,12 @@ const
    TAG_EXIFVER          = $9000;
    TAG_SHUTTERSPEED     = $9201;
    TAG_APERTURE         = $9202;
+   TAG_MAXAPERTUREVALUE = $9205;
    TAG_FOCALLENGTH      = $920A;
 
 (*
    TAG_EXPOSURETIME     = $829A;
    TAG_FNUMBER          = $829D;
-   TAG_MAXAPERTURE      = $9205;
    TAG_FOCALLENGTH35MM  = $A405;             // added by M. Schwaiger
    TAG_SUBJECT_DISTANCE = $9206;
    TAG_LIGHT_SOURCE     = $9208;
@@ -514,7 +514,7 @@ const
    TAG_IMAGELENGTH        = $0101;
 
    GPSCnt = 31 - 6;
-   ExifTagCnt = 251 - 8;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 7;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -720,7 +720,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9203;  Name:'BrightnessValue'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9204;  Name:'ExposureBiasValue'      ),
-//  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; FormatS:'F%0.1f'),
+  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
   (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
