@@ -41,7 +41,6 @@ type
     procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
       AExpectedDateTime: TDateTime);
-    procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
     procedure Test_ImageSize(const AFileName: String;
       AExpectedWidth, AExpectedHeight: Integer);
     procedure Test_Resolution(const AFileName: String;
@@ -904,38 +903,14 @@ end;
 
 { Exposure time }
 
-procedure TTstReadFile_dEXIF.Test_ExposureTime(const AFilename: String;
-  const AExpected: String);
-var
-  DUT: TImgData;
-  currStrValue: String;
-  p: Integer;
-begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(AFilename);
-    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal('ExposureTime');
-    if currStrValue <> AExpected then begin
-      p := pos('sec', currStrValue);
-      if p <> 0 then Delete(currStrValue, p, MaxInt);
-      p := pos('sec', AExpected);
-      if p <> 0 then Delete(currStrValue, p, MaxInt);
-    end;
-    CheckEquals(trim(AExpected), trim(currStrValue), 'Exposure time mismatch');
-  finally
-    DUT.Free;
-  end;
-end;
-
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureTime;
 begin
-  Test_ExposureTime(FImgFileName, '1/3376');
+  StdFloatTest(FImgFilename, 'ExposureTime', 1/3376, 8, 'Exposure time mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureTime;
 begin
-  Test_ExposureTime(FImgFileName, '1/1600');
+  StdFloatTest(FImgFilename, 'ExposureTime', 1/1600, 8, 'Exposure time mismatch');
 end;
 
 
@@ -1247,6 +1222,7 @@ begin
   StdIntTest(FImgFileName, 'SensingMethod', 2, 'SensingMethod mismatch');
     // "One-chip color area"  --> 2
 end;
+
 
 { Shutter speed value }
 
