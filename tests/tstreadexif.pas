@@ -95,7 +95,9 @@ type
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
     procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLatitudeRef;
     procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_GPSLongitudeRef;
     procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
@@ -103,6 +105,8 @@ type
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
+    procedure TstReadFile_RelatedImageHeight;
+    procedure TstReadFile_RelatedImageWidth;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SceneCaptureType;
@@ -155,7 +159,9 @@ type
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
     procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLatitudeRef;
     procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_GPSLongitudeRef;
     procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
@@ -163,6 +169,8 @@ type
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
+    procedure TstReadFile_RelatedImageHeight;
+    procedure TstReadFile_RelatedImageWidth;
     procedure TstReadFile_Resolution;
     procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SensingMethod;
@@ -1355,6 +1363,20 @@ begin
 end;
 
 
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLatitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLatitudeRef', '', 'GPS latitude reference mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLatitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLatitudeRef', 'N', 'GPS latitude reference mismatch');
+    // output of EXIFTool: 50 deg 6' 51.67" N  --> 'N'
+end;
+
+
 { GPS longitude }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLongitude;
@@ -1367,6 +1389,22 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLongitude;
 begin
   Test_GPSPosition(FImgFileName, 'GPSLongitude', 8, 40, 53.21, 'GPS longitude mismatch');
     // output of EXIFTool: 8 deg 40' 53.21" E
+end;
+
+
+{ GPS latitude reference }
+{ GPS longitude reference }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLongitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLongitudeRef', '', 'GPS longitude reference mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLongitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLongitudeRef', 'E', 'GPS longitude reference mismatch');
+    // output of EXIFTool: 8 deg 40' 53.21" E  --> 'E'
 end;
 
 
@@ -1489,6 +1527,34 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_Orientation;
 begin
   StdIntTest(FImgFileName, 'Orientation', 1, 'Orientation mismatch');
     // "Horizontal (normal)" --> 1
+end;
+
+
+{ Related image height }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_RelatedImageHeight;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageHeight', -1, 'Related image height mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_RelatedImageHeight;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageHeight', 1832, 'Related image height mismatch');
+end;
+
+
+{ Related image width }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_RelatedImageWidth;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageWidth', -1, 'Related image width mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_RelatedImageWidth;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageWidth', 3264, 'Related image width mismatch');
 end;
 
 
