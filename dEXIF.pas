@@ -3083,6 +3083,7 @@ var
   jms: TMemoryStream;
   jfs: TFileStream;
   imgSize: TPoint;
+  NewExifBlock: boolean;
 begin
   jfs := TFileStream.Create(AFilename, fmCreate or fmShareExclusive);
   try
@@ -3096,11 +3097,14 @@ begin
       EXIFobj.AdjExifSize(imgSize.Y, imgSize.X);  // Adjust EXIF to image size
       AJpeg.Position := 0;                        // Rewind stream
     end;
-  //  SaveExif(jfs);
+    //  SaveExif(jfs);
+    // if no exif block is here
+    //   create a new one
+    NewExifBlock:= (ExifObj = nil);
     jms := TMemoryStream.Create;
     try
       jms.CopyFrom(AJpeg, AJpeg.Size);
-      MergeToStream(jms, jfs);
+      MergeToStream(jms, jfs, 255, NewExifBlock);
     finally
       jms.Free;
     end;

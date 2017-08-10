@@ -65,9 +65,15 @@ begin
   CreateGeenJpg(co_ImageName);
   ImgData:= TImgData.Create(GenAll);
   ImgData.ProcessFile(co_ImageName);
+  if not ImgData.HasEXIF then begin
+    // write a file with an empty exif
+    ImgData.WriteEXIFJpeg(co_ImageName);
+    // Reread the file
+    ImgData.reset;
+    ImgData.ProcessFile(co_ImageName);
+  end;
   if not ImgData.HasEXIF then
-    CreateEXIF(ImgData);
-  ImgData.WriteEXIFJpeg(co_ImageName);
+    showmessage('somethings goes wrong');
 end;
 
 procedure TForm1.CreateEXIF(const ImgData: TImgData);
