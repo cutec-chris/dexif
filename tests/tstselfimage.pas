@@ -21,6 +21,7 @@ type
   published
     procedure CheckForNoPicture;
     procedure CreateImageJpg;
+    procedure CreateImageJpgWithEXIF;
   end;
 
 implementation
@@ -78,6 +79,27 @@ begin
   DUT:= TImgData.Create();
   // Lazarus gerated Files have no EXIF information
   CheckFalse(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
+  DUT.Free;
+end;
+
+procedure TTstSelfImage.CreateImageJpgWithEXIF;
+var
+  DUT: TImgData;
+begin
+  CreateGeenJpg(co_DUTPicSelfImage01);
+  CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
+  DUT:= TImgData.Create(GenAll);
+  // Lazarus gerated Files have no EXIF information
+  CheckFalse(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData can process file, but shouldnt:'+co_DUTPicSelfImage01);
+  CheckFalse(DUT.HasEXIF,'TImgData should not have EXIF'+co_DUTPicSelfImage01);
+  if not DUT.HasEXIF then begin
+    // write a file with an empty exif
+    DUT.WriteEXIFJpeg(co_DUTPicSelfImage01);
+    // Reread the file
+    DUT.reset;
+    CheckTrue(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
+    CheckTrue(DUT.HasEXIF,'TImgData should have EXIF now '+co_DUTPicSelfImage01);
+  end;
   DUT.Free;
 end;
 
