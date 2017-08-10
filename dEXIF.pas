@@ -380,13 +380,13 @@ Const
      M_DRI  = $DD;            // Restart interoperability definition
      M_DHP  = $DE;            // Define hierarchical progression
      M_EXP  = $DF;            // Expand reference component
-     M_JFIF = $E0;            // Jfif marker
-     M_EXIF = $E1;            // Exif marker
-  M_EXIFEXT = $E2;            // Exif extended marker
+     M_JFIF = $E0;            // Jfif marker                             224
+     M_EXIF = $E1;            // Exif marker                             225
+  M_EXIFEXT = $E2;            // Exif extended marker                    225
      //  M_KODAK = $E3;           // Kodak marker  ???
-     M_IPTC = $ED;            // IPTC - Photoshop
+     M_IPTC = $ED;            // IPTC - Photoshop                        237
     M_APP14 = $EE;            // Photoshop data:  App14
-     M_COM  = $FE;            // Comment
+     M_COM  = $FE;            // Comment                                 254
 
     ProcessTable : array [0..29] of TTagEntry =
     (( TID:0;TType:0;ICode: 0;Tag: M_SOF0;   Name:'SKIP';Desc: 'Baseline'),
@@ -2866,6 +2866,16 @@ begin
   begin
     if FreshExifBlock then
     begin
+      // af begin
+      if not Assigned(ExifObj) then begin
+        EXIFsegment := @sections[SectionCnt+1];
+        EXIFobj := TImageInfo.Create(self,BuildList);
+        EXIFobj.TraceLevel := TraceLevel;
+        //ExifObj.CameraModel:= 'Lazarus';
+        //ExifObj.CameraMake:= 'dExif V' + DexifVersion;
+        //SetDataBuff(EXIFsegment^.data);
+      end;
+      // af end
       buff := #$FF + Chr(M_EXIF);
       cnt := cnt + jfs2.Write(buff[1], Length(buff));
       buff := ExifObj.CreateExifBuf;
