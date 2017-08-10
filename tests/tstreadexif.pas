@@ -674,9 +674,18 @@ begin
       CheckTRUE(IsNaN(currDeg) and IsNaN(currMin) and IsNaN(currSec), AMismatchMsg)
     else
     begin
-      CheckEquals(round(AExpectedDeg), round(currDeg), AMismatchMsg + ' (degrees)');
-      CheckEquals(round(AExpectedMin), round(currMin), AMismatchMsg + ' (minutes)');
-      CheckEquals(round(AExpectedSec), round(currSec), AMismatchMsg + ' (seconds)');
+      if IsNan(currDeg) then
+        Fail(AMismatchMsg + ' is NaN (degrees)')
+      else
+        CheckEquals(round(AExpectedDeg), round(currDeg), AMismatchMsg + ' (degrees)');
+      if IsNan(currMin) then
+        Fail(AMismatchMsg + ' is NaN (minutes)')
+      else
+        CheckEquals(round(AExpectedMin), round(currMin), AMismatchMsg + ' (minutes)');
+      if IsNan(currSec) then
+        Fail(AMismatchMsg + ' is NaN (seconds)')
+      else
+        CheckEquals(round(AExpectedSec), round(currSec), AMismatchMsg + ' (seconds)');
     end;
   finally
     DUT.Free;
