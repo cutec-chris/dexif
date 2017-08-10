@@ -95,8 +95,9 @@ begin
   if not DUT.HasEXIF then begin
     // write a file with an empty exif
     DUT.WriteEXIFJpeg(co_DUTPicSelfImage01);
+    FreeAndNil(DUT);
     // Reread the file
-    DUT.reset;
+    DUT:= TImgData.Create(GenAll);
     CheckTrue(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
     CheckTrue(DUT.HasEXIF,'TImgData should have EXIF now '+co_DUTPicSelfImage01);
   end;
