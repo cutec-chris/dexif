@@ -16,15 +16,20 @@ const
   co_TestPic01 = './testpictures/original/with_exif_large.jpeg';
   co_DUTPicName01 = './testpictures/DUTPic01.jpeg';
 
-  // Picture with EXIF data taken from CANON camera
+  // Picture with EXIF data taken from CANON camera with GPS
   co_TestPic02 = './testpictures/original/img_9438.jpg';
   co_DUTPicName02 = './testpictures/DUTPic03.jpeg';
+
+  // Picture with EXIF data taken from CANON camera with comment etc.
+  co_TestPic03 = './testpictures/original/Schilfgebiet.jpg';
+  co_DUTPicName03 = './testpictures/DUTPic04.jpeg';
 
 type
   { TTsTBasic_dEXIF }
 
   TTstReadFile_dEXIF= class(TTestCase)
   protected
+    FImgFileName: String;
     procedure SetUp; override;
     procedure TearDown; override;
 
@@ -38,27 +43,32 @@ type
       const AExpectedResult, AMismatchMsg: String);
 
     procedure Test_ByteOrder(const AFilename: String; AExpected: Boolean);
+    procedure ReadFile_CommentSegment(const AFileName, AExpected: String);
     procedure Test_DateTime(const AFileName: String; AKind: Integer;
       AExpectedDateTime: TDateTime);
-    procedure Test_ExposureTime(const AFilename: String; const AExpected: String);
+    procedure Test_GPSPosition(const AFileName: String; const ATagName: String;
+      AExpectedDeg, AExpectedMin, AExpectedSec: Double; const AMismatchMsg: String);
     procedure Test_ImageSize(const AFileName: String;
       AExpectedWidth, AExpectedHeight: Integer);
     procedure Test_Resolution(const AFileName: String;
       AExpectedXResolution, AExpectedYResolution: Integer; AExpectedUnits: String);
+    procedure Test_UserComment(const AFilename, AExpected: String);
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
-
-  { TTstReadFile_dEXIF_01 }
-
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
+  public
+    constructor Create; override;
   published
     procedure TstReadFile_ApertureValue;
+    procedure TstReadFile_Artist;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
     procedure TstReadFile_CameraMake;
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
     procedure TstReadFile_CompressedBitsPerPixel;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_CustomRendered;
@@ -75,33 +85,46 @@ type
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_FileSource;
-//    procedure TstReadFile_FirmwareVersion;
+    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
-//    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalLengthIn35mmFilm;
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
+    procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLatitudeRef;
+    procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_GPSLongitudeRef;
+    procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
+    procedure TstReadFile_RelatedImageHeight;
+    procedure TstReadFile_RelatedImageWidth;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SceneCaptureType;
     procedure TstReadFile_SensingMethod;
     procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_XResolution;
     procedure TstReadFile_YCbCrPositioning;
 //  procedure TstReadFile_YCbCrSubsampling;
+    procedure TstReadFile_YResolution;
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
+  public
+    constructor Create; override;
   published
+    procedure TstReadFile_Artist;
     procedure TstReadFile_ApertureValue;
 //    procedure TstReadFile_BitsPerSample;
     procedure TstReadFile_ByteOrder;
@@ -109,6 +132,8 @@ type
     procedure TstReadFile_CameraModel;
     procedure TstReadFile_ColorSpace;
     procedure TstReadFile_CompressedBitsPerPixel;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
 //    procedure TstReadFile_Compression;
     procedure TstReadFile_CustomRendered;
     procedure TstReadFile_DateTime;
@@ -124,30 +149,50 @@ type
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_FileSource;
-//    procedure TstReadFile_FirmwareVersion;
+    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
     procedure TstReadFile_FocalLength;
-//    procedure TstReadFile_FocalLengthIn35mm;
+    procedure TstReadFile_FocalLengthIn35mmFilm;
     procedure TstReadFile_FocalPlaneXResolution;
     procedure TstReadFile_FocalPlaneYResolution;
     procedure TstReadFile_FocalPlaneResolutionUnit;
+    procedure TstReadFile_GPSLatitude;
+    procedure TstReadFile_GPSLatitudeRef;
+    procedure TstReadFile_GPSLongitude;
+    procedure TstReadFile_GPSLongitudeRef;
+    procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
     procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
     procedure TstReadFile_Orientation;
+    procedure TstReadFile_RelatedImageHeight;
+    procedure TstReadFile_RelatedImageWidth;
     procedure TstReadFile_Resolution;
+    procedure TstReadFile_ResolutionUnit;
     procedure TstReadFile_SensingMethod;
     procedure TstReadfile_SceneCaptureType;
     procedure TstReadFile_ShutterSpeedValue;
     procedure TstReadFile_WhiteBalance;
+    procedure TstReadFile_XResolution;
     procedure TstReadFile_YCbCrPositioning;
 //    procedure TstReadFile_YCbCrSubsampling;
+    procedure TstReadFile_YResolution;
   end;
 
+  { Tests for image DUTPic03, taken by Casio camera, contains comment etc }
+  TTstReadFile_dEXIF_03 = class(TTstReadFile_dEXIF)
+  public
+    constructor Create; override;
+  published
+    procedure TstReadFile_Artist;
+    procedure TstReadFile_CommentExif;
+    procedure TstReadFile_CommentSegment;
+    procedure TstReadFile_ImageDescription;
+  end;
 
 implementation
 
@@ -382,6 +427,62 @@ Output of EXIFTool for DUTPic03.jpeg
     Hyperfocal Distance             : 2.69 m
     Lens                            : 6.0 - 72.0 mm (35 mm equivalent: 36.3 - 435.8 mm)
     Light Value                     : 12.8
+--------------------------------------------------------------------------------
+Output of CCR-EXIF Tag List demo for DUTPic03.jpeg
+
+General
+   Byte order	Small endian
+Main IFD
+   Loaded cleanly	Yes
+   Camera make	Canon
+   Camera model	Canon PowerShot S5 IS
+   Date/time	Samstag, 11. Februar 2017 at 15:09:39
+   Image description	MyZeil Shopping Center
+   Orientation	Normal
+   Resolution	180 x 180 inches
+Exif sub-IFD
+   Loaded cleanly	Yes
+   Exif version	2,2,0
+   Aperture value	2,875
+   Colour space	sRGB
+   Compressed bits per pixel	3
+   Date/time original	Samstag, 11. Februar 2017 at 15:09:39
+   Date/time digitised	Samstag, 11. Februar 2017 at 15:09:39
+   Digital zoom ratio	1
+   Exif image width	3264
+   Exif image height	1832
+   Exposure time	0,000625 seconds
+   Exposure bias value	0
+   File source	Digital camera
+   Flash present	Yes
+   Flash mode	Compulsory suppression
+   Flash fired	No
+   Flash red eye reduction	No
+   Flash strobe light	No detection function
+   F number	2,7
+   Focal length	6
+   Focal length in 35mm film	36
+   Focal plane resolution	14506,6666666667 x 10840,2366863905 inches
+   ISO speed rating(s)	160
+   Max aperture value	2,875
+   Metering mode	Pattern
+   Rendering	Normal
+   Scene capture type	Standard
+   Sensing method	One chip
+   Shutter speed	0,6197 milliseconds
+   White balance mode	Auto
+Interoperability sub-IFD
+   Loaded cleanly	Yes
+   Interoperability type	R98
+   Interoperability version	1,0,0
+GPS sub-IFD
+   Loaded cleanly	Yes
+   GPS version	2,3,0
+   GPS latitude	50,6,79775/1544N
+   GPS longitude	8,40,89923/1690E
+Thumbnail IFD
+   Loaded cleanly	Yes
+   Thumbnail resolution	180 x 180 inches
 
 --------------------------------------------------------------------------------
 +  <--- test is passed
@@ -435,6 +536,97 @@ begin
   end;
 end;
 
+{ dEXIF exports GPS coordinates as "d degrees m minutes s seconds" }
+procedure ExtractGPSPosition(InStr: String; out ADeg, AMin, ASec: Double);
+const
+   NUMERIC_CHARS = ['0'..'9', '.', ',', '-', '+'];
+var
+  p, p0: PChar;
+  n: Integer;
+  s: String;
+  res: Integer;
+begin
+  ADeg := NaN;
+  AMin := NaN;
+  ASec := NaN;
+
+  if InStr = '' then
+    exit;
+
+  // skip leading non-numeric characters
+  p := @InStr[1];
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract first value: degrees
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n);
+  val(s, ADeg, res);
+
+  // skip non-numeric characters between degrees and minutes
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract second value: minutes
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n);
+  val(s, AMin, res);
+
+  // skip non-numeric characters between minutes and seconds
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract third value: seconds
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLengtH(s, n);
+  Move(p0^, s[1], n);
+  val(s, ASec, res);
+end;
+
+
+{ Preparation }
+
+{ Test ...01 will operate on image co_DUTPicName01 }
+constructor TTstReadFile_dEXIF_01.Create;
+begin
+  inherited;
+  FImgFileName := co_DUTPicName01;
+end;
+
+{ Test ...02 will operate on image co_DUTPicName02 }
+constructor TTstReadFile_dEXIF_02.Create;
+begin
+  inherited;
+  FImgFileName := co_DUTPicName02;
+end;
+
+{ Test ...03 will operate on image co_DUTPicName03 }
+constructor TTstReadFile_dEXIF_03.Create;
+begin
+  inherited;
+  FImgFileName := co_DUTPicName03;
+end;
+
 
 { Test methods }
 
@@ -447,6 +639,10 @@ begin
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
       CopyFile(co_TestPic02, co_DUTPicName02);
+
+  if not FileExists(co_DUTPicName03) then
+    if FileExists(co_TestPic03) then
+      CopyFile(co_TestPic03, co_DUTPicName03);
 end;
 
 procedure TTstReadFile_dEXIF.TearDown;
@@ -457,6 +653,35 @@ end;
 
 
 { Generic tests }
+
+procedure TTstReadFile_dEXIF.Test_GPSPosition(const AFileName: String;
+  const ATagName: String; AExpectedDeg, AExpectedMin, AExpectedSec: Double;
+  const AMismatchMsg: String);
+const
+  EPS = 1E-2;
+var
+  DUT: TImgData;
+  currStrValue: String;
+  currDeg, currMin, currSec: Double;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
+    currStrValue := DUT.ExifObj.LookupTagVal(ATagName);
+    ExtractGPSPosition(currStrValue, currDeg, currMin, currSec);
+    if IsNaN(AExpectedDeg) and IsNaN(AExpectedMin) and IsNaN(AExpectedSec) then
+      CheckTRUE(IsNaN(currDeg) and IsNaN(currMin) and IsNaN(currSec), AMismatchMsg)
+    else
+    begin
+      CheckEquals(round(AExpectedDeg), round(currDeg), AMismatchMsg + ' (degrees)');
+      CheckEquals(round(AExpectedMin), round(currMin), AMismatchMsg + ' (minutes)');
+      CheckEquals(round(AExpectedSec), round(currSec), AMismatchMsg + ' (seconds)');
+    end;
+  finally
+    DUT.Free;
+  end;
+end;
 
 { Use NaN as AExpectedResult if the Tag does not exist in the image }
 procedure TTstReadFile_dEXIF.StdFloatTest(const AFileName, ATestTag: String;
@@ -561,18 +786,37 @@ begin
   end;
 end;
 
+
+{ Artist }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', '', 'Artist mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', 'wp', 'Artist mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_Artist;
+begin
+  StdStringTest(FImgFileName, 'Artist', 'Mitja Stachowiak', 'Artist mismatch');
+end;
+
+
 { Aperture value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ApertureValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ApertureValue', NaN, 1, 'Aperature value mismatch');
+  StdFloatTest(FImgFileName, 'ApertureValue', NaN, 1, 'Aperature value mismatch');
   // It is listed in EXIFTool output, but not in CCR.EXIF Tag List, and
   // is not found by EXIFSpy. --> NaN
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ApertureValue;
 begin
-  StdFloatTest(co_DUTPicName02, 'ApertureValue', 2.875, 1, 'Aperature value mismatch');
+  StdFloatTest(FImgFileName, 'ApertureValue', 2.875, 1, 'Aperature value mismatch');
   // EXIFTool shows a value 2.7 here, but CCR.EXIF Tag List lists the value 2.875
   // that is also seen by Serif PhotoPlus X7 and EXIFSpy.
   // I suppose that EXIFTool displays the FNumber value.  --> 2.875
@@ -583,12 +827,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_BitsPerSample;
 begin
-  StdIntTest(co_DUTPicName01, 'BitsPerSample', 8, 'BitsPerSample usage mismatch');
+  StdIntTest(FImgFileName, 'BitsPerSample', 8, 'BitsPerSample usage mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_BitsPerSample;
 begin
-  StdIntTest(co_DUTPicName02, 'BitsPerSample', 8, 'BitsPerSample mismatch');
+  StdIntTest(FImgFileName, 'BitsPerSample', 8, 'BitsPerSample mismatch');
     // "Auto" --> 0
 end;
 *)
@@ -612,12 +856,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ByteOrder;
 begin
-  Test_ByteOrder(co_DUTPicName01, true);
+  Test_ByteOrder(FImgFileName, true);
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ByteOrder;
 begin
-  Test_ByteOrder(co_DUTPicName02, false);
+  Test_ByteOrder(FImgFileName, false);
 end;
 
 
@@ -625,12 +869,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_CameraMake;
 begin
-  StdStringTest(co_DUTPicName01, 'Make', 'SAMSUNG', 'Camera Make mismatch');
+  StdStringTest(FImgFileName, 'Make', 'SAMSUNG', 'Camera Make mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CameraMake;
 begin
-  StdStringTest(co_DUTPicName02, 'Make', 'Canon', 'Camera Make mismatch');
+  StdStringTest(FImgFileName, 'Make', 'Canon', 'Camera Make mismatch');
 end;
 
 
@@ -638,12 +882,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_CameraModel;
 begin
-  StdStringTest(co_DUTPicName01, 'Model', 'SM-G850F', 'Camera model mismatch');
+  StdStringTest(FImgFileName, 'Model', 'SM-G850F', 'Camera model mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CameraModel;
 begin
-  StdStringTest(co_DUTPicName02, 'Model', 'Canon PowerShot S5 IS', 'Camera model mismatch');
+  StdStringTest(FImgFileName, 'Model', 'Canon PowerShot S5 IS', 'Camera model mismatch');
 end;
 
 
@@ -651,13 +895,84 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ColorSpace;
 begin
-  StdStringTest(co_DUTPicName01, 'ColorSpace', '', 'ColorSpace mismatch');
+  StdStringTest(FImgFileName, 'ColorSpace', '', 'ColorSpace mismatch');
     // Tag not available
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ColorSpace;
 begin
-  StdStringTest(co_DUTPicName02, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
+  StdStringTest(FImgFileName, 'ColorSpace', 'sRGB', 'ColorSpace mismatch');
+end;
+
+
+{ Comment in Exif Segement: Tag UserComment}
+
+procedure TTstReadFile_dEXIF.Test_UserComment(const AFileName, AExpected: String);
+var
+  DUT: TImgData;
+  currStrValue: String;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    currStrValue := DUT.ExifObj.ReadComments;
+    CheckEquals(AExpected, currStrValue, 'User comment mismatch');
+  finally
+    DUT.Free;
+  end;
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_CommentExif;
+begin
+//  StdStringTest(FImgFileName, 'UserComment', '', 'Comment mismatch');
+  Test_UserComment(FImgFileName, '');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CommentExif;
+begin
+  Test_UserComment(FImgFileName, 'This is an EXIF user comment with äöü');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_CommentExif;
+begin
+  Test_UserComment(FImgFileName, 'am Reinheimer Teich - Лев Николаевич Толсто́й - End of line.');
+end;
+
+
+{ CommentSegment }
+
+procedure TTstReadFile_dEXIF.ReadFile_CommentSegment(
+  const AFileName, AExpected: String);
+var
+  DUT: TImgData;
+  currStrValue: String;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(AFileName);
+    CheckEquals(AExpected <> '', DUT.HasComment, 'No comment segment found');
+    if Dut.HasComment then begin
+      currStrValue := DUT.GetCommentStr;
+      CheckEquals(AExpected, currStrValue, 'Comment text mismatch');
+    end;
+  finally
+    DUT.Free;
+  end;
+end;
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, '');
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, 'This text is in COMMENT section');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_CommentSegment;
+begin
+  ReadFile_CommentSegment(FImgFileName, '');
 end;
 
 
@@ -665,13 +980,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_CompressedBitsPerPixel;
 begin
-  StdIntTest(co_DUTPicName01, 'CompressedBitsPerPixel', -1, 'Compressed bits per pixel mismatch');
+  StdIntTest(FImgFileName, 'CompressedBitsPerPixel', -1, 'Compressed bits per pixel mismatch');
     // Tag not specified --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CompressedBitsPerPixel;
 begin
-  StdIntTest(co_DUTPicName02, 'CompressedBitsPerPixel', 3, 'Compressed bits per pixel mismatch');
+  StdIntTest(FImgFileName, 'CompressedBitsPerPixel', 3, 'Compressed bits per pixel mismatch');
 end;
 
 
@@ -681,13 +996,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
 begin
-  StdIntTest(co_DUTPicName01, 'Compression', -1, 'Compression mismatch');
+  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
     // Tag not specified --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
 begin
-  StdIntTest(co_DUTPicName02, 'Compression', 6, 'Compression mismatch');
+  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
     // "JPEG (old style)" --> 6.
     // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
 end;
@@ -697,12 +1012,12 @@ end;
 { CustomRendered }
 procedure TTstReadFile_dEXIF_01.TstReadFile_CustomRendered;
 begin
-  StdIntTest(co_DUTPicName01, 'CustomRendered', -1, 'CustomRendered mismatch');
+  StdIntTest(FImgFileName, 'CustomRendered', -1, 'CustomRendered mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CustomRendered;
 begin
-  StdIntTest(co_DUTPicName02, 'CustomRendered', 0, 'CustomRendered mismatch');
+  StdIntTest(FImgFileName, 'CustomRendered', 0, 'CustomRendered mismatch');
     // CCR ExifList: "Normal" --> 0
 end;
 
@@ -733,49 +1048,49 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime;
 begin
-  Test_DateTime(co_DUTPicName01, 0, EncodeDateTime(2017,03,15, 10,35,11,0));
+  Test_DateTime(FImgFileName, 0, EncodeDateTime(2017,03,15, 10,35,11,0));
     // 2017:03:15 10:35:11
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime;
 begin
-  Test_DateTime(co_DUTPicName02, 0, EncodeDateTime(2017,02,11, 15,09,39,0));
+  Test_DateTime(FImgFileName, 0, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
 end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Original;
 begin
-  Test_DateTime(co_DUTPicName01, 1, EncodeDateTime(2017,03,15, 10,35,11,0));
+  Test_DateTime(FImgFileName, 1, EncodeDateTime(2017,03,15, 10,35,11,0));
     // 2017:03:15 10:35:11
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Original;
 begin
-  Test_DateTime(co_DUTPicName02, 1, EncodeDateTime(2017,02,11, 15,09,39,0));
+  Test_DateTime(FImgFileName, 1, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
 end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Digitized;
 begin
-  Test_DateTime(co_DUTPicName01, 2, 0.0);
+  Test_DateTime(FImgFileName, 2, 0.0);
     // Tag not available --> 0.0
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Digitized;
 begin
-  Test_DateTime(co_DUTPicName02, 2, EncodeDateTime(2017,02,11, 15,09,39,0));
+  Test_DateTime(FImgFileName, 2, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
 end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DateTime_Modified;
 begin
-  Test_DateTime(co_DUTPicName01, 3, 0.0);
+  Test_DateTime(FImgFileName, 3, 0.0);
     // Tag not available --> 0.0
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DateTime_Modified;
 begin
-  Test_DateTime(co_DUTPicName02, 3, EncodeDateTime(2017,02,11, 15,09,39,0));
+  Test_DateTime(FImgFileName, 3, EncodeDateTime(2017,02,11, 15,09,39,0));
     // 2017:02:11 15:09:39
 end;
 
@@ -784,13 +1099,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_DigitalZoomRatio;
 begin
-  StdIntTest(co_DUTPicName01, 'DigitalZoomRatio', -1, 'Digital zoom ratio mismatch');
+  StdIntTest(FImgFileName, 'DigitalZoomRatio', -1, 'Digital zoom ratio mismatch');
   // Tag not available in this image
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_DigitalZoomRatio;
 begin
-  StdIntTest(co_DUTPicName02, 'DigitalZoomRatio', 1, 'Digital zoom ratio mismatch');
+  StdIntTest(FImgFileName, 'DigitalZoomRatio', 1, 'Digital zoom ratio mismatch');
 end;
 
 
@@ -798,13 +1113,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExifImageLength;
 begin
-  StdIntTest(co_DUTPicName01, 'ExifImageLength', -1, 'Exif image length mismatch');
+  StdIntTest(FImgFileName, 'ExifImageLength', -1, 'Exif image length mismatch');
   // Tag not available in this image
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageLength;
 begin
-  StdIntTest(co_DUTPicName02, 'ExifImageLength', 1832, 'Exif image length mismatch');
+  StdIntTest(FImgFileName, 'ExifImageLength', 1832, 'Exif image length mismatch');
 end;
 
 
@@ -812,13 +1127,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExifImageWidth;
 begin
-  StdIntTest(co_DUTPicName01, 'ExifImageWidth', -1, 'Exif image width mismatch');
+  StdIntTest(FImgFileName, 'ExifImageWidth', -1, 'Exif image width mismatch');
   // Tag not available in this image
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageWidth;
 begin
-  StdIntTest(co_DUTPicName02, 'ExifImageWidth', 3264, 'Exif image width mismatch');
+  StdIntTest(FImgFileName, 'ExifImageWidth', 3264, 'Exif image width mismatch');
 end;
 
 
@@ -826,13 +1141,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExifVersion;
 begin
-  StdStringTest(co_DUTPicName01, 'ExifVersion', '', 'Exif version mismatch');
+  StdStringTest(FImgFileName, 'ExifVersion', '', 'Exif version mismatch');
   // Tag not available in this image
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExifVersion;
 begin
-  StdStringTest(co_DUTPicName02, 'ExifVersion', '0220', 'Exif version mismatch');
+  StdStringTest(FImgFileName, 'ExifVersion', '0220', 'Exif version mismatch');
 end;
 
 
@@ -840,13 +1155,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureBiasValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ExposureBiasValue', NaN, 2, 'Exposure bias value mismatch');
+  StdFloatTest(FImgFileName, 'ExposureBiasValue', NaN, 2, 'Exposure bias value mismatch');
   // Tag not available in this image
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureBiasValue;
 begin
-  StdFloatTest(co_DUTPicName02, 'ExposureBiasValue', 0.0, 2, 'Exposure bias value mismatch');
+  StdFloatTest(FImgFileName, 'ExposureBiasValue', 0.0, 2, 'Exposure bias value mismatch');
 end;
 
 
@@ -854,13 +1169,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureMode;
 begin
-  StdIntTest(co_DUTPicName01, 'ExposureMode', -1, 'ExposureMode mismatch');
+  StdIntTest(FImgFileName, 'ExposureMode', -1, 'ExposureMode mismatch');
     // Tag not specified --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureMode;
 begin
-  StdIntTest(co_DUTPicName02, 'ExposureMode', 0, 'ExposreMode mismatch');
+  StdIntTest(FImgFileName, 'ExposureMode', 0, 'ExposreMode mismatch');
     // "Auto" --> 0
 end;
 
@@ -869,51 +1184,27 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureProgram;
 begin
-  StdIntTest(co_DUTPicName01, 'ExposureProgram', -1, 'Exposure program mismatch');
+  StdIntTest(FImgFileName, 'ExposureProgram', -1, 'Exposure program mismatch');
     // Tag not specified --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureProgram;
 begin
-  StdIntTest(co_DUTPicName02, 'ExposureProgram', -1, 'Exposure program mismatch');
+  StdIntTest(FImgFileName, 'ExposureProgram', -1, 'Exposure program mismatch');
     // Tag not available --> -1
 end;
 
 
 { Exposure time }
 
-procedure TTstReadFile_dEXIF.Test_ExposureTime(const AFilename: String;
-  const AExpected: String);
-var
-  DUT: TImgData;
-  currStrValue: String;
-  p: Integer;
-begin
-  DUT := TImgData.Create;
-  try
-    DUT.ProcessFile(AFilename);
-    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal('ExposureTime');
-    if currStrValue <> AExpected then begin
-      p := pos('sec', currStrValue);
-      if p <> 0 then Delete(currStrValue, p, MaxInt);
-      p := pos('sec', AExpected);
-      if p <> 0 then Delete(currStrValue, p, MaxInt);
-    end;
-    CheckEquals(trim(AExpected), trim(currStrValue), 'Exposure time mismatch');
-  finally
-    DUT.Free;
-  end;
-end;
-
 procedure TTstReadFile_dEXIF_01.TstReadFile_ExposureTime;
 begin
-  Test_ExposureTime(co_DUTPicName01, '1/3376');
+  StdFloatTest(FImgFilename, 'ExposureTime', 1/3376, 8, 'Exposure time mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExposureTime;
 begin
-  Test_ExposureTime(co_DUTPicName02, '1/1600');
+  StdFloatTest(FImgFilename, 'ExposureTime', 1/1600, 8, 'Exposure time mismatch');
 end;
 
 
@@ -921,40 +1212,42 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FileSource;
 begin
-  StdIntTest(co_DUTPicName01, 'FileSource', -1, 'File source mismatch');
-    // Tag not specified --> -1
+  StdIntTest(FImgFileName, 'FileSource', -1, 'File source mismatch');
+    // Tag not used --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FileSource;
 begin
-  StdIntTest(co_DUTPicName02, 'FileSource', 3, 'File source mismatch');
-    // "Digigal camera" --> 3
+  StdIntTest(FImgFileName, 'FileSource', 3, 'File source mismatch');
+    // "Digital camera" --> 3
 end;
 
-(*                   wp: is not found..., ccr-exif EXITList lists it in MakerNotes
+
 { Firmware version }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FirmwareVersion;
 begin
-  StdStringTest(co_DUTPicName01, 'FirmwareVersion', '', 'Firmware version mismatch');
+  StdStringTest(FImgFileName, 'FirmwareVersion', '', 'Firmware version mismatch');
+    // Tag not used
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FirmwareVersion;
 begin
-  StdStringTest(co_DUTPicName01, 'FirmwareVersion', 'Firmware Version 1.01', 'Firmware version mismatch');
+  StdStringTest(FImgFileName, 'FirmwareVersion', 'Firmware Version 1.01', 'Firmware version mismatch');
 end;
-*)
+
 
 { Flash }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_Flash;
 begin
-  StdIntTest(co_DUTPicName01, 'Flash', -1, 'Flash usage mismatch');
+  StdIntTest(FImgFileName, 'Flash', -1, 'Flash usage mismatch');
+    // Tag not used
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Flash;
 begin
-  StdIntTest(co_DUTPicName02, 'Flash', 16, 'Flash usage mismatch');  // "Off, Did not fire"
+  StdIntTest(FImgFileName, 'Flash', 16, 'Flash usage mismatch');  // "Off, Did not fire"
   // see https://stackoverflow.com/questions/44579889/using-bitwise-to-enumerate-exif-flash-readable-string
   // "Off, did not fire" corresponds to Flash value = 16
 end;
@@ -964,12 +1257,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FlashPixVersion;
 begin
-  StdStringTest(co_DUTPicName01, 'FlashPixVersion', '', 'FlashPix version mismatch');
+  StdStringTest(FImgFileName, 'FlashPixVersion', '', 'FlashPix version mismatch');
+    // Tag not used
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FlashPixVersion;
 begin
-  StdStringTest(co_DUTPicName02, 'FlashPixVersion', '0100', 'FlashPix version mismatch');
+  StdStringTest(FImgFileName, 'FlashPixVersion', '0100', 'FlashPix version mismatch');
 end;
 
 
@@ -977,12 +1271,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FNumber;
 begin
-  StdFloatTest(co_DUTPicName01, 'FNumber', 2.2, 1, 'F number mismatch');
+  StdFloatTest(FImgFileName, 'FNumber', 2.2, 1, 'F number mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FNumber;
 begin
-  StdFloatTest(co_DUTPicName02, 'FNumber', 2.7, 1, 'F number mismatch');
+  StdFloatTest(FImgFileName, 'FNumber', 2.7, 1, 'F number mismatch');
 end;
 
 
@@ -990,41 +1284,39 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLength;
 begin
-  StdFloatTest(co_DUTPicName01, 'FocalLength', 4.1, 1, 'Focal length mismatch');
+  StdFloatTest(FImgFileName, 'FocalLength', 4.1, 1, 'Focal length mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLength;
 begin
-  StdFloatTest(co_DUTPicName02, 'FocalLength', 6.0, 1, 'Focal length mismatch');
+  StdFloatTest(FImgFileName, 'FocalLength', 6.0, 1, 'Focal length mismatch');
 end;
 
-                                  (*
-                                  wp: failing because Calc35Equiv does not write Raw value
+
 { Focal length in 35 mm }
 
-procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLengthIn35mm;
+procedure TTstReadFile_dEXIF_01.TstReadFile_FocalLengthIn35mmFilm;
 begin
-  StdFloatTest(co_DUTPicName01, 'FocalLengthIn35mm', NaN, 0, 'Focal length in 35mm mismatch');
+  StdFloatFromStringTest(FImgFileName, 'FocalLengthIn35mmFilm', '', 0, 'Focal length in 35mm film mismatch');
 end;
 
-procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLengthIn35mm;
+procedure TTstReadFile_dEXIF_02.TstReadFile_FocalLengthIn35mmFilm;
 begin
-  StdFloatTest(co_DUTPicName02, 'FocalLengthIn35mm', 36, 0, 'Focal length in 35mm mismatch');
+  StdFloatFromStringTest(FImgFileName, 'FocalLengthIn35mmFilm', '36', 0, 'Focal length in 35mm film mismatch');
 end;
-                                    *)
 
 
 { Focal plane x resolution }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneXResolution;
 begin
-  StdFloatTest(co_DUTPicName01, 'FocalPlaneXResolution', NaN, 0, 'Focal plane X resolution mismatch');
+  StdFloatTest(FImgFileName, 'FocalPlaneXResolution', NaN, 0, 'Focal plane X resolution mismatch');
     // This image does not contain this tag
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneXResolution;
 begin
-  StdFloatTest(co_DUTPicName02, 'FocalPlaneXResolution', 14506.66667, 3, 'Focal plane X resolution mismatch');
+  StdFloatTest(FImgFileName, 'FocalPlaneXResolution', 14506.66667, 3, 'Focal plane X resolution mismatch');
 end;
 
 
@@ -1032,13 +1324,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneYResolution;
 begin
-  StdFloatTest(co_DUTPicName01, 'FocalPlaneYResolution', NaN, 0, 'Focal plane Y resolution mismatch');
+  StdFloatTest(FImgFileName, 'FocalPlaneYResolution', NaN, 0, 'Focal plane Y resolution mismatch');
     // This image does not contain this tag
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneYResolution;
 begin
-  StdFloatTest(co_DUTPicName02, 'FocalPlaneYResolution', 10840.23669, 3, 'Focal plane Y resolution mismatch');
+  StdFloatTest(FImgFileName, 'FocalPlaneYResolution', 10840.23669, 3, 'Focal plane Y resolution mismatch');
 end;
 
 
@@ -1046,13 +1338,92 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FocalPlaneResolutionUnit;
 begin
-  StdIntTest(co_DUTPicName01, 'FocalPlaneResolutionUnit', -1, 'Focal plane resolution unit mismatch');
+  StdIntTest(FImgFileName, 'FocalPlaneResolutionUnit', -1, 'Focal plane resolution unit mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_FocalPlaneResolutionUnit;
 begin
-  StdIntTest(co_DUTPicName02, 'FocalPlaneResolutionUnit', 2, 'Focal plane resolution unit mismatch');
+  StdIntTest(FImgFileName, 'FocalPlaneResolutionUnit', 2, 'Focal plane resolution unit mismatch');
     // 'inches' --> 2
+end;
+
+
+{ GPS latitude }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLatitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLatitude', NaN, NaN, NaN,'GPS latitude mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLatitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLatitude', 50, 6, 51.67, 'GPS latitude mismatch');
+    // output of EXIFTool: 50 deg 6' 51.67" N
+end;
+
+
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLatitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLatitudeRef', '', 'GPS latitude reference mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLatitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLatitudeRef', 'N', 'GPS latitude reference mismatch');
+    // output of EXIFTool: 50 deg 6' 51.67" N  --> 'N'
+end;
+
+
+{ GPS longitude }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLongitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLongitude', NaN, NaN, NaN, 'GPS longitude mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLongitude;
+begin
+  Test_GPSPosition(FImgFileName, 'GPSLongitude', 8, 40, 53.21, 'GPS longitude mismatch');
+    // output of EXIFTool: 8 deg 40' 53.21" E
+end;
+
+
+{ GPS latitude reference }
+{ GPS longitude reference }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_GPSLongitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLongitudeRef', '', 'GPS longitude reference mismatch');
+    // No GPS info in this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_GPSLongitudeRef;
+begin
+  StdStringTest(FImgFileName, 'GPSLongitudeRef', 'E', 'GPS longitude reference mismatch');
+    // output of EXIFTool: 8 deg 40' 53.21" E  --> 'E'
+end;
+
+
+{ Image description }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', '', 'Image description mismatch');
+    // Tag not used by this image
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', 'MyZeil Shopping Center', 'Image description mismatch');
+end;
+
+procedure TTstReadFile_dEXIF_03.TstReadFile_ImageDescription;
+begin
+  StdStringTest(FImgFileName, 'ImageDescription', 'Schilfgebiet', 'Image description mismatch');
 end;
 
 
@@ -1076,12 +1447,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ImageSize;
 begin
-  Test_ImageSize(co_DUTPicName01, 4608, 2592);
+  Test_ImageSize(FImgFileName, 4608, 2592);
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ImageSize;
 begin
-  Test_ImageSize(co_DUTPicName02, 3264, 1832);
+  Test_ImageSize(FImgFileName, 3264, 1832);
 end;
 
 
@@ -1089,12 +1460,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ImageType;
 begin
-  StdStringTest(co_DUTPicName01, 'ImageType', '', 'ImageType mismatch');
+  StdStringTest(FImgFileName, 'ImageType', '', 'ImageType mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ImageType;
 begin
-  StdStringTest(co_DUTPicName02, 'ImageType', 'IMG:PowerShot S5 IS JPEG', 'ImageType mismatch');
+  StdStringTest(FImgFileName, 'ImageType', 'IMG:PowerShot S5 IS JPEG', 'ImageType mismatch');
 end;
 
 
@@ -1102,12 +1473,12 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ISO;
 begin
-  StdStringTest(co_DUTPicName01, 'ISOSpeedRatings', '40, 0', 'ISO mismatch');
+  StdStringTest(FImgFileName, 'ISOSpeedRatings', '40, 0', 'ISO mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ISO;
 begin
-  StdStringTest(co_DUTPicName02, 'ISOSpeedRatings', '160', 'ISO mismatch');
+  StdStringTest(FImgFileName, 'ISOSpeedRatings', '160', 'ISO mismatch');
 end;
 
 
@@ -1115,13 +1486,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_MaxApertureValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'MaxApertureValue', NaN, 1, 'Max aperature value mismatch');
+  StdFloatTest(FImgFileName, 'MaxApertureValue', NaN, 1, 'Max aperature value mismatch');
     // Tag not used
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_MaxApertureValue;
 begin
-  StdFloatTest(co_DUTPicName02, 'MaxApertureValue', 2.875, 1, 'Max aperature value mismatch');
+  StdFloatTest(FImgFileName, 'MaxApertureValue', 2.875, 1, 'Max aperature value mismatch');
 end;
 
 
@@ -1129,13 +1500,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_MeteringMode;
 begin
-  StdIntTest(co_DUTPicName01, 'MeteringMode', -1, 'Metering mode mismatch');
+  StdIntTest(FImgFileName, 'MeteringMode', -1, 'Metering mode mismatch');
     // Tag not used
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_MeteringMode;
 begin
-  StdIntTest(co_DUTPicName02, 'MeteringMode', 5, 'Metering mode mismatch');
+  StdIntTest(FImgFileName, 'MeteringMode', 5, 'Metering mode mismatch');
     // ccr Exif List reports it as "Pattern" corresponding to the value 5 in
     // the EXIF documentation.
     // IrfanView calls it "MultiSegment" which is directly the dEXIF text for 5
@@ -1148,14 +1519,42 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_Orientation;
 begin
-  StdIntTest(co_DUTPicName01, 'Orientation', -1, 'Orientation mismatch');
+  StdIntTest(FImgFileName, 'Orientation', -1, 'Orientation mismatch');
     // Tag not available --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Orientation;
 begin
-  StdIntTest(co_DUTPicName02, 'Orientation', 1, 'Orientation mismatch');
+  StdIntTest(FImgFileName, 'Orientation', 1, 'Orientation mismatch');
     // "Horizontal (normal)" --> 1
+end;
+
+
+{ Related image height }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_RelatedImageHeight;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageHeight', -1, 'Related image height mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_RelatedImageHeight;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageHeight', 1832, 'Related image height mismatch');
+end;
+
+
+{ Related image width }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_RelatedImageWidth;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageWidth', -1, 'Related image width mismatch');
+    // Tag not available --> -1
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_RelatedImageWidth;
+begin
+  StdIntTest(FImgFileName, 'RelatedImageWidth', 3264, 'Related image width mismatch');
 end;
 
 
@@ -1185,12 +1584,27 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_Resolution;
 begin
-  Test_Resolution(co_DUTPicName01, 300, 300, 'inches');
+  Test_Resolution(FImgFileName, 300, 300, 'inches');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
 begin
-  Test_Resolution(co_DUTPicName02, 180, 180, 'inch');
+  Test_Resolution(FImgFileName, 180, 180, 'inch');
+end;
+
+
+{ Resolution unit}
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_ResolutionUnit;
+begin
+  StdIntTest(FImgFileName, 'ResolutionUnit', -1, 'Resolution unit mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_ResolutionUnit;
+begin
+  StdIntTest(FImgFileName, 'ResolutionUnit', 2, 'Resolution unit mismatch');
+    // "inch" --> 2
 end;
 
 
@@ -1198,13 +1612,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_SceneCaptureType;
 begin
-  StdIntTest(co_DUTPicName01, 'SceneCaptureType', -1, 'Scene capture type mismatch');
+  StdIntTest(FImgFileName, 'SceneCaptureType', -1, 'Scene capture type mismatch');
     // Tag not available --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_SceneCaptureType;
 begin
-  StdIntTest(co_DUTPicName02, 'SceneCaptureType', 0, 'Scene capture type mismatch');
+  StdIntTest(FImgFileName, 'SceneCaptureType', 0, 'Scene capture type mismatch');
     // "Standard"  --> 0
 end;
 
@@ -1213,21 +1627,22 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_SensingMethod;
 begin
-  StdIntTest(co_DUTPicName01, 'SensingMethod', -1, 'SensingMethod mismatch');
+  StdIntTest(FImgFileName, 'SensingMethod', -1, 'SensingMethod mismatch');
     // Tag not available  --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_SensingMethod;
 begin
-  StdIntTest(co_DUTPicName02, 'SensingMethod', 2, 'SensingMethod mismatch');
+  StdIntTest(FImgFileName, 'SensingMethod', 2, 'SensingMethod mismatch');
     // "One-chip color area"  --> 2
 end;
+
 
 { Shutter speed value }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ShutterSpeedValue;
 begin
-  StdFloatTest(co_DUTPicName01, 'ShutterSpeedValue', NaN, 8, 'Shutter speed value mismatch');
+  StdFloatTest(FImgFileName, 'ShutterSpeedValue', NaN, 8, 'Shutter speed value mismatch');
     // Tag not available (EXIFTool does list a "Shutter Speed", but the tag is
     // not in the file, the value is probably taken from tag "ExposureTime")
     // --> NaN
@@ -1248,7 +1663,7 @@ begin
   expectedExposureTime := 1/1614;
   expectedShutterSpeed := -log2(expectedExposureTime);
   allowedDigits := round(abs(log10(EPS * expectedShutterspeed)));
-  StdFloatTest(co_DUTPicName02, 'ShutterSpeedValue', expectedShutterSpeed,
+  StdFloatTest(FImgFileName, 'ShutterSpeedValue', expectedShutterSpeed,
     allowedDigits, 'Shutter speed value mismatch');
 end;
 
@@ -1257,14 +1672,28 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_WhiteBalance;
 begin
-  StdIntTest(co_DUTPicName01, 'WhiteBalance', -1, 'WhiteBalance mismatch');
+  StdIntTest(FImgFileName, 'WhiteBalance', -1, 'WhiteBalance mismatch');
     // Tag not available  --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_WhiteBalance;
 begin
-  StdIntTest(co_DUTPicName02, 'WhiteBalance', 0, 'WhiteBalance mismatch');
+  StdIntTest(FImgFileName, 'WhiteBalance', 0, 'WhiteBalance mismatch');
     // "Auto"  --> 0
+end;
+
+
+{ X Resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_XResolution;
+begin
+  StdIntTest(FImgFileName, 'XResolution', -1, 'XResolution mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_XResolution;
+begin
+  StdIntTest(FImgFileName, 'XResolution', 180, 'XResolution mismatch');
 end;
 
 
@@ -1272,13 +1701,13 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_YCbCrPositioning;
 begin
-  StdIntTest(co_DUTPicName01, 'YCbCrPositioning', -1, 'YCbCrPositioning mismatch');
+  StdIntTest(FImgFileName, 'YCbCrPositioning', -1, 'YCbCrPositioning mismatch');
     // Tag not specified  --> -1
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_YCbCrPositioning;
 begin
-  StdIntTest(co_DUTPicName02, 'YCbCrPositioning', 1, 'YCbCrPositioning mismatch');
+  StdIntTest(FImgFileName, 'YCbCrPositioning', 1, 'YCbCrPositioning mismatch');
     // "centered" --> 1
 end;
 
@@ -1288,18 +1717,34 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_YCbCrSubsampling;
 begin
-  StdStringTest(co_DUTPicName01, 'YCbCrSubsampling', 'YCbCr4:2:0 (2 2)', 'YCbCrSubsampling mismatch');
+  StdStringTest(FImgFileName, 'YCbCrSubsampling', 'YCbCr4:2:0 (2 2)', 'YCbCrSubsampling mismatch');
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_YCbCrSubsampling;
 begin
-  StdStringTest(co_DUTPicName02, 'YCbCrSubsampling', 'YCbCr4:2:2 (2 1)', 'YCbCrsubsampling mismatch');
+  StdStringTest(FImgFileName, 'YCbCrSubsampling', 'YCbCr4:2:2 (2 1)', 'YCbCrsubsampling mismatch');
 end;
 *)
+
+
+{ Y Resolution }
+
+procedure TTstReadFile_dEXIF_01.TstReadFile_YResolution;
+begin
+  StdIntTest(FImgFileName, 'YResolution', -1, 'YResolution mismatch');
+    // Tag not used in this image file
+end;
+
+procedure TTstReadFile_dEXIF_02.TstReadFile_YResolution;
+begin
+  StdIntTest(FImgFileName, 'YResolution', 180, 'YResolution mismatch');
+end;
+
 
 initialization
   RegisterTest(TTstReadFile_dEXIF_01);
   RegisterTest(TTstReadFile_dEXIF_02);
+  RegisterTest(TTstReadFile_dEXIF_03);
 
 end.
 
