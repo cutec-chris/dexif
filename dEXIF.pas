@@ -2870,7 +2870,8 @@ begin
       if not Assigned(ExifObj) then begin
         EXIFsegment := @sections[SectionCnt+1];
         EXIFobj := TImageInfo.Create(self,BuildList);
-        EXIFobj.TraceLevel := TraceLevel;
+        //ExifObj.SetTagElement();
+        //EXIFobj.TraceLevel := TraceLevel;
         //ExifObj.CameraModel:= 'Lazarus';
         //ExifObj.CameraMake:= 'dExif V' + DexifVersion;
         //SetDataBuff(EXIFsegment^.data);
