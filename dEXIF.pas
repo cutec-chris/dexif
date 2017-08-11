@@ -242,9 +242,6 @@ type
         TraceLevel: integer;
         procedure reset;
         procedure SetFileInfo(fname:ansistring);
-        constructor Create(buildCode: integer = GenAll);
-        function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
-          freshExifBlock: Boolean=false): longint;
         function ReadExifInfo(fname:ansistring):boolean;
         Procedure MakeIPTCSegment(buff:ansistring);
         Procedure MakeCommentSegment(buff:ansistring);
@@ -261,7 +258,7 @@ type
         procedure ClearComments;
         procedure ProcessEXIF;
         procedure CreateIPTCObj;
-        function  HasMetaData:boolean;
+        function HasMetaData:boolean;
         function HasEXIF: boolean;
         function HasIPTC: boolean;
         function HasComment: boolean;
@@ -269,8 +266,11 @@ type
         function ReadIPTCStrings(fname: ansistring):tstringlist;
         function ExtractThumbnailBuffer: ansistring;
         function ExtractThumbnailJpeg(AStream: TStream): Boolean;
-        procedure MergeToStream(Input, Output: TStream; EnabledMeta: Byte = $FF;
-          freshExifBlock: Boolean = false);
+
+        function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
+          freshExifBlock: Boolean=false): longint;
+        procedure MergeToStream(AInputStream, AOutputStream: TStream;
+          AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
         procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
         procedure WriteEXIFJpeg(AJPeg: TStream; AFileName, AOrigName: String;
           AdjSize: Boolean = true); overload;
@@ -289,6 +289,7 @@ type
         function MetaDataToXML: tstringlist;
         function FillInIptc:boolean;
   public
+    constructor Create(buildCode: integer = GenAll);
     destructor Destroy; override;
 
     property Height: Integer read GetHeight;
@@ -2861,7 +2862,6 @@ begin
   cnt := 0;
   buff := #$FF#$D8;
   jfs2.Write(pointer(buff)^, Length(buff));
-
   if (EnabledMeta and 1 <> 0) then
   begin
     if FreshExifBlock then
@@ -2901,7 +2901,7 @@ begin
     if (cnt = 0) then
     begin
       // buff := chr($FF)+chr(Dtype)+data;
-      buff := #$FF + chr(M_JFIF) + #$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
+      buff := #$FF + chr(M_JFIF) + #$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;       // To do:  contains wrong resolution!!!
       cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
     end;
   end;
@@ -3158,7 +3158,7 @@ begin
     imgStream.Free;
   end;
 end;
-
+         (*
 procedure TImgData.MergeToStream(Input, Output: TStream; EnabledMeta: Byte = $FF;
   freshExifBlock: Boolean = false);   // msta
 var
@@ -3187,6 +3187,65 @@ begin
  Input.Seek(pslen,soFromBeginning);
  Output.Seek(0,soFromEnd);
  Output.CopyFrom(Input,Input.Size-pslen);
+end;
+*)
+procedure TImgData.MergeToStream(AInputStream, AOutputStream: TStream;
+  AEnabledMeta: Byte; AFreshExifBlock: Boolean = false);
+type
+  TSegmentHeader = packed record
+    Key: byte;
+    Marker: byte;
+    Size: Word;
+  end;
+var
+  header: TSegmentHeader;
+  ms: TMemoryStream;
+  n, count: Integer;
+  savedPos: Int64;
+begin
+  // Write the header segment and all segments modified by dEXIF to  the
+  // beginning of the stream
+  AOutputStream.Position := 0;
+  SaveExif(AOutputStream, AEnabledMeta, AFreshExifBlock);
+
+  // Now write copy all segments which were not modified by dEXIF.
+  AInputStream.Position := 0;
+  while AInputStream.Position < AInputStream.Size do begin
+    savedPos := AInputStream.Position;  // just for debugging
+    n := AInputStream.Read(header, SizeOf(header));
+    if n <> Sizeof(header) then
+      raise Exception.Create('Defective JPEG structure: Incomplete segment header');
+    if header.Key <> $FF then
+       raise Exception.Create('Defective JPEG structure: $FF expected.');
+     header.Size := BEToN(header.Size);
+
+     // Save stream position before segment size value.
+     savedPos := AInputStream.Position - 2;
+     case header.Marker of
+       M_SOI:
+         header.Size := 0;
+       M_JFIF, M_EXIF, M_IPTC, M_COM:  // these segments were already written by SaveExif
+         ;
+       M_SOS:
+         begin
+           // this is the last segment before compressed data which don't have a marker
+           // --> just copy the rest of the file
+           count := AInputStream.Size - savedPos;
+           AInputStream.Position := savedPos;
+           AOutputStream.WriteBuffer(header, 2);
+           n := AOutputStream.CopyFrom(AInputStream, count);
+           if n <> count then
+             raise Exception.Create('Read/write error detected for compressed data.');
+           break;
+         end;
+       else
+         AInputstream.Position := AInputStream.Position - 4;  // go back to where the segment begins
+         n := AOutputStream.Copyfrom(AInputStream, header.Size + 2);
+         if n <> header.Size + 2 then
+           raise Exception.CreateFmt('Read/write error in segment $FF%.2x', [header.Marker]);
+     end;
+     AInputStream.Position := savedPos + header.Size;
+  end;
 end;
 
 function TImgData.FillInIptc:boolean;
