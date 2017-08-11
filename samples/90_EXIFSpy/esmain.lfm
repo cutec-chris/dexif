@@ -408,27 +408,28 @@ object MainForm: TMainForm
           Height = 489
           Top = 0
           Width = 428
-          ActivePage = PgConverter
+          ActivePage = PgAnalysis
           Align = alClient
-          TabIndex = 1
+          TabIndex = 0
           TabOrder = 0
           object PgAnalysis: TTabSheet
             Caption = 'Analysis'
-            ClientHeight = 457
+            ClientHeight = 461
             ClientWidth = 420
             object AnalysisGrid: TStringGrid
               Left = 0
-              Height = 436
+              Height = 440
               Top = 21
               Width = 420
               Align = alClient
               ColCount = 4
               FixedCols = 0
               MouseWheelOption = mwGrid
-              Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goThumbTracking, goSmoothScroll, goCellHints, goTruncCellHints, goCellEllipsis]
+              Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goDrawFocusSelected, goColSizing, goThumbTracking, goSmoothScroll, goCellHints, goTruncCellHints, goCellEllipsis]
               RowCount = 2
               TabOrder = 0
               OnClick = AnalysisGridClick
+              OnPrepareCanvas = AnalysisGridPrepareCanvas
               ColWidths = (
                 64
                 64
@@ -1111,19 +1112,34 @@ object MainForm: TMainForm
       Hint = 'Go to "Image file directory 1" (IFD1)'
       OnExecute = TbGotoIFD
     end
-    object AcGotoSubIFD: TAction
+    object AcGotoExifSubIFD: TAction
       Tag = 1003
-      Caption = 'SubIFD'
-      Hint = 'Go to "Sub image file directory" (SubIFD)'
+      Caption = 'SubExifIFD'
+      Hint = 'Go to "Exif Sub image file directory" (SubIFD)'
+      OnExecute = TbGotoIFD
+    end
+    object AcGotoGPSSubIFD: TAction
+      Tag = 1004
+      Caption = 'GPS SubIFD'
+      Hint = 'Go to "GPS Sub image file directory" (SubIFD)'
+      OnExecute = TbGotoIFD
+    end
+    object AcGotoInteropSubIFD: TAction
+      Tag = 1005
+      Caption = 'INTEROP SubIFD'
+      Hint = 'Go to "Interoperability Sub image file directory" (SubIFD)'
       OnExecute = TbGotoIFD
     end
   end
   object APP1Popup: TPopupMenu
-    left = 80
-    top = 115
+    left = 261
+    top = 128
     object MenuItem1: TMenuItem
       Action = AcGotoTIFFHeader
       OnClick = TbGotoTIFFHeaderClick
+    end
+    object MenuItem8: TMenuItem
+      Caption = '-'
     end
     object MenuItem2: TMenuItem
       Tag = 1000
@@ -1135,10 +1151,19 @@ object MainForm: TMainForm
       Action = AcGotoIFD1
       OnClick = TbGotoIFD
     end
+    object MenuItem5: TMenuItem
+      Caption = '-'
+    end
     object MenuItem4: TMenuItem
       Tag = 1002
-      Action = AcGotoSubIFD
+      Action = AcGotoExifSubIFD
       OnClick = TbGotoIFD
+    end
+    object MenuItem6: TMenuItem
+      Action = AcGotoGPSSubIFD
+    end
+    object MenuItem7: TMenuItem
+      Action = AcGotoInteropSubIFD
     end
   end
 end

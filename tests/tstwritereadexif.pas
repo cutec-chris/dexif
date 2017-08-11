@@ -2,7 +2,7 @@ unit tstwritereadexif;
 
 {$mode objfpc}{$H+}
 
-{$DEFINE ERASE_TESTIMAGE}
+{.$DEFINE ERASE_TESTIMAGE}
 
 interface
 
@@ -12,7 +12,7 @@ uses
 const
   // Picture with EXIF data taken from CANON camera }
   co_SrcPic = './testpictures/original/img_9438.jpg';
-  co_DestPic = './testpictures/DUTPic.jpeg';
+  co_DestPic = './testpictures/ReadWriteTest.jpg';
 
 type
   { TTsWriteReadFile_dEXIF }
@@ -40,6 +40,8 @@ type
     procedure Test_ExifComment_ASCII;
     procedure Test_ExifComment_UNICODE;
     procedure Test_ImageDescription;
+    procedure Test_CameraMake;
+    procedure Test_CameraMake_TooLong;
 
   end;
 
@@ -60,7 +62,7 @@ type
 
 const
   // !!! INCREMENT WHEN ADDING TESTS !!!
-  TestCount = 9;
+  TestCount = 11;
 
   // !!! ADD NEW TESTS HERE !!!
   TestParams: Array[0..TestCount-1] of TWriteReadParam = (
@@ -72,7 +74,9 @@ const
 {5}  (Kind:tkString; Tag:'Artist';             Value:'Ansel Adams'),
      (Kind:tkString; Tag:'ExifComment';        Value:'This is a comment'),
      (Kind:tkString; Tag:'ExifComment';        Value:'äöü αβγ'),
-     (Kind:tkString; Tag:'ImageDescription';   Value:'My image')
+     (Kind:tkString; Tag:'ImageDescription';   Value:'My image'),
+     (Kind:tkString; Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
+     (Kind:tkString; Tag:'CameraMake';         Value:'Minolta')  // longer than text in file --> fail
   );
 
 
@@ -133,6 +137,8 @@ var
       6: Result := DUT.ExifObj.ExifComment;
       7: Result := DUT.ExifObj.ExifComment;
       8: Result := DUT.ExifObj.ImageDescription;
+      9: Result := DUT.ExifObj.CameraMake;
+     10: Result := DUT.ExifObj.CameraMake;
     end;
   end;
 
@@ -152,6 +158,8 @@ var
       6: DUT.ExifObj.ImageDescription := strValue;
       7: DUT.ExifObj.ExifComment := strValue;
       8: DUT.ExifObj.ExifComment := strValue;
+      9: DUT.ExifObj.CameraMake := strValue;
+    10: DUT.ExifObj.CameraMake := strValue;
     end;
   end;
 
@@ -290,6 +298,17 @@ end;
 procedure TTstWriteReadFile_dEXIF.Test_ImageDescription;
 begin
   GenericTest(8);
+end;
+
+{ Camera make }
+procedure TTstWriteReadFile_dEXIF.Test_CameraMake;
+begin
+  GenericTest(9);
+end;
+
+procedure TTstWriteReadFile_dEXIF.Test_CameraMake_TooLong;
+begin
+  GenericTest(10);
 end;
 
 

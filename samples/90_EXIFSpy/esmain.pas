@@ -17,8 +17,10 @@ type
     AcImgFit: TAction;
     AcGotoIFD0: TAction;
     AcGotoIFD1: TAction;
-    AcGotoSubIFD: TAction;
+    AcGotoExifSubIFD: TAction;
     AcGotoTIFFHeader: TAction;
+    AcGotoGPSSubIFD: TAction;
+    AcGotoInteropSubIFD: TAction;
     ActionList: TActionList;
     BtnOpen: TButton;
     CbHexEditorAddressMode: TComboBox;
@@ -32,6 +34,10 @@ type
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
     OpenDialog: TOpenDialog;
     HexPageControl: TPageControl;
     Panel1: TPanel;
@@ -86,6 +92,8 @@ type
     PgTags: TTabSheet;
     procedure AcImgFitExecute(Sender: TObject);
     procedure AnalysisGridClick(Sender: TObject);
+    procedure AnalysisGridPrepareCanvas(sender: TObject; aCol, aRow: Integer;
+      aState: TGridDrawState);
     procedure BtnBrowseClick(Sender: TObject);
     procedure BtnOpenClick(Sender: TObject);
     procedure CbFileCloseUp(Sender: TObject);
@@ -138,7 +146,7 @@ type
     function GetValueGridDataSize: Integer;
     function GotoNextIFD(var AOffset: Int64): Boolean;
     procedure GotoOffset(AOffset: Int64);
-    function GotoSubIFD(var AOffset: Int64; ATiffHeaderOffset: Int64): Boolean;
+    function GotoSubIFD(ATag: Word; var AOffset: Int64; ATiffHeaderOffset: Int64): Boolean;
     procedure OpenFile(const AFileName: String);
     procedure PopulateValueGrid;
     procedure UpdateIFD;
@@ -214,6 +222,11 @@ const
   MARKER_SOF14  = $CE;
   MARKER_SOF15  = $CF;
   MARKER_SOS   = $DA;
+
+  TAG_EXIF_OFFSET        = $8769;
+  TAG_GPS_OFFSET         = $8825;
+  TAG_INTEROP_OFFSET     = $A005;
+  TAG_SUBIFD_OFFSET      = $014A;
 
 var
   MaxHistory: Integer = 10;
@@ -300,6 +313,16 @@ begin
 
   if not HexEditor.CaretVisible then
     HexEditor.ExecuteCommand(ecScrollCenter);;
+end;
+
+procedure TMainForm.AnalysisGridPrepareCanvas(sender: TObject; aCol,
+  aRow: Integer; aState: TGridDrawState);
+var
+  s: String;
+begin
+  s := AnalysisGrid.Cells[ACol, ARow];
+  if (s <> '') and ((s[1] = '#') or (s = 'Offset to next IFD')) and (ACol = 3) then
+    AnalysisGrid.Canvas.Font.Style := [fsBold];
 end;
 
 procedure TMainForm.BtnBrowseClick(Sender: TObject);
@@ -1377,7 +1400,8 @@ begin
   TbNextSegment.Enabled := FBuffer^[AOffset] = $FF;
 end;
 
-function TMainForm.GotoSubIFD(var AOffset: Int64; ATIFFHeaderOffset: Int64): boolean;
+function TMainForm.GotoSubIFD(ATag: Word;
+  var AOffset: Int64; ATIFFHeaderOffset: Int64): boolean;
 var
   n,L: Int64;
   val: Int64;
@@ -1393,10 +1417,10 @@ begin
   for i:=0 to n-1 do begin
     if not GetExifIntValue(AOffset, 2, val) then
       exit;
-    if val = $8769 then begin   // Tag for EXIF SubIFD offset.
+    if val = ATag then begin        // See TAG_XXXX_OFFSET constants
       inc(AOffset, 2 + 2);
       if not GetExifIntValue(AOffset, 4, L) then exit;
-      if L > $0000FFFF then
+      if L > 4 then
         AOffset := ATiffHeaderOffset + L
       else
         inc(AOffset, 4);
@@ -1819,7 +1843,7 @@ end;
 procedure TMainForm.TbGotoIFD(Sender: TObject);
 var
   p: Int64;
-  TiffHeader: Int64;
+  TiffHeaderOffs: Int64;
 begin
   p := FindMarker(MARKER_APP1);
   if p = -1 then begin
@@ -1831,13 +1855,13 @@ begin
   inc(p, 2 + 2 + Length('EXIF'#0#0));
 
   // TIFF header
-  TiffHeader := p;
+  TiffHeaderOffs := p;
   inc(p, 8);  // Size of TIFF header
 
   // IFD0
   if TComponent(Sender).Tag = 1001 then begin
     GotoOffset(p);
-    if not DisplayIFD(p, TiffHeader, 'IFD0 (Image file directory 0)') then
+    if not DisplayIFD(p, TiffHeaderOffs, 'IFD0 (Image file directory 0)') then
       Statusbar.SimpleText := 'ERROR';
     exit;
   end else
@@ -1849,23 +1873,46 @@ begin
       exit;
     end;
     GotoOffset(p);
-    if not DisplayIFD(p, TiffHeader, 'IFD1 (Image file directory 1)') then
+    if not DisplayIFD(p, TiffHeaderOffs, 'IFD1 (Image file directory 1)') then
       Statusbar.SimpleText := 'ERROR';
     exit;
   end else
   // EXIF SubIFD
   if TComponent(Sender).Tag = 1003 then begin
     GotoOffset(p);
-    if not GotoSubIFD(p, TiffHeader) then begin
+    if not GotoSubIFD(TAG_EXIF_OFFSET, p, TiffHeaderOffs) then begin
       Statusbar.SimpleText := 'No EXIF SubIFD';
       exit;
     end;
     GotoOffset(p);
-    if not DisplayIFD(p, TIFFHeader, 'EXIF SubIFD (Image file subdirectory)') then
+    if not DisplayIFD(p, TIFFHeaderOffs, 'EXIF SubIFD (Image file subdirectory)') then
+      Statusbar.SimpleText := 'ERROR';
+    exit;
+  end else
+  // GPS SubIFD
+  if TComponent(Sender).Tag = 1004 then begin
+    GotoOffset(p);
+    if not GotoSubIFD(TAG_GPS_OFFSET, p, TiffHeaderOffs) then begin
+      Statusbar.SimpleText := 'No GPS SubIFD';
+      exit;
+    end;
+    GotoOffset(p);
+    if not DisplayIFD(p, TIFFHeaderOffs, 'GPS SubIFD (Image file subdirectory)') then
+      Statusbar.SimpleText := 'ERROR';
+    exit;
+  end else
+  // Interoperability SubIFD
+  if TComponent(Sender).Tag = 1005 then begin
+    GotoOffset(p);
+    if not GotoSubIFD(TAG_INTEROP_OFFSET, p, TiffHeaderOffs) then begin
+      Statusbar.SimpleText := 'No Interoperability SubIFD';
+      exit;
+    end;
+    GotoOffset(p);
+    if not DisplayIFD(p, TIFFHeaderOffs, 'Interoperability SubIFD (Image file subdirectory)') then
       Statusbar.SimpleText := 'ERROR';
     exit;
   end;
-
 end;
 
 procedure TMainForm.TbGotoMarker(Sender: TObject);

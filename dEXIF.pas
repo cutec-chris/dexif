@@ -85,6 +85,8 @@ type
     iterator:integer;
     iterThumb:integer;
 
+    FCameraMake: String;
+
     // Getter / setter
     function GetDateTimeOriginal: TDateTime;
     procedure SetDateTimeOriginal(const AValue: TDateTime);
@@ -104,6 +106,8 @@ type
     function GetImageDescription: String;
     procedure SetImageDescription(const v: String);
 
+    function GetCameraMake: String;
+    procedure SetCameraMake(const AValue: String);
 
     // misc
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
@@ -126,7 +130,7 @@ type
     MaxTag: integer;
     parent: timgdata;
     exifVersion : string[ 6];
-    CameraMake:   string[32];
+//    CameraMake:   string[32];
     CameraModel:  string[40];
     DateTime:     string[20];
     Height,Width,HPosn,WPosn: integer;
@@ -221,6 +225,7 @@ type
     property Artist: String read GetArtist write SetArtist;
     property ExifComment: String read GetExifComment write SetExifComment;
     property ImageDescription: String read GetImageDescription write SetImageDescription;
+    property CameraMake: String read GetCameraMake write SetCameraMake;
 
   end; // TInfoData
 
@@ -1181,7 +1186,7 @@ end;
 
 procedure TImageInfo.Assign(Source: TImageInfo);
 begin
-  CameraMake      := Source.CameraMake;
+  FCameraMake     := Source.FCameraMake;
   CameraModel     := Source.CameraModel;
   DateTime        := Source.DateTime;
   Height          := Source.Height;
@@ -1758,6 +1763,9 @@ var
   tmpDateTime: string;
   tagID: word;
 begin
+  if parentID = 0 then
+    idCnt := 1;
+
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
   if (ExifTrace > 0) then
@@ -1781,6 +1789,7 @@ begin
 
   for de := 0 to NumDirEntries-1 do
   begin
+    tagID := 0;
     DirEntry := DirStart+2+12*de;
     Tag := Get16u(DirEntry);
     TFormat := Get16u(DirEntry+2);
@@ -1881,12 +1890,15 @@ begin
          begin
            try
              SubdirStart := OffsetBase + LongInt(Get32u(ValuePtr));
-             if not testDirStack(SubDirStart,OffsetBase) then
-               ProcessExifDir(SubdirStart, OffsetBase, ExifLength, GpsTag);
+             if not testDirStack(SubDirStart,OffsetBase) then begin
+               tagID := idCnt;
+               inc(idCnt);
+               ProcessExifDir(SubdirStart, OffsetBase, ExifLength, GpsTag, '', tagID);
+             end;
            except
            end;
          end;
-       TAG_MAKE: CameraMake := fstr;
+       TAG_MAKE: FCameraMake := fstr;
        TAG_MODEL: CameraModel := fstr;
        TAG_EXIFVER: ExifVersion := rawstr;
        TAG_DATETIME_MODIFY:
@@ -1941,6 +1953,8 @@ begin
         NewE.Size := length(RawStr);
         NewE.PRaw := ValuePtr;
         NewE.TType := tFormat;
+        NewE.parentID := parentID;
+        NewE.id := tagID;
         if tagType = ThumbTag then
           AddTagToThumbArray(NewE)
         else
@@ -1966,6 +1980,8 @@ begin
       NewE.Size := length(fStr);
       NewE.PRaw := 0;
       NewE.TType:= fType;
+      newE.parentID := 0;
+      newE.id := 0;
       NewE.TID  := 1; // MsSpecific
       AddTagToArray(NewE);
     except
@@ -2220,7 +2236,7 @@ begin
               'File Size:     ' + AnsiString(IntToStr(parent.FileSize div 1024)) + 'k' + crlf +
               'File Date:     ' + AnsiString(FileDateTime) + crlf +
               'Photo Date:    ' + AnsiString(DateTime) + crlf +
-              'Make (Model):  ' + CameraMake + ' ('+CameraModel+')' + crlf +
+              'Make (Model):  ' + FCameraMake + ' ('+CameraModel+')' + crlf +
               'Dimensions:    ' + AnsiString(IntToStr(Width)) + ' x '+ AnsiString(IntToStr(Height));
 
     if BuildList in [GenString,GenAll] then
@@ -2486,7 +2502,7 @@ begin
   p := GetTag(TAG_EXIF_OFFSET, false, 0, 4);
   if (p = nil) then
     exit;
-  p := GetTag(TAG_USERCOMMENT, false, p^.ID, 2);
+  p := GetTag(TAG_USERCOMMENT, false, p^.ID, FMT_STRING);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
   if (Pos('ASCII', p^.Raw) = 1) then begin
@@ -2545,7 +2561,7 @@ var
   v: ansistring;
 begin
   Result := '';
-  p := GetTag(TAG_IMAGEDESCRIPTION, false, 0, 2);
+  p := GetTag(TAG_IMAGEDESCRIPTION, false, 0, FMT_STRING);
   if (p = nil) then
     exit;
   SetLength(v, Length(p^.Raw)-1);
@@ -2566,7 +2582,7 @@ begin
     RemoveTag(TAG_IMAGEDESCRIPTION, 0);
     exit;
   end;
-  p := GetTag(TAG_IMAGEDESCRIPTION, true, 0, 2);
+  p := GetTag(TAG_IMAGEDESCRIPTION, true, 0, FMT_STRING);
  {$IFDEF DELPHI}
   p^.Raw := ansistring(v) + #0;
  {$ELSE}
@@ -2575,6 +2591,49 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
+
+function TImageInfo.GetCameraMake: String;
+var
+  p: PTagEntry;
+  v: AnsiString;
+begin
+//  Result := FCameraMake;
+
+  Result := '';
+  p := GetTag(TAG_MAKE, false, 0, FMT_STRING);
+  if p = nil then
+    exit;
+  SetLength(v, Length(p^.Raw) - 1);
+  Move(p^.Raw[1], v[1], Length(p^.Raw) - 1);
+  v := trim(v);
+ {$IFDEF DELPHI}
+  AnsiString(Result) := v;
+ {$ELSE}
+  Result := AnsiToUTF8(v);
+ {$ENDIF}
+
+end;
+
+procedure TImageInfo.SetCameraMake(const AValue: String);
+var
+  p: PTagEntry;
+begin
+  if (AValue = '') then begin
+    RemoveTag(TAG_MAKE, 0);
+    exit;
+  end;
+  p := GetTag(TAG_MAKE, true, 0, FMT_STRING);
+ {$IFDEF DELPHI}
+  p^.Raw := AnsiStrin(AValue) + #0;
+ {$ELSE}
+  p^.Raw := UTF8ToAnsi(AValue) + #0;
+ {$ENDIF}
+  p^.Data := p^.Raw;
+  p^.Size := Length(p^.Raw);
+
+  WriteThruString('Make', AValue);
+end;
+
 
 function TImageInfo.IterateFoundTags(TagId: integer;
         var retVal:TTagEntry):boolean;
@@ -2647,12 +2706,13 @@ end;
 //  enough info in the EXIF to calculate the equivalent 35mm
 //  focal length and it needs to be looked up on a camera
 //  by camera basis. - next rev - maybe
-Function TImageInfo.LookupRatio:double;
-var estRatio:double;
-  upMake,upModel:ansistring;
+Function TImageInfo.LookupRatio: double;
+var
+  estRatio: double;
+  upMake, upModel: ansistring;
 begin
-  upMake  := copy(AnsiString(AnsiUpperCase(cameramake)) ,1,5);
-  upModel := copy(AnsiString(AnsiUpperCase(cameramodel)),1,5);
+  upMake := copy(AnsiString(AnsiUpperCase(FCameraMake)), 1, 5);
+  upModel := copy(AnsiString(AnsiUpperCase(cameramodel)), 1, 5);
   estRatio := 4.5;  // ballpark for *my* camera -
   result := estRatio;
 end;
@@ -3397,10 +3457,7 @@ begin
     {$IFDEF DELPHI}
     Result := ansistring(Copy(buffer, 3, bufLen - 2);
     {$ELSE}
-    Result := Copy(buffer, 3, bufLen - 2);
-    {$IFDEF WINDOWS}
-    Result := AnsiToUTF8(Result);
-    {$ENDIF}
+    Result := AnsiToUTF8(copy(buffer, 3, bufLen - 2));
     {$ENDIF}
   end;
 end;
@@ -3410,11 +3467,7 @@ begin
   {$IFDEF DELPHI}
   MakeCommentSegment(ansistring(v));
   {$ELSE}
-  {$IFDEF WINDOWS}
   MakeCommentSegment(UTF8ToAnsi(v));
-  {$ELSE}
-  MakeCommentSegment(v);
-  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -3485,9 +3538,10 @@ end;
 // Parse the marker stream until SOS or EOI is seen;
 //--------------------------------------------------------------------------
 function TImgData.ReadJpegSections (var f: tstream):boolean;
-var a,b:byte;
-    ll,lh,itemlen,marker:integer;
-    pw: PWord;
+var
+  a, b: byte;
+  ll, lh, itemlen, marker: integer;
+  pw: PWord;
 begin
   a := getbyte(f);
   b := getbyte(f);

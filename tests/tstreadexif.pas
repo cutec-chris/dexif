@@ -85,7 +85,7 @@ type
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_FileSource;
-    procedure TstReadFile_FirmwareVersion;
+//    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
@@ -100,7 +100,7 @@ type
     procedure TstReadFile_GPSLongitudeRef;
     procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
-    procedure TstReadFile_ImageType;
+//    procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
@@ -149,7 +149,7 @@ type
     procedure TstReadFile_ExposureProgram;
     procedure TstReadFile_ExposureTime;
     procedure TstReadFile_FileSource;
-    procedure TstReadFile_FirmwareVersion;
+//    procedure TstReadFile_FirmwareVersion;
     procedure TstReadFile_Flash;
     procedure TstReadFile_FlashPixVersion;
     procedure TstReadFile_FNumber;
@@ -164,7 +164,7 @@ type
     procedure TstReadFile_GPSLongitudeRef;
     procedure TstReadFile_ImageDescription;
     procedure TstReadFile_ImageSize;
-    procedure TstReadFile_ImageType;
+//    procedure TstReadFile_ImageType;
     procedure TstReadFile_ISO;
     procedure TstReadFile_MaxApertureValue;
     procedure TstReadFile_MeteringMode;
@@ -1230,7 +1230,7 @@ begin
     // "Digital camera" --> 3
 end;
 
-
+(*
 { Firmware version }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_FirmwareVersion;
@@ -1243,7 +1243,7 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_FirmwareVersion;
 begin
   StdStringTest(FImgFileName, 'FirmwareVersion', 'Firmware Version 1.01', 'Firmware version mismatch');
 end;
-
+*)
 
 { Flash }
 
@@ -1463,7 +1463,7 @@ begin
   Test_ImageSize(FImgFileName, 3264, 1832);
 end;
 
-
+(*
 { Image type }
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_ImageType;
@@ -1475,7 +1475,7 @@ procedure TTstReadFile_dEXIF_02.TstReadFile_ImageType;
 begin
   StdStringTest(FImgFileName, 'ImageType', 'IMG:PowerShot S5 IS JPEG', 'ImageType mismatch');
 end;
-
+*)
 
 { ISO }
 
