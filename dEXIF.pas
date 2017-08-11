@@ -82,6 +82,30 @@ type
 
   TImageInfo = class(tEndind)
   private
+    iterator:integer;
+    iterThumb:integer;
+
+    // Getter / setter
+    function GetDateTimeOriginal: TDateTime;
+    procedure SetDateTimeOriginal(const AValue: TDateTime);
+
+    function GetDateTimeDigitized: TDateTime;
+    procedure SetDateTimeDigitized(const AValue: TDateTime);
+
+    function GetDateTimeModify: TDateTime;
+    procedure SetDateTimeModify(const AValue: TDateTime);
+
+    function GetArtist: AnsiString;
+    procedure SetArtist(v: String);
+
+    function GetExifComment: String;
+    procedure SetExifComment(const v: String);
+
+    function GetImageDescription: String;
+    procedure SetImageDescription(const v: String);
+
+
+    // misc
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
     function getTag(TagID: integer; forceCreate: Boolean=false; parentID: word=
       0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
@@ -95,6 +119,7 @@ type
     procedure pushDirStack(dirStart, offsetbase: Integer);
     function testDirStack(dirStart, offsetbase: Integer): boolean;
     procedure clearDirStack;
+
   public
     FITagArray: array of tTagEntry;
     FITagCount: integer;
@@ -142,12 +167,10 @@ type
 //  The following functions format this structure into a string
     function  toShortString:ansistring;   //  Summarizes in a single line
     function  toLongString:ansistring;
-    procedure SetExifComment(newComment: ansistring);
+//    procedure SetExifComment(newComment: ansistring);
+
 //  The following functions manage the date
     function  GetImgDateTime: TDateTime;
-    function  GetDateTimeOriginal: TDateTime;
-    function  GetDateTimeDigitized: TDateTime;
-    function  GetDateTimeModify: TDateTime;
     function  ExtrDateTime(oset: integer): TDateTime;
     function  ExifDateToDateTime(dstr: ansistring): TDateTime;
     procedure SetDateTimeStr(oset: integer; TimeIn: TDateTime);
@@ -191,16 +214,14 @@ type
     function WriteThruInt(tname: ansistring; value: Integer): boolean;
     function WriteThruString(tname, value: ansistring): boolean;
 
-    function ReadArtist: AnsiString;
-    function ReadComments: String;
-    function ReadImageDescription: AnsiString;
-    procedure WriteArtist(v: String);
-    procedure WriteComments(v: String);
-    procedure WriteImageDescription(v: AnsiString);
+  public
+    property DateTimeOriginal: TDateTime read GetDateTimeOriginal write SetDateTimeOriginal;
+    property DateTimeDigitized: TDateTime read GetDateTimeDigitized write SetDateTimeDigitized;
+    property DateTimeModify: TDateTime read GetDateTimeModify write SetDateTimeModify;
+    property Artist: String read GetArtist write SetArtist;
+    property ExifComment: String read GetExifComment write SetExifComment;
+    property ImageDescription: String read GetImageDescription write SetImageDescription;
 
-  private
-    iterator:integer;
-    iterThumb:integer;
   end; // TInfoData
 
   tSection = record
@@ -214,17 +235,19 @@ type
  // TTagTableArray = array of TTagEntry;
   TGpsFormat = (gf_DD,gf_DM,gf_DMS);
 
-    TImgData = class(tEndInd) // One per image object
-    private
-      FHeight: Integer;
-      FWidth: Integer;
-      function GetWidth: Integer;
-      function GetHeight: Integer;
-      function GetResolutionUnit: String;
-      function GetXResolution: Integer;
-      function GetYResolution: Integer;
+  TImgData = class(tEndInd) // One per image object
+  private
+    FHeight: Integer;
+    FWidth: Integer;
+    function GetWidth: Integer;
+    function GetHeight: Integer;
+    function GetResolutionUnit: String;
+    function GetXResolution: Integer;
+    function GetYResolution: Integer;
+    function GetComment: String;
+    procedure SetComment(v: String);
 
-    public
+  public
         sections: array [1..21] of tSection;
         TiffFmt: boolean;
         BuildList: integer;
@@ -245,8 +268,8 @@ type
         function ReadExifInfo(fname:ansistring):boolean;
         Procedure MakeIPTCSegment(buff:ansistring);
         Procedure MakeCommentSegment(buff:ansistring);
-        function  GetCommentStr:ansistring;
-        Function  GetCommentSegment:ansistring;
+//        function  GetCommentStr:ansistring;
+//        Function  GetCommentSegment:ansistring;
         function ProcessFile(const AFileName: string):boolean;
         function ReadJpegSections (var f: tstream):boolean;
         function ReadJpegFile(const AFileName: string):boolean;
@@ -297,6 +320,7 @@ type
     property XResolution: Integer read GetXResolution;
     property YResolution: Integer read GetYResolution;
     property ResolutionUnit: String read GetResolutionUnit;
+    property Comment: String read GetComment write SetComment;  // Comment from COM segment
 
   end; // TImgData
 
@@ -465,7 +489,8 @@ var
 
 implementation
 
-uses msData;
+uses
+  msData;
 
 const
 // Compression Type Constants
@@ -1226,13 +1251,8 @@ begin
     Result := 0.0;
 end;
 
-function TImageInfo.GetDateTimeDigitized: TDateTime;
-begin
-  if dt_digi_oset > 0 then
-    Result := ExtrDateTime(dt_digi_oset)
-  else
-    Result := 0.0;
-end;
+
+
 
 function TImageInfo.GetDateTimeOriginal: TDateTime;
 begin
@@ -1242,13 +1262,48 @@ begin
     Result := 0.0;
 end;
 
-function TImageInfo.GetDateTimeModify:TDateTime;
+procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
+begin
+  if dt_orig_oset > 0 then
+    SetDateTimeStr(dt_orig_oset, AValue)
+  else
+    raise Exception.Create('Tag DateTimeOriginal not available');
+end;
+
+function TImageInfo.GetDateTimeDigitized: TDateTime;
+begin
+  if dt_digi_oset > 0 then
+    Result := ExtrDateTime(dt_digi_oset)
+  else
+    Result := 0.0;
+end;
+
+procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
+begin
+  if dt_digi_oset > 0 then
+    SetDateTimeStr(dt_digi_oset, AValue)
+  else
+    raise Exception.Create('Tag DateTimeDigitized not available.');
+end;
+
+function TImageInfo.GetDateTimeModify: TDateTime;
 begin
   if dt_modify_oset > 0 then
     Result := ExtrDateTime(dt_modify_oset)
   else
     Result := 0.0;
 end;
+
+procedure TImageInfo.SetDateTimeModify(const AValue: TDateTime);
+begin
+  if dt_modify_oset > 0 then
+    SetDateTimeStr(dt_modify_oset, AValue)
+  else
+    raise Exception.Create('Tag DateTimeModify not available.');
+end;
+
+
+
 
 Procedure TImageInfo.AdjDateTime(days,hours,mins,secs:integer);
 var delta:double;
@@ -1282,6 +1337,7 @@ begin
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, ADateTime);
 end;
+
 
 Function CvtTime(instr:ansistring) :ansistring;
 var i,sl:integer;
@@ -2219,10 +2275,12 @@ end;
 The following methods write data back into the
 EXIF buffer.
 *************************************************)
+(*
 procedure TImageInfo.SetExifComment( newComment:ansistring);
 begin
   WriteThruString('UserComment','ASCII'#0#0#0+newComment);
 end;
+  *)
 
 procedure TImageInfo.AdjExifSize(nh,nw:longint);
 begin
@@ -2381,7 +2439,43 @@ begin
  end;
 end;
 
-function TImageInfo.ReadComments : String;
+function TImageInfo.GetArtist: String;
+var
+  p: PTagEntry;
+  v: AnsiString;
+begin
+  Result := '';
+  p := getTag(TAG_ARTIST, false, 0, 2);
+  if (p = nil) then exit;
+  SetLength(v, Length(p^.Raw)-1);
+  Move(p^.Raw[1], v[1], Length(p^.Raw)-1);
+  v := trim(v);
+  {$IFDEF DELPHI}
+  AnsiString(Result) := v;
+  {$ELSE}
+  Result := AnsiToUTF8(v);
+  {$ENDIF}
+end;
+
+procedure TImageInfo.SetArtist(v: String);
+var
+  p : PTagEntry;
+begin
+  if (v = '') then begin
+    RemoveTag(TAG_ARTIST, 0);
+    exit;
+  end;
+  p := GetTag(TAG_ARTIST, true, 0, 2);
+  {$IFDEF DELPHI}
+  p^.Raw := AnsiString(v) + #0;
+  {$ELSE}
+  p^.Raw := UTF8ToAnsi(v) + #0;
+  {$ENDIF}
+  p^.Data := p^.Raw;
+  p^.Size := Length(p^.Raw);
+end;
+
+function TImageInfo.GetExifComment: String;
 var
   p : PTagEntry;
   w : WideString;
@@ -2389,10 +2483,10 @@ var
 begin
   Result := '';
   w := '';
-  p := getTag(TAG_EXIF_OFFSET, false, 0, 4);
+  p := GetTag(TAG_EXIF_OFFSET, false, 0, 4);
   if (p = nil) then
     exit;
-  p := getTag(TAG_USERCOMMENT, false, p^.ID, 2);
+  p := GetTag(TAG_USERCOMMENT, false, p^.ID, 2);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
   if (Pos('ASCII', p^.Raw) = 1) then begin
@@ -2410,84 +2504,77 @@ begin
  end;
 end;
 
-function TImageInfo.ReadImageDescription : AnsiString;
-var p : PTagEntry;
-begin
- Result := '';
- p := getTag(TAG_IMAGEDESCRIPTION, false, 0, 2);
- if (p = nil) then exit;
- setLength(Result, Length(p^.Raw)-1);
- move(p^.Raw[1], Result[1], Length(p^.Raw)-1);
- Result := trim(Result);
-end;
-
-function TImageInfo.ReadArtist : AnsiString;
-var p : PTagEntry;
-begin
- Result := '';
- p := getTag(TAG_ARTIST, false, 0, 2);
- if (p = nil) then exit;
- setLength(Result, Length(p^.Raw)-1);
- move(p^.Raw[1], Result[1], Length(p^.Raw)-1);
- Result := trim(Result);
-end;
-
-procedure TImageInfo.WriteComments (v : String);
+procedure TImageInfo.SetExifComment(const v: String);
 var
   p : PTagEntry;
   i : integer;
   w : WideString;
   u : Boolean;
 begin
- p := getTag(TAG_EXIF_OFFSET, true, 0, 4, true);
- if (v = '') then begin
-  removeTag(TAG_USERCOMMENT, p^.ID);
-  exit;
- end;
- p := getTag(TAG_USERCOMMENT, true, p^.ID, 7);
- u := false;
- w := v;
- for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin u := true; break; end;
- if (u) then begin
-  p^.Raw := 'UNICODE ';
-  for i := 1 to Length(w) do begin
-   p^.Raw := p^.Raw + Char(PByte(@w[i])^) + Char(PByte(@w[i]+1)^);
+  p := getTag(TAG_EXIF_OFFSET, true, 0, 4, true);
+  if (v = '') then begin
+    RemoveTag(TAG_USERCOMMENT, p^.ID);
+    exit;
   end;
-  p^.Raw := p^.Raw + #0#0;
- end else begin
-  p^.Raw := 'ASCII   ';
-  for i := 1 to Length(w) do begin
-   p^.Raw := p^.Raw + Char(PByte(@w[i])^);
+  p := GetTag(TAG_USERCOMMENT, true, p^.ID, 7);
+  u := false;
+  w := v;
+  for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin
+    u := true;
+    break;
   end;
-  p^.Raw := p^.Raw + #0;
- end;
- p^.Size := Length(p^.Raw);
+  if (u) then begin
+    p^.Raw := 'UNICODE ';
+    for i := 1 to Length(w) do begin
+      p^.Raw := p^.Raw + Char(PByte(@w[i])^) + Char(PByte(@w[i]+1)^);
+    end;
+    p^.Raw := p^.Raw + #0#0;
+  end else begin
+    p^.Raw := 'ASCII   ';
+    for i := 1 to Length(w) do begin
+      p^.Raw := p^.Raw + Char(PByte(@w[i])^);
+    end;
+    p^.Raw := p^.Raw + #0;
+  end;
+  p^.Size := Length(p^.Raw);
 end;
 
-procedure TImageInfo.WriteImageDescription (v : AnsiString);
-var p : PTagEntry;
+function TImageInfo.GetImageDescription: String;
+var
+  p: PTagEntry;
+  v: ansistring;
 begin
- if (v = '') then begin
-  removeTag(TAG_IMAGEDESCRIPTION, 0);
-  exit;
- end;
- p := getTag(TAG_IMAGEDESCRIPTION, true, 0, 2);
- p^.Raw := v + #0;
- p^.Size := Length(p^.Raw);
+  Result := '';
+  p := GetTag(TAG_IMAGEDESCRIPTION, false, 0, 2);
+  if (p = nil) then
+    exit;
+  SetLength(v, Length(p^.Raw)-1);
+  Move(p^.Raw[1], v[1], Length(p^.Raw)-1);
+  v := trim(v);
+ {$IFDEF Delphi}
+  ansistring(Result) := v;
+ {$ELSE}
+  Result := AnsiToUTF8(v);
+ {$ENDIF}
 end;
 
-procedure TImageInfo.WriteArtist (v : String);
-var p : PTagEntry;
+procedure TImageInfo.SetImageDescription(const v: String);
+var
+  p: PTagEntry;
 begin
- if (v = '') then begin
-  removeTag(TAG_ARTIST, 0);
-  exit;
- end;
- p := getTag(TAG_ARTIST, true, 0, 2);
- p^.Raw := v + #0;
- p^.Size := Length(p^.Raw);
+  if (v = '') then begin
+    RemoveTag(TAG_IMAGEDESCRIPTION, 0);
+    exit;
+  end;
+  p := GetTag(TAG_IMAGEDESCRIPTION, true, 0, 2);
+ {$IFDEF DELPHI}
+  p^.Raw := ansistring(v) + #0;
+ {$ELSE}
+  p^.Raw := UTF8ToAnsi(v) + #0;
+ {$ENDIF}
+  p^.Data := p^.Raw;
+  p^.Size := Length(p^.Raw);
 end;
-
 
 function TImageInfo.IterateFoundTags(TagId: integer;
         var retVal:TTagEntry):boolean;
@@ -2802,12 +2889,14 @@ begin
   CommentSegment^.dtype := M_COM;
 end;
 
+{
 Function TImgData.GetCommentSegment:ansistring;
 begin
   result := '';
   if CommentSegment <> nil then
     result := copy(CommentSegment^.data,2,maxint);
 end;
+ }
 
 (*
 function TImgData.SaveExif(var jfs2:tstream):longint;
@@ -3284,6 +3373,7 @@ begin
   HeaderSegment := nil;
 end;
 
+{
 function TImgData.GetCommentStr:ansistring;
 var buffer:ansistring;
     bufLen:integer;
@@ -3291,6 +3381,41 @@ begin
   buffer := CommentSegment^.Data;
   bufLen := (byte(buffer[1]) shl 8) or byte(buffer[2]);
   result := copy(buffer,3,bufLen-2);
+end;
+}
+
+function TImgData.GetComment: String;
+var
+  buffer: ansistring;
+  bufLen: integer;
+begin
+  if CommentSegment = nil then
+    Result := ''
+  else begin
+    buffer := CommentSegment^.Data;
+    bufLen := (byte(buffer[1]) shl 8) or byte(buffer[2]);
+    {$IFDEF DELPHI}
+    Result := ansistring(Copy(buffer, 3, bufLen - 2);
+    {$ELSE}
+    Result := Copy(buffer, 3, bufLen - 2);
+    {$IFDEF WINDOWS}
+    Result := AnsiToUTF8(Result);
+    {$ENDIF}
+    {$ENDIF}
+  end;
+end;
+
+procedure TImgData.SetComment(v: String);
+begin
+  {$IFDEF DELPHI}
+  MakeCommentSegment(ansistring(v));
+  {$ELSE}
+  {$IFDEF WINDOWS}
+  MakeCommentSegment(UTF8ToAnsi(v));
+  {$ELSE}
+  MakeCommentSegment(v);
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function TImgData.ReadExifInfo(fname:ansistring):boolean;

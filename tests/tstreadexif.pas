@@ -924,7 +924,7 @@ begin
   DUT := TImgData.Create;
   try
     DUT.ProcessFile(AFileName);
-    currStrValue := DUT.ExifObj.ReadComments;
+    currStrValue := DUT.ExifObj.ExifComment;
     CheckEquals(AExpected, currStrValue, 'User comment mismatch');
   finally
     DUT.Free;
@@ -933,7 +933,6 @@ end;
 
 procedure TTstReadFile_dEXIF_01.TstReadFile_CommentExif;
 begin
-//  StdStringTest(FImgFileName, 'UserComment', '', 'Comment mismatch');
   Test_UserComment(FImgFileName, '');
 end;
 
@@ -961,7 +960,7 @@ begin
     DUT.ProcessFile(AFileName);
     CheckEquals(AExpected <> '', DUT.HasComment, 'No comment segment found');
     if Dut.HasComment then begin
-      currStrValue := DUT.GetCommentStr;
+      currStrValue := DUT.Comment;
       CheckEquals(AExpected, currStrValue, 'Comment text mismatch');
     end;
   finally
@@ -1045,9 +1044,9 @@ begin
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file:'+co_DUTPicName01);
     case AKind of
       0: currValue := DUT.EXIFObj.GetImgDateTime;       // any date/time available
-      1: currValue := DUT.EXIFObj.GetDateTimeOriginal;  // Tag "DateTimeOriginal"
-      2: currValue := DUT.EXIFObj.GetDateTimeDigitized; // Tag "DateTimeDigitized"
-      3: currValue := Dut.EXIFObj.GetDateTimeModify;    // Tag "DateTimeModify"
+      1: currValue := DUT.EXIFObj.DateTimeOriginal;     // Tag "DateTimeOriginal"
+      2: currValue := DUT.EXIFObj.DateTimeDigitized;    // Tag "DateTimeDigitized"
+      3: currValue := Dut.EXIFObj.DateTimeModify;       // Tag "DateTimeModify"
     end;
     CheckEquals(AExpectedDateTime, currValue, 'Date/time mismatch');
   finally
