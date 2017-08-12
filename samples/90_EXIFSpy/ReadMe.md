@@ -1,0 +1,1 @@
+ExifSpy use the extrnal component KHexEditor. KHexEditor is already part of KControls (http://www.tkweb.eu/en/delphicomp/kcontrols.html). Please download there.
