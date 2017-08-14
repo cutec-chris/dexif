@@ -2,7 +2,7 @@
   This source is only used to compile and install the package.
  }
 
-unit dexif_package;
+unit new_dexif_package;
 
 {$warn 5023 off : no warning about unused units}
 interface

@@ -33,7 +33,7 @@ uses
  {$ELSE}
   fpimage, fpreadjpeg,
  {$ENDIF}
-  dIPTC;
+  dglobal, dIPTC;
 
 Const
    DexifVersion: ansistring = '1.04';
@@ -58,6 +58,18 @@ Const
    {$ENDIF}
 
 type
+  TImgData = class;
+
+  TBasicMetadataWriter = class
+  protected
+    FImgData: TImgData;
+    FErrLog: TStrings;
+  public
+    constructor Create(AImgData: TImgData); virtual;
+    destructor Destroy; override;
+    procedure LogError(const AMsg: String);
+    procedure WriteToStream(AStream: TStream); virtual;
+  end;
 
    { tEndInd }
 
@@ -75,8 +87,6 @@ type
    private
       llData: ansistring;
    end;
-
-  TimgData = class;
 
   { TImageInfo }
 
@@ -295,6 +305,8 @@ type
         function ExtractThumbnailBuffer: ansistring;
         function ExtractThumbnailJpeg(AStream: TStream): Boolean;
 
+        procedure WriteToStream(AStream: TStream);
+
         function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
           freshExifBlock: Boolean=false): longint;
         procedure MergeToStream(AInputStream, AOutputStream: TStream;
@@ -466,24 +478,6 @@ Const
    Function SSpeedCallBack(instr: ansistring): ansistring;
    Function xpTranslate(instr: ansistring):ansistring;
 
-const
-//--------------------------------------------------------------------------
-// Describes format descriptor
-   BytesPerFormat: array [0..12] of integer = (0,1,1,2,4,8,1,1,2,4,8,4,8);
-   NUM_FORMATS   = 12;
-   FMT_BYTE      =  1;
-   FMT_STRING    =  2;
-   FMT_USHORT    =  3;
-   FMT_ULONG     =  4;
-   FMT_URATIONAL =  5;
-   FMT_SBYTE     =  6;
-   FMT_UNDEFINED =  7;
-   FMT_SSHORT    =  8;
-   FMT_SLONG     =  9;
-   FMT_SRATIONAL = 10;
-   FMT_SINGLE    = 11;
-   FMT_DOUBLE    = 12;
-
 var
   ExifNonThumbnailLength : integer;
   ShowTags: integer;
@@ -495,7 +489,7 @@ var
 implementation
 
 uses
-  msData;
+  dExifWrite, msData;
 
 const
 // Compression Type Constants
@@ -506,44 +500,6 @@ const
 // Describes only tag values needed for physical access
 // all others are found in tag array.
 //-------------------------------------------------------
-
-   TAG_EXIF_OFFSET        = $8769;
-   TAG_GPS_OFFSET         = $8825;
-   TAG_INTEROP_OFFSET     = $A005;
-   TAG_SUBIFD_OFFSET      = $014A;
-
-   TAG_IMAGEWIDTH         = $0100;
-   TAG_IMAGELENGTH        = $0101;
-   TAG_THUMBTYPE          = $0103;
-   TAG_IMAGEDESCRIPTION   = $010E;     // msta
-   TAG_MAKE               = $010F;
-   TAG_MODEL              = $0110;
-   TAG_DATETIME_MODIFY    = $0132;
-   TAG_ARTIST             = $013B;     // msta
-
-   TAG_EXPOSURETIME       = $829A;
-   TAG_FNUMBER            = $829D;
-
-   TAG_EXIFVER            = $9000;
-   TAG_DATETIME_ORIGINAL  = $9003;
-   TAG_DATETIME_DIGITIZED = $9004;
-   TAG_SHUTTERSPEED       = $9201;
-   TAG_APERTURE           = $9202;
-   TAG_MAXAPERTUREVALUE   = $9205;
-   TAG_SUBJECT_DISTANCE   = $9206;
-   TAG_LIGHT_SOURCE       = $9208;
-   TAG_FLASH              = $9209;
-   TAG_FOCALLENGTH        = $920A;
-   TAG_MAKERNOTE          = $927C;
-   TAG_USERCOMMENT        = $9286;
-
-   TAG_EXIF_IMAGEWIDTH    = $A002;
-   TAG_EXIF_IMAGELENGTH   = $A003;
-   TAG_FOCALPLANEXRES     = $A20E;
-   TAG_FOCALPLANEYRES     = $A20F;             // added by M. Schwaiger
-   TAG_FOCALPLANEUNITS    = $A210;
-   TAG_FOCALLENGTH35MM    = $A405;             // added by M. Schwaiger
-
 
    GPSCnt = 31 - 4;
    ExifTagCnt = 251 - 6;  // NOTE: was 250 before, but "count" is 251
@@ -981,6 +937,38 @@ begin
       result := ProcessTable[i].desc;
 end;
 
+
+
+{------------------------------------------------------------------------------}
+{                        TBasicMetaDataWriter                                  }
+{------------------------------------------------------------------------------}
+
+constructor TBasicMetadataWriter.Create(AImgData: TImgData);
+begin
+  FImgData := AImgData;
+  FErrLog := TStringList.Create;
+end;
+
+destructor TBasicMetadataWriter.Destroy;
+begin
+  FErrLog.Free;
+  inherited;
+end;
+
+procedure TBasicMetadataWriter.LogError(const AMsg: String);
+begin
+  FErrLog.Add(AMsg);
+end;
+
+procedure TBasicMetadataWriter.WriteToStream(AStream: TStream);
+begin
+  FErrLog.Clear;
+end;
+
+
+{------------------------------------------------------------------------------}
+{                            TImageInfo                                        }
+{------------------------------------------------------------------------------}
 // These destructors provided by Keith Murray
 // of byLight Technologies - Thanks!
 Destructor TImageInfo.Destroy;
@@ -1505,7 +1493,7 @@ var buff2,os:ansistring;
     dv:double;
 begin
   os := '';
-  vlen := BytesPerFormat[fmt];
+  vlen := BYTES_PER_FORMAT[fmt];
   if vlen = 0 then
   begin
     result := '0';
@@ -1651,7 +1639,10 @@ var
   var
     i : integer;
   begin
-    if (t.parentID <> pid) or (t.TType >= Length(BytesPerFormat)) or (BytesPerFormat[t.TType] = 0) then Result := false
+    if (t.parentID <> pid) or (t.TType >= Length(BYTES_PER_FORMAT)) or
+       (BYTES_PER_FORMAT[t.TType] = 0)
+    then
+      Result := false
     else begin
       Result := Length(whitelist) = 0;
       for i := 0 to Length(whitelist)-1 do if (whitelist[i] = t.Tag) then begin
@@ -1720,7 +1711,7 @@ begin
     end
     else begin
       PWord(@Result[1+Length(head)+2+12*n+2])^ := fiTagArray[i].TType;
-      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BytesPerFormat[fiTagArray[i].TType];
+      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BYTES_PER_FORMAT[fiTagArray[i].TType];
     end;
     {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + '  ' + fiTagArray[i].Name;{$endif}
     if (Length(fiTagArray[i].Raw) <= 4) and (fiTagArray[i].id = 0) then begin
@@ -1794,7 +1785,7 @@ begin
     Tag := Get16u(DirEntry);
     TFormat := Get16u(DirEntry+2);
     Components := Get32u(DirEntry+4);
-    ByteCount := Components * BytesPerFormat[TFormat];
+    ByteCount := Components * BYTES_PER_FORMAT[TFormat];
     if ByteCount = 0 then
       continue;
     If ByteCount > 4 then
@@ -1900,7 +1891,7 @@ begin
          end;
        TAG_MAKE: FCameraMake := fstr;
        TAG_MODEL: CameraModel := fstr;
-       TAG_EXIFVER: ExifVersion := rawstr;
+       TAG_EXIFVERSION: ExifVersion := rawstr;
        TAG_DATETIME_MODIFY:
          begin
            dt_modify_oset := ValuePtr;
@@ -2036,7 +2027,7 @@ begin
       Tag := Get16u(DirEntry);
       TFormat := Get16u(DirEntry+2);
       Components := Get32u(DirEntry+4);
-      ByteCount := Components * BytesPerFormat[TFormat];
+      ByteCount := Components * BYTES_PER_FORMAT[TFormat];
       OffsetVal := 0;
       If ByteCount > 4 then
       begin
@@ -2330,7 +2321,7 @@ begin
     exit;
 
   result := true;   // success
-  vlen := BytesPerFormat[te.TType];
+  vlen := BYTES_PER_FORMAT[te.TType];
   if vlen = 2 then
     TagWriteThru16(te,word(value))
   else
@@ -3007,6 +2998,7 @@ function TImgData.SaveExif(jfs2: TStream; EnabledMeta: Byte = $FF;
 var
   cnt: Longint;
   buff: AnsiString;
+  writer: TExifWriter;
 begin
   cnt := 0;
   buff := #$FF#$D8;
@@ -3032,6 +3024,16 @@ begin
       cnt := cnt + jfs2.Write(buff[1], Length(buff));
       buff := '';
     end else
+    if HasExif then begin
+      writer := TExifWriter.Create(self);
+      try
+        writer.WriteExifHeader(jfs2);
+        writer.WriteToStream(jfs2);
+      finally
+        writer.Free;
+      end;
+    end else
+    (*
     if (ExifSegment <> nil) then
       with ExifSegment^ do
       begin
@@ -3039,6 +3041,7 @@ begin
         cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
       end
     else
+    *)
     if (HeaderSegment <> nil) then
       with HeaderSegment^ do
       begin
@@ -3070,6 +3073,10 @@ begin
     end;
 
   Result := cnt;
+end;
+
+procedure TImgData.WriteToStream(AStream: TStream);
+begin
 end;
 
 function TImgData.ExtractThumbnailBuffer:ansistring;

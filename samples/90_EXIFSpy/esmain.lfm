@@ -483,8 +483,8 @@ object MainForm: TMainForm
               OnClick = ValueGridClick
               ColWidths = (
                 64
-                176
-                176
+                167
+                168
               )
             end
           end
@@ -1114,7 +1114,7 @@ object MainForm: TMainForm
     end
     object AcGotoExifSubIFD: TAction
       Tag = 1003
-      Caption = 'SubExifIFD'
+      Caption = 'EXIF SubIFD'
       Hint = 'Go to "Exif Sub image file directory" (SubIFD)'
       OnExecute = TbGotoIFD
     end
@@ -1147,7 +1147,7 @@ object MainForm: TMainForm
       OnClick = TbGotoIFD
     end
     object MenuItem3: TMenuItem
-      Tag = 1001
+      Tag = 1004
       Action = AcGotoIFD1
       OnClick = TbGotoIFD
     end
@@ -1155,14 +1155,16 @@ object MainForm: TMainForm
       Caption = '-'
     end
     object MenuItem4: TMenuItem
-      Tag = 1002
+      Tag = 1001
       Action = AcGotoExifSubIFD
       OnClick = TbGotoIFD
     end
     object MenuItem6: TMenuItem
+      Tag = 1003
       Action = AcGotoGPSSubIFD
     end
     object MenuItem7: TMenuItem
+      Tag = 1002
       Action = AcGotoInteropSubIFD
     end
   end

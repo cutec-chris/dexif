@@ -122,6 +122,7 @@ type
     FMotorolaOrder: Boolean;
     FWidth: Integer;
     FHeight: Integer;
+    FIFDList: array[0..4] of Int64;
     procedure AddToHistory(const AFilename: String);
     function DisplayGenericMarker(AOffset: Int64): Boolean;
     function DisplayMarker(AOffset: Int64): Boolean;
@@ -149,6 +150,7 @@ type
     function GotoSubIFD(ATag: Word; var AOffset: Int64; ATiffHeaderOffset: Int64): Boolean;
     procedure OpenFile(const AFileName: String);
     procedure PopulateValueGrid;
+    procedure ScanIFDs;
     procedure UpdateIFD;
     procedure UpdateMarkers;
     procedure UpdateStatusbar;
@@ -169,7 +171,8 @@ implementation
 
 uses
   LCLType, StrUtils, Math, IniFiles,
-  KEditCommon;
+  KEditCommon,
+  dGlobal;
 
 const
   VALUE_ROW_INDEX         =  1;
@@ -1551,6 +1554,7 @@ begin
   FCurrOffset := 0;
   HexEditorClick(nil);
 
+  ScanIFDs;
   UpdateMarkers;
 
   L := FImgData.MetadataToXML;
@@ -1824,6 +1828,64 @@ begin
   end;
 end;
 
+procedure TMainForm.ScanIFDs;
+var
+  tiffHeaderStart: Int64;
+
+  procedure ScanIFD(p: Int64);
+  var
+    n: Integer;
+    i: Integer;
+    TagID: Word;
+    val: DWord;
+  begin
+    n := PWord(@FBuffer^[p])^;
+    if FMotorolaOrder then n := BEToN(n);
+    inc(p, 2);
+    for i:=0 to n-1 do begin
+      TagID := PWord(@FBuffer^[p])^;
+      if FMotorolaOrder then TagID := BEToN(TagID);
+      inc(p, 2);  // --> type
+      inc(p, 2);  // --> size
+      inc(p, 4);  // --> value
+      val := PDWord(@FBuffer^[p])^;
+      if FMotorolaOrder then val := BEToN(TagID);
+      if TagID = TAG_EXIF_OFFSET then begin
+        FIFDList[1] := val + tiffHeaderStart;
+        ScanIFD(FIFDList[1]);
+      end else
+      if val = TAG_GPS_OFFSET then begin
+        FIFDList[3] := val + tiffHeaderStart;
+        ScanIFD(FIFDList[3]);
+      end else
+      if val = TAG_INTEROP_OFFSET then begin
+        FIFDList[2] := val + tiffHeaderStart;
+        ScanIFD(FIFDList[2]);
+      end;
+      inc(p, 4)  // --> next tag
+    end;
+  end;
+
+var
+  p: Int64;
+  n: word;
+begin
+  FillChar(FIFDList[0], SizeOf(FIFDList), -1);
+
+  tiffHeaderStart := FindTiffHeader;
+  FIFDList[0] := tiffHeaderStart + 8;
+  ScanIFD(FIFDList[0]);
+
+  // Find IFD1
+  p := FIFDList[0];
+  n := PWord(@FBuffer^[p])^;
+  if FMotorolaOrder then n := BEToN(n);
+  inc(p, 2 + n*12);
+  FIFDList[4] := PDWord(@FBuffer^[p])^;
+  if FMotorolaOrder then FIFDList[4] := BEToN(FIFDList[4]);
+end;
+
+
 procedure TMainForm.TagsGridCompareCells(Sender: TObject; ACol, ARow, BCol,
   BRow: Integer; var Result: integer);
 var
@@ -1844,6 +1906,7 @@ procedure TMainForm.TbGotoIFD(Sender: TObject);
 var
   p: Int64;
   TiffHeaderOffs: Int64;
+  ok: Boolean;
 begin
   p := FindMarker(MARKER_APP1);
   if p = -1 then begin
@@ -1858,6 +1921,37 @@ begin
   TiffHeaderOffs := p;
   inc(p, 8);  // Size of TIFF header
 
+  p := FIDList[TComponent(Sender).Tag - 1000];
+  {
+  case TComponent(Sender).Tag of
+    1001: p := FIFDList[0];   // IFD0
+    1002: p := FIFDList[4];   // IFD1
+    1003: p := FIFDList[1];   // EXIF
+    1004: p := FIFDList[3];   // GPS
+    1005: p := FIFDList[2];   // Interop;
+  end;
+  }
+
+  if p = -1 then
+  begin
+    Statusbar.SimpleText := TAction(Sender).Caption + ' does not exit.';
+    exit;
+  end;
+
+  GotoOffset(p);
+
+  case TComponent(Sender).Tag of
+    1000: ok := DisplayIFD(p, TiffHeaderOffs, 'IFD0 (Image file directory 0)');
+    1001: ok := DisplayIFD(p, TIFFHeaderOffs, 'EXIF SubIFD (Image file subdirectory)');
+    1002: ok := DisplayIFD(p, TiffHeaderOffs, 'Interoperability SubIFD (Image file subdirectory)');
+    1003: ok := DisplayIFD(p, TiffHeaderOffs, 'GPS SubIFD (Image file subdirectory)');
+    1004: ok := DisplayIFD(p, TiffHeaderOffs, 'IFD1 (Image file directory 1 - thumbnail)');
+    else  ok := true;
+  end;
+  if not ok then
+    Statusbar.SimpleText := 'ERROR';
+
+  (*
   // IFD0
   if TComponent(Sender).Tag = 1001 then begin
     GotoOffset(p);
@@ -1913,6 +2007,7 @@ begin
       Statusbar.SimpleText := 'ERROR';
     exit;
   end;
+  *)
 end;
 
 procedure TMainForm.TbGotoMarker(Sender: TObject);

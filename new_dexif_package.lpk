@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
-    <Name Value="dexif_package"/>
+    <Name Value="new_dexif_package"/>
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
