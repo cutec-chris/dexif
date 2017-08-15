@@ -1756,6 +1756,8 @@ var
 begin
 //  if parentID = 0 then
 //    idCnt := 1;
+  WriteLn(Format('ENTER ProcessExifDir: DirStart: %d, Offsetbase: %d, ExifLength:%d, tagType:%d, prefix:%s, parentID:$%.4x, hasThumb:%d',
+    [DirStart, OffsetBase, ExifLength, tagType, prefix, parentid, ord(HasThumbnail)]));
 
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
@@ -1798,6 +1800,9 @@ begin
 
     RawStr := copy(parent.EXIFsegment^.data,ValuePtr,ByteCount);
     fstr := '';
+
+    WriteLn(Format('  #%d - tag: $%.4x, Format: %d, ByteCount: %d, OffsetVal: %d, ValuePtr: %d, RawStr: %s, Number: %.3f',
+      [de, tag, TFormat, ByteCount, OffsetVal, valuePtr, MakePrintable(RawStr), GetNumber(RawStr, TFormat)]));
 
     if BuildList in [GenString, GenAll] then
     begin
@@ -2625,7 +2630,6 @@ begin
   WriteThruString('Make', AValue);
 end;
 
-
 function TImageInfo.IterateFoundTags(TagId: integer;
         var retVal:TTagEntry):boolean;
 begin
@@ -2714,6 +2718,7 @@ var
   tmp:integer;
   CCDWidth, CCDHeight, fpu, fl, fl35, ratio : double;
   NewE, LookUpE : TTagEntry;
+  w: Word;
 begin
   if LookUpTag('FocalLengthin35mmFilm') >= 0 then
     exit;  // no need to calculate - already have it
@@ -2755,6 +2760,7 @@ begin
     ratio :=  Diag35mm / sqrt (sqr (CCDWidth) + sqr (CCDHeight));
 
   fl35 := fl *  ratio;
+  w := Round(fl35);
 
 // now load it into the tag array
     tmp := LookupTagDefn('FocalLengthIn35mmFilm');
@@ -2764,6 +2770,9 @@ begin
     NewE := LookupE;
     NewE.Data := ansistring(Format('%5.2f',[fl35]));
     NewE.FormatS := '%s mm';
+    SetLength(NewE.Raw, 2);
+    Move(w, NewE.Raw[1], 2);
+    NewE.TType := 3;
     AddTagToArray(NewE);
     TraceStr := TraceStr+crlf+
           siif(ExifTrace > 0,'tag[$'+AnsiString(inttohex(tmp,4))+']: ','')+

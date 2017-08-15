@@ -31,8 +31,9 @@ type
     function FixEndian32(AValue: DWord): DWord;
 
     procedure WriteIFD(AStream: TStream; ASubIFDList: TInt64List;
-      ADirectoryID: TTagID);
-    procedure WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List);
+      ADirectoryID: TTagID; AHardwareSpecific: Boolean);
+    procedure WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List;
+      AHardwareSpecific: Boolean);
     procedure WriteTag(AStream, AValueStream: TStream; ADataStartOffset: Int64;
       ATag: TTagEntry);
     procedure WriteTiffHeader(AStream: TStream);
@@ -59,7 +60,8 @@ constructor TExifWriter.Create(AImgData: TImgData);
 begin
   inherited;
   FExifSegmentStartPos := -1;
-  FHasThumbnail := FImgData.HasThumbnail;
+  FHasThumbnail := FImgData.HasExif and FImgData.HasThumbnail and
+    (FImgData.ExifObj.FIThumbCount > 0);
 end;
 
 //------------------------------------------------------------------------------
@@ -102,7 +104,7 @@ end;
 procedure TExifWriter.UpdateSegmentSize(AStream: TStream);
 var
   startPos: Int64;
-  segmentSize: DWord;
+  segmentSize: Word;
 begin
   // If the exif structure is part of a jpeg file then WriteExifHeader has
   // been called which determines the position where the Exif header starts.
@@ -147,7 +149,7 @@ end;
 // Writes all IFD record belonging to the same directory
 // -----------------------------------------------------------------------------
 procedure TExifWriter.WriteIFD(AStream: TStream; ASubIFDList: TInt64List;
-  ADirectoryID: TTagID);
+  ADirectoryID: TTagID; AHardwareSpecific: Boolean);
 var
   valueStream: TMemoryStream;
   i: Integer;
@@ -158,26 +160,42 @@ var
   startPos: Int64;
   sizeOfTagPart: DWord;
   offsetToIFD1: Int64;
-  dirID: TTagID;
+
+  tagArray: array of TTagEntry;
+  tagCount: Integer;
 begin
-  // to do: remove when new reader is active
-  (*
-  case ADirectoryID of
-    1                  : dirID := 4;   // IFD1
-    TAG_EXIF_OFFSET    : dirID := 1;
-    TAG_GPS_OFFSET     : dirID := 3;
-    TAG_INTEROP_OFFSET : dirID := 2;
+  if ADirectoryID = 1 then
+  begin   // Thumbnail tags (IFD1)
+    tagArray := FImgdata.ExifObj.FIThumbArray;
+    tagCount := FImgData.ExifObj.FiThumbCount;
+  end else
+  begin   // IFD0 and its subIFDs
+    tagArray := FImgData.ExifObj.FITagArray;
+    tagCount := FImgData.ExifObj.FITagCount;
   end;
-  ADirectoryID := dirID;
-    *)
+
+  write(Format('Writing directory %d ($%.4x) ', [ADirectoryID, ADirectoryID]));
+  if ADirectoryID = TAG_EXIF_OFFSET then
+    WriteLn('(EXIF)...')
+  else if ADirectoryID = TAG_GPS_OFFSET then
+    WriteLn('(GPS)...')
+  else if ADirectoryID = TAG_INTEROP_OFFSET then
+    WriteLn('(INTER_OP)...')
+  else
+    WriteLn;
+
   valueStream := TMemoryStream.Create;
   try
     // Count IDF records in this directory
     count := 0;
-    for i:=0 to FImgData.ExifObj.FITagCount - 1 do begin
-      tag := FImgData.ExifObj.FITagArray[i];
-      if tag.ParentID = ADirectoryID then
-        inc(count);
+    for i:=0 to tagCount - 1 do begin
+      tag := tagArray[i];
+      if (tag.ParentID = ADirectoryID) then begin
+        if AHardwareSpecific and (tag.TID = 1) or
+           ((not AHardwareSpecific) and (tag.TID = 0))
+        then
+          inc(count);
+      end;
     end;
 
     // No records in this directory? Nothing to do...
@@ -198,8 +216,11 @@ begin
     AStream.WriteWord(FixEndian16(count));
 
     // Now write all the records in this directory
-    for i:=0 to FImgData.ExifObj.FITagCount-1 do begin
-      tag := FImgData.ExifObj.FITagArray[i];
+    for i:=0 to tagCount-1 do begin
+      tag := tagArray[i];
+      if AHardwareSpecific and (tag.TID <> 1) then continue;
+      if (not AHardwareSpecific) and (tag.TID = 1) then continue;
+
       if tag.ParentID = ADirectoryID then begin
         // Some tags will link to subdirectories. The offset to the start of
         // a subdirectory must be specified in the DataValue field of the
@@ -210,6 +231,8 @@ begin
           ASubIFDList.Add(AStream.Position);
 
         // Now write the tag
+        WriteLn('  Tag: ', Format('%d ($%.4x)', [tag.Tag, tag.Tag]));
+
         WriteTag(AStream, valueStream, datastartOffset, tag);
       end;
     end;
@@ -224,10 +247,12 @@ begin
       offs := 0;
     AStream.WriteDWord(FixEndian32(offs));
 
-    // Finally we copy the value stream to the end of the tag stream (AStream)
+    // Copy the value stream to the end of the tag stream (AStream)
     valueStream.Seek(0, soFromBeginning);
     AStream.CopyFrom(valueStream, valueStream.Size);
 
+    // Rewind the stream to its end
+    AStream.Seek(0, soFromEnd);
   finally
     valueStream.Free;
   end;
@@ -240,13 +265,14 @@ end;
 // of the subdirectory and write the position where the subdirectory starts
 // to the tag's DataValue field in AStream.
 //------------------------------------------------------------------------------
-procedure TExifWriter.WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List);
+procedure TExifWriter.WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List;
+  AHardwareSpecific: Boolean);
 var
   subIFDStartPos: Int64;
   tagPos: Int64;
   i: Integer;
   id: TTagID;
-  rec: TIFDRecord = (TagID:0; DataType:0; DataSize:0; DataValue:0);
+  rec: TIFDRecord = (TagID:0; DataType:0; DataCount:0; DataValue:0);
   offs: DWord;
 begin
   i := 0;
@@ -272,14 +298,15 @@ begin
     offs := CalcOffsetFromTiffHeader(subIFDStartPos);
     rec.DataValue := FixEndian32(offs);
 
-    // Write the IFD record back to the stream
+    // Write the IFD record back to the stream. Don't forget to return to
+    // where the tag starts!
     AStream.Position := tagPos;
     AStream.WriteBuffer(rec, SizeOf(rec));
 
     // Now return the stream to the end (i.e. where the subdirectory should be)
     // and write the tags of the subdirectory.
     AStream.Seek(0, soFromEnd);
-    WriteIFD(AStream, ASubIFDList, id);
+    WriteIFD(AStream, ASubIFDList, id, AHardwareSpecific);
 
     // Delete the current SubIFDList entry because it already has been handled.
     ASubIFDList.Delete(0);
@@ -304,21 +331,34 @@ var
   rec: TIFDRecord;
   rat: TExifRational;
   s: rawbytestring;
+  n: DWord;
 begin
   rec.TagID := FixEndian16(ATag.Tag);
   rec.DataType := FixEndian16(ATag.TType);
   if ATag.TType = FMT_STRING then
   begin
-    // A null byte must be added to the tag text.
-    s := ATag.Raw + #0;
-    rec.DataSize := FixEndian32(Length(s));
-    rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
-    AValueStream.WriteBuffer(s[1], Length(s));
+    s := ATag.Raw;
+    if s[Length(s)] <> #0 then s := s + #0;
+    rec.DataCount := FixEndian32(Length(s));
+    if Length(s) <= 4 then begin
+      n := 0;
+      Move(s[1], n, Length(s));
+      rec.DataValue := FixEndian32(n);
+    end else begin
+      rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
+      AValueStream.WriteBuffer(s[1], Length(s));
+    end;
   end else
   if ATag.TType = FMT_BINARY then begin
-    rec.DataSize := FixEndian32(Length(ATag.Raw));
-    rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
-    AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
+    rec.DataCount := FixEndian32(Length(ATag.Raw));
+    if Length(ATag.Raw) <= 4 then begin
+      n := 0;
+      Move(ATag.Raw[1], n, Length(ATag.Raw));
+      rec.DataValue := FixEndian32(n);
+    end else begin
+      rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
+      AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
+    end;
   end else
   if BYTES_PER_FORMAT[ATag.TType] > 4 then begin
     // If the value requires mote than 4 bytes the data bytes are written to
@@ -327,7 +367,7 @@ begin
     // with all the IDFRecords is not complete at this moment we store the
     // offsets to these fields in the OffsetList for correction later.
     // For this reason, we do not take care of endianness here as well.
-    rec.DataSize := FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
+    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]; //1; //FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
     rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
     case ATag.TType of
       FMT_URATIONAL, FMT_SRATIONAL:
@@ -346,7 +386,7 @@ begin
   begin
     // If the size of the data field is not larger than 4 bytes
     // then the data value is written to the rec.DataValue field directly.
-    rec.DataSize := FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
+    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]; //1; // ????? FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
     case ATag.TType of
       FMT_BYTE, FMT_SBYTE:
         rec.DataValue := byte(ATag.Raw[1]);
@@ -392,14 +432,14 @@ begin
     WriteTiffHeader(AStream);
 
     // Write IFD0
-    WriteIFD(AStream, subIFDList, 0);
+    WriteIFD(AStream, subIFDList, 0, false);
 
     // Write IFD1
     if FHasThumbnail then
-      WriteIFD(AStream, subIFDList, 1);
+      WriteIFD(AStream, subIFDList, 1, false);
 
     // Write special subIFDs collected in subIFDList
-    WriteSubIFDs(AStream, subIFDList);
+    WriteSubIFDs(AStream, subIFDList, false);
 
     // If WriteToStream is called within a JPEG structure we must update the
     // size of the EXIF segment.

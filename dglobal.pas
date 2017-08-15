@@ -41,9 +41,14 @@ type
   TIFDRecord = packed record
     TagID: Word;
     DataType: Word;
-    DataSize: DWord;
+    DataCount: DWord;
     DataValue: DWord;
   end;
+  { A note on DataCount, from the EXIF specification:
+    "Count
+    The number of values. It should be noted carefully that the count is not the
+    sum of the bytes. In the case of one value of SHORT (16 bits), for example,
+    the count is '1' even though it is 2 Bytes." }
 
   TExifRational = record
     Numerator, Denominator: LongInt;
