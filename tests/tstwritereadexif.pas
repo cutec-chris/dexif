@@ -2,7 +2,7 @@ unit tstwritereadexif;
 
 {$mode objfpc}{$H+}
 
-{.$DEFINE ERASE_TESTIMAGE}
+{$DEFINE ERASE_TESTIMAGE}
 
 interface
 

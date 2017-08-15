@@ -346,6 +346,7 @@ type
   function CvtTime(instr: ansistring): ansistring;
 
   function FindExifTag(ATag: Word): PTagEntry;
+  function FindGPSTag(ATag: Word): PTagEntry;
 
 Var
    DexifDataSep   : ansistring = ', ';
@@ -865,6 +866,18 @@ var
 begin
   for i:=0 to High(TagTable) do begin
     Result := @TagTable[i];
+    if Result^.Tag = ATag then
+      exit;
+  end;
+  Result := nil;
+end;
+
+function FindGpsTag(ATag: word): PTagEntry;
+var
+  i: Integer;
+begin
+  for i:=0 to High(GpsTable) do begin
+    Result := @GpsTable[i];
     if Result^.Tag = ATag then
       exit;
   end;
