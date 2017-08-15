@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterXML, Forms, Controls,
   Graphics, Dialogs, StdCtrls, ExtCtrls, EditBtn, Grids, ComCtrls, ValEdit,
-  Buttons, ActnList, Menus, khexeditor, kfunctions, dEXIF, dIPTC, Types;
+  Buttons, ActnList, Menus, khexeditor, kfunctions, dEXIF, dIPTC, Types,
+  mrumanager;
 
 type
 
@@ -21,16 +22,24 @@ type
     AcGotoTIFFHeader: TAction;
     AcGotoGPSSubIFD: TAction;
     AcGotoInteropSubIFD: TAction;
+    AcFileOpen: TAction;
+    AcFileQuit: TAction;
     ActionList: TActionList;
-    BtnOpen: TButton;
-    CbHexEditorAddressMode: TComboBox;
-    CbFile: TComboBox;
+    CbHexAddressMode: TCheckBox;
+    CbHexSingleBytes: TCheckBox;
+    dExif_ThumbTagsGrid: TStringGrid;
     HexEditor: TKHexEditor;
     Image: TImage;
-    Label1: TLabel;
+    ImageList: TImageList;
     AnalysisInfo: TLabel;
+    MainMenu: TMainMenu;
     MainPageControl: TPageControl;
     MenuItem1: TMenuItem;
+    MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
+    MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MnuFileReOpen: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -38,20 +47,24 @@ type
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
+    MenuItem9: TMenuItem;
     OpenDialog: TOpenDialog;
     HexPageControl: TPageControl;
-    Panel1: TPanel;
+    PageControl1: TPageControl;
     Panel2: TPanel;
     HexPanel: TPanel;
     PgHex: TTabSheet;
-    BtnBrowse: TSpeedButton;
     APP1Popup: TPopupMenu;
+    RecentFilesPopup: TPopupMenu;
     ScrollBox: TScrollBox;
     Splitter1: TSplitter;
     StatusBar: TStatusBar;
     AnalysisGrid: TStringGrid;
     PgImage: TTabSheet;
     ImageToolBar: TToolBar;
+    PgDExifTags: TTabSheet;
+    PgDExifThumbTags: TTabSheet;
+    PgDExifXML: TTabSheet;
     TbFit: TToolButton;
     TbGotoSOF1: TToolButton;
     TbGotoSOF2: TToolButton;
@@ -69,13 +82,15 @@ type
     TbGotoSOF15: TToolButton;
     TbGotoDAC: TToolButton;
     TbGotoDQT: TToolButton;
+    MainToolBar: TToolBar;
     ToolButton3: TToolButton;
     TbNextSegment: TToolButton;
+    ToolButton4: TToolButton;
+    ToolButton5: TToolButton;
     XML_SynEdit: TSynEdit;
     SynXMLSyn: TSynXMLSyn;
     PgAnalysis: TTabSheet;
     PgConverter: TTabSheet;
-    PgXML: TTabSheet;
     HexToolBar: TToolBar;
     TbGotoSOI: TToolButton;
     TbGotoSOF0: TToolButton;
@@ -88,25 +103,25 @@ type
     ToolButton1: TToolButton;
     ToolButton2: TToolButton;
     ValueGrid: TStringGrid;
-    TagsGrid: TStringGrid;
-    PgTags: TTabSheet;
+    dExif_TagsGrid: TStringGrid;
+    PgDExif: TTabSheet;
+    procedure AcFileOpenExecute(Sender: TObject);
+    procedure AcFileQuitExecute(Sender: TObject);
     procedure AcImgFitExecute(Sender: TObject);
     procedure AnalysisGridClick(Sender: TObject);
     procedure AnalysisGridPrepareCanvas(sender: TObject; aCol, aRow: Integer;
       aState: TGridDrawState);
-    procedure BtnBrowseClick(Sender: TObject);
-    procedure BtnOpenClick(Sender: TObject);
-    procedure CbFileCloseUp(Sender: TObject);
-    procedure CbHexEditorAddressModeChange(Sender: TObject);
-    procedure FormActivate(Sender: TObject);
+    procedure CbHexAddressModeChange(Sender: TObject);
+    procedure CbHexSingleBytesChange(Sender: TObject);
+    procedure dExifGridCompareCells(Sender: TObject; ACol, ARow, BCol,
+      BRow: Integer; var Result: integer);
     procedure FormCreate(Sender: TObject);
     procedure FormDeactivate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure HexEditorClick(Sender: TObject);
     procedure HexEditorKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
-    procedure TagsGridCompareCells(Sender: TObject; ACol, ARow, BCol,
-      BRow: Integer; var Result: integer);
+    procedure MRUMenuManagerRecentFile(Sender:TObject; const AFileName:string);
     procedure TbGotoAPP1ArrowClick(Sender: TObject);
     procedure TbGotoMarker(Sender: TObject);
     procedure TbGotoTIFFHeaderClick(Sender: TObject);
@@ -116,14 +131,15 @@ type
 
   private
     FImgData: TImgData;
+    FFileName: String;
     FCurrOffset: Int64;
     FBuffer: PBytes;
     FBufferSize: Int64;
     FMotorolaOrder: Boolean;
     FWidth: Integer;
     FHeight: Integer;
-    FIFDList: array[0..4] of Int64;
-    procedure AddToHistory(const AFilename: String);
+    IFDList: array[0..4] of Int64;
+    FMRUMenuManager : TMRUMenuManager;
     function DisplayGenericMarker(AOffset: Int64): Boolean;
     function DisplayMarker(AOffset: Int64): Boolean;
     function DisplayMarkerAPP0(AOffset: Int64): Boolean;
@@ -149,9 +165,11 @@ type
     procedure GotoOffset(AOffset: Int64);
     function GotoSubIFD(ATag: Word; var AOffset: Int64; ATiffHeaderOffset: Int64): Boolean;
     procedure OpenFile(const AFileName: String);
-    procedure PopulateValueGrid;
+    procedure Populate_dExifGrid(Thumbs: Boolean);
+    procedure Populate_ValueGrid;
     procedure ScanIFDs;
-    procedure UpdateIFD;
+    procedure StatusMsg(const AMsg: String);
+    procedure UpdateIFDs;
     procedure UpdateMarkers;
     procedure UpdateStatusbar;
 
@@ -159,6 +177,7 @@ type
     procedure WriteToIni;
 
   public
+    procedure BeforeRun;
 
   end;
 
@@ -172,7 +191,7 @@ implementation
 uses
   LCLType, StrUtils, Math, IniFiles,
   KEditCommon,
-  dGlobal;
+  dGlobal, dTags;
 
 const
   VALUE_ROW_INDEX         =  1;
@@ -231,6 +250,14 @@ const
   TAG_INTEROP_OFFSET     = $A005;
   TAG_SUBIFD_OFFSET      = $014A;
 
+  INDEX_IFD0     = 0;
+  INDEX_EXIF     = 1;
+  INDEX_INTEROP  = 2;
+  INDEX_GPS      = 3;
+  INDEX_IFD1     = 4;
+
+  OFFSET_MASK = '%d ($%0:.8x)';
+
 var
   MaxHistory: Integer = 10;
 
@@ -264,6 +291,17 @@ end;
 
 { TMainForm }
 
+procedure TMainForm.AcFileOpenExecute(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+    OpenFile(OpenDialog.Filename);
+end;
+
+procedure TMainForm.AcFileQuitExecute(Sender: TObject);
+begin
+  Close;
+end;
+
 procedure TMainForm.AcImgFitExecute(Sender: TObject);
 begin
   if AcImgFit.Checked then begin
@@ -279,30 +317,20 @@ begin
   Scrollbox.Visible := not AcImgFit.Checked;
 end;
 
-procedure TMainForm.AddToHistory(const AFilename: String);
-var
-  idx: Integer;
-begin
-  CbFile.Items.BeginUpdate;
-  try
-    idx := CbFile.Items.IndexOf(AFileName);
-    if idx > -1 then CbFile.Items.Delete(idx);
-    CbFile.Items.Insert(0, AFilename);
-    while CbFile.Items.Count > MaxHistory do
-      CbFile.Items.Delete(CbFile.Items.Count-1);
-  finally
-    CbFile.Items.EndUpdate;
-  end;
-end;
-
 procedure TMainForm.AnalysisGridClick(Sender: TObject);
 var
   sel: TKHexEditorSelection;
   n: Integer;
+  s: String;
 begin
   sel := HexEditor.SelStart;
 
-  n := StrToInt(AnalysisGrid.Cells[0, AnalysisGrid.Row]);
+  s := AnalysisGrid.Cells[0, AnalysisGrid.Row];
+  n := pos(' ', s);
+  if n > 0 then
+    s := Copy(s, 1, n-1);
+  if not TryStrToInt(s, n) then
+    exit;
   if n > 0 then begin
     sel.Index := n;
     sel.Digit := 0;
@@ -328,33 +356,34 @@ begin
     AnalysisGrid.Canvas.Font.Style := [fsBold];
 end;
 
-procedure TMainForm.BtnBrowseClick(Sender: TObject);
+procedure TMainForm.BeforeRun;
 begin
-  if OpenDialog.Execute then begin
-    CbFile.Text := OpenDialog.FileName;
-    CbFile.Refresh;
-    AddToHistory(CbFile.Text);
-  end;
+  ReadFromIni;
 end;
 
-procedure TMainForm.BtnOpenClick(Sender: TObject);
+procedure TMainForm.CbHexAddressModeChange(Sender: TObject);
 begin
-  OpenFile(CbFile.Text);
-end;
-
-procedure TMainForm.CbFileCloseUp(Sender: TObject);
-begin
-  CbFile.Text := CbFile.Items[CbFile.ItemIndex];
-  OpenFile(CbFile.Text);
-end;
-
-procedure TMainForm.CbHexEditorAddressModeChange(Sender: TObject);
-begin
-  HexEditor.AddressMode := TKHexEditorAddressMode(CbHexEditorAddressMode.ItemIndex);
+  HexEditor.AddressMode := TKHexEditorAddressMode(ord(CbHexAddressMode.Checked));
   case HexEditor.AddressMode of
     eamHex: HexEditor.AddressPrefix := '$';
     eamDec: HexEditor.AddressPrefix := ' ';
   end;
+end;
+
+procedure TMainForm.CbHexSingleBytesChange(Sender: TObject);
+begin
+  HexEditor.DigitGrouping := IfThen(CbHexSingleBytes.Checked, 1, 2);
+end;
+
+procedure TMainForm.dExifGridCompareCells(Sender: TObject; ACol, ARow, BCol,
+  BRow: Integer; var Result: integer);
+var
+  sA, sB: String;
+begin
+  sA := dExif_TagsGrid.Cells[ACol, ARow];
+  sB := dExif_TagsGrid.Cells[BCol, BRow];
+  Result := CompareText(sA, sB);
+  if dExif_TagsGrid.SortOrder = soDescending then Result := -Result;
 end;
 
 function TMainForm.DisplayGenericMarker(AOffset: Int64): Boolean;
@@ -375,7 +404,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := GetMarkerName(m, true);
@@ -385,7 +414,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -428,7 +457,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'APP0 marker';
@@ -438,7 +467,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -448,7 +477,7 @@ begin
   numbytes := 5;
   SetLength(s, 5);
   Move(FBuffer^[AOffset], s[1], 5);
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := s;
   AnalysisGrid.Cells[3, j] := 'Identifier (must be JFIF)';
@@ -458,7 +487,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'JFIF format revision';
@@ -467,7 +496,7 @@ begin
 
   numbytes := 1;
   if not GetBEIntvalue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   case val of
@@ -482,7 +511,7 @@ begin
 
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'X density';
@@ -491,7 +520,7 @@ begin
 
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Y density';
@@ -500,7 +529,7 @@ begin
 
   numbytes := 1;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Thumbnail width';
@@ -509,7 +538,7 @@ begin
 
   numbytes := 1;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Thumbnail height';
@@ -535,7 +564,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'APP1 marker';
@@ -545,7 +574,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -555,7 +584,7 @@ begin
   numbytes := 6;
   SetLength(s, numbytes);
   Move(FBuffer^[AOffset], s[1], numbytes);
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := s;
   AnalysisGrid.Cells[3, j] := 'EXIF identifer';
@@ -587,7 +616,7 @@ begin
   AnalysisGrid.RowCount := AnalysisGrid.FixedRows + n*4 + 2;
 
   j := AnalysisGrid.FixedRows;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(n);
   AnalysisGrid.Cells[3, j] := 'Number of directory entries';
@@ -604,7 +633,7 @@ begin
       s := 'unknown'
     else
       s := pTag^.Desc;
-    AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+    AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
     AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
     AnalysisGrid.Cells[3, j] := Format('#%d: Tag type (%s)', [i, s]);
@@ -630,7 +659,7 @@ begin
       else s := '';
     end;
     dt := val;
-    AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+    AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
     AnalysisGrid.Cells[2, j] := Format('%d', [val]);
     AnalysisGrid.Cells[3, j] := Format('   Data type (%s)', [s]);;
@@ -641,7 +670,7 @@ begin
     if not GetExifIntValue(AOffset, numbytes, val) then
       exit;
     ds := val;
-    AnalysisGrid.cells[0, j] := IntToStr(AOffset);
+    AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
     AnalysisGrid.Cells[2, j] := IntToStr(ds);
     AnalysisGrid.Cells[3, j] := '   Data size (L)';
@@ -651,7 +680,7 @@ begin
     numbytes := 4;
     if not GetExifIntValue(AOffset, numbytes, val) then
       exit;
-    AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+    AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
     s := IntToStr(val);
     if val > 4 then
@@ -665,7 +694,7 @@ begin
   numbytes := 4;
   if not GetExifIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Offset to next IFD';
@@ -690,7 +719,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'COM marker';
@@ -700,7 +729,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -709,7 +738,7 @@ begin
 
   SetLength(s, val - 2);
   Move(FBuffer^[AOffset], s[1], Length(s));
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := s;
   AnalysisGrid.Cells[3, j] := 'Comment text';
@@ -734,7 +763,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'EOI marker';
@@ -760,7 +789,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'SOF0 marker';
@@ -770,7 +799,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -780,7 +809,7 @@ begin
   numbytes := 1;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Data precision (bits/sample)';
@@ -790,7 +819,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Image height';
@@ -800,7 +829,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Image width';
@@ -810,7 +839,7 @@ begin
   numbytes := 1;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Number of components';
@@ -835,7 +864,7 @@ begin
   j := AnalysisGrid.FixedRows;
 
   s := char(FBuffer^[AOffset]) + char(FBuffer^[AOffset+1]);
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := '2';
   AnalysisGrid.Cells[2, j] := s;
   if s = 'II' then s := 'Intel (little endian)' else
@@ -846,7 +875,7 @@ begin
 
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'TIFF version number';
@@ -855,7 +884,7 @@ begin
 
   numbytes := 4;
   if not GetBEIntValue(AOffset, numbytes, val) then exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d --> %d', [val, tiffHdr + val]);
   AnalysisGrid.Cells[3, j] := 'Offset to first IFD (from begin of TIFF header)';
@@ -880,7 +909,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'SOI marker';
@@ -907,7 +936,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := Format('%d ($%.4x)', [val, val]);
   AnalysisGrid.Cells[3, j] := 'SOS marker';
@@ -917,7 +946,7 @@ begin
   numbytes := 2;
   if not GetBEIntValue(AOffset, numbytes, val) then
     exit;
-  AnalysisGrid.Cells[0, j] := IntToStr(AOffset);
+  AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
   AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
   AnalysisGrid.Cells[2, j] := IntToStr(val);
   AnalysisGrid.Cells[3, j] := 'Size';
@@ -1054,42 +1083,41 @@ begin
   end;
 end;
 
-procedure TMainForm.FormActivate(Sender: TObject);
-begin
-  ReadFromIni;
-end;
-
 procedure TMainForm.FormCreate(Sender: TObject);
 var
   i: Integer;
 begin
   FCurrOffset := -1;
 
-  with TagsGrid do begin
-    RowCount := FixedRows + 1;
-    ColCount := FixedCols + 15;
-    Cells[ 1, 0] := 'TID';
-    Cells[ 2, 0] := 'TType';
-    Cells[ 3, 0] := 'TCode';
-    Cells[ 4, 0] := 'Tag';
-    Cells[ 5, 0] := 'Name';
-    Cells[ 6, 0] := 'Desc';
-    Cells[ 7, 0] := 'Code';
-    Cells[ 8, 0] := 'Data';
-    Cells[ 9, 0] := 'Raw';
-    Cells[10, 0] := 'PRaw';
-    Cells[11, 0] := 'FormatS';
-    Cells[12, 0] := 'Size';
-    Cells[13, 0] := 'CallBack';
-    Cells[14, 0] := 'id';
-    Cells[15, 0] := 'parentid';
+  AcGotoIFD0.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_IFD0;
+  AcGotoEXIFSubIFD.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_EXIF;
+  AcGotoINTEROPSubIFD.Tag := AcGotoTIFFHeader.Tag + 1+ INDEX_INTEROP;
+  AcGotoGPSSubIFD.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_GPS;
+  AcGotoIFD1.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_IFD1;
+
+  FMRUMenuManager := TMRUMenuManager.Create(self);
+  with FMRUMenuManager do begin
+    Name := 'MRUMenuManager';
+    IniFileName := CalcIniName;
+    IniSection := 'RecentFiles';
+    MaxRecent := 16;
+    MenuCaptionMask := '&%x - %s';    // & --> create hotkey
+    MenuItem := MnuFileReopen;
+    PopupMenu := RecentFilesPopup;
+    OnRecentFile := @MRUMenuManagerRecentFile;
   end;
 
   with HexEditor do begin
     Font.Name := GetFixedFontName;  // The hard-coded Courier New does not exist in Linux
     Font.Style := [];
     Font.Pitch := fpDefault;
-   // Font.Quality := fqAntialiased; //Proof;
+    Font.Quality := fqClearType;
+  end;
+
+  with AnalysisGrid do begin
+    ColWidths[0] := 120;
+    ColWidths[1] := 50;
+    ColWidths[2] := 150;
   end;
 
   with ValueGrid do begin
@@ -1122,10 +1150,13 @@ begin
     Cells[0, VALUE_ROW_PWIDECHAR] := 'PWideChar';
     ColWidths[0] := Canvas.TextWidth(' SmallInt (BE) ');
   end;
-  CbHexEditorAddressModeChange(nil);
+  CbHexAddressModeChange(nil);
 
   for i:=0 to HexToolbar.ButtonCount-1 do
     HexToolbar.Buttons[i].Enabled := false;
+
+  Populate_dExifGrid(false);
+  Populate_dExifGrid(true);
   {
   for i:=0 to APP1Popup.Items.Count-1 do
     APP1Popup.Items[i].Enabled := false;
@@ -1220,8 +1251,12 @@ var
   dbl: Double;
   i: Integer;
 begin
-  if AOffset >= FBufferSize then
-    exit('');
+  if (AOffset + ADataSize > FBufferSize) or
+     (AOffset + ADataSize < 0) then
+  begin
+    Result := '<???>';
+    exit;
+  end;
 
   case ADataType of
     1: Result := IntToStr(FBuffer^[AOffset]);  // unsigned byte
@@ -1390,6 +1425,16 @@ procedure TMainForm.GotoOffset(AOffset: Int64);
 var
   sel: TKHexEditorSelection;
 begin
+  if AOffset > High(FBuffer^) then begin
+    StatusMsg('Out of buffer limits.');
+    exit;
+  end;
+
+  if AOffset < 0 then begin
+    StatusMsg('Out of buffer limits.');
+    exit;
+  end;
+
   FCurrOffset := AOffset;
   sel := HexEditor.SelStart;
   sel.Index := AOffset;
@@ -1398,7 +1443,7 @@ begin
   HexEditor.SelEnd := sel;
   if not HexEditor.CaretVisible then
     HexEditor.ExecuteCommand(ecScrollCenter);
-  PopulateValueGrid;
+  Populate_ValueGrid;
   UpdateStatusbar;
   TbNextSegment.Enabled := FBuffer^[AOffset] = $FF;
 end;
@@ -1490,6 +1535,12 @@ begin
   Key := 0;
 end;
 
+procedure TMainForm.MRUMenuManagerRecentFile(Sender: TObject;
+  const AFileName: string);
+begin
+  OpenFile(AFileName);
+end;
+
 procedure TMainForm.OpenFile(const AFileName: String);
 var
   i, j: Integer;
@@ -1505,9 +1556,7 @@ begin
     exit;
   end;
 
-  AddToHistory(AFilename);
-  CbFile.Text := AFilename;
-  CbFile.Refresh;
+  FFilename := AFilename;
 
   FreeAndNil(FImgData);
   FImgData := TImgData.Create;
@@ -1516,13 +1565,64 @@ begin
   FWidth := FImgData.Width;
   FHeight := FImgData.Height;
 
-  if FImgData.HasExif then begin
-    TagsGrid.RowCount := FImgData.ExifObj.FITagCount + TagsGrid.FixedRows;
+  Populate_dExifGrid(false);
+  Populate_dExifGrid(true);
 
-    for i:=0 to FImgData.ExifObj.FITagCount-1 do begin
-      t := FImgData.ExifObj.FITagArray[i];
-      j := TagsGrid.FixedRows + i;
-      with TagsGrid do begin
+  HexEditor.LoadFromFile(AFileName);
+  FBuffer := THexEditorOpener(HexEditor).Buffer;
+  FBufferSize := THexEditorOpener(HexEditor).Size;
+  FCurrOffset := 0;
+  HexEditorClick(nil);
+
+  ScanIFDs;
+  UpdateIFDs;
+  UpdateMarkers;
+
+  L := FImgData.MetadataToXML;
+  try
+    XML_SynEdit.Lines.Assign(L);
+  finally
+    L.Free;
+  end;
+
+  Image.Picture.LoadFromFile(AFileName);
+  Image.Width := FWidth;
+  Image.Height := FHeight;
+  AcImgFitExecute(nil);
+
+  FMRUMenuManager.AddToRecent(AFileName);
+
+  Caption := Format('Exif Spy - "%s"', [FFilename]);
+end;
+
+procedure TMainForm.Populate_dExifGrid(Thumbs: Boolean);
+var
+  tagArray: Array of TTagEntry;
+  tagCount: Integer;
+  t: TTagEntry;
+  i, j: Integer;
+  grid: TStringGrid;
+begin
+  if thumbs then
+    grid := dExif_ThumbTagsGrid
+  else
+    grid := dExif_TagsGrid;
+  grid.ColCount := 16;
+
+  if (FImgData <> nil) and FImgData.HasExif then begin
+    if Thumbs then begin
+      tagArray := FImgData.ExifObj.FIThumbArray;
+      tagCount := FImgData.ExifObj.FIThumbCount;
+    end else begin
+      tagArray := FImgData.ExifObj.FITagArray;
+      tagCount := FImgData.ExifObj.FITagCount;
+    end;
+    grid.RowCount := tagCount + grid.FixedRows;
+
+    for i:=0 to tagCount-1 do begin
+      t := tagArray[i];
+      j := grid.FixedRows + i;
+      with grid do begin
         Cells[ 0, j] := IntToStr(i);
         Cells[ 1, j] := IntToStr(t.TID);
         Cells[ 2, j] := IntToStr(t.TType);
@@ -1543,34 +1643,30 @@ begin
     end;
   end else
   begin
-    TagsGrid.RowCount := TagsGrid.FixedRows + 1;
-    TagsGrid.Rows[TagsGrid.FixedRows].Clear;
-    ShowMessage('No EXIF data in file "' + AFileName + '".');
+    grid.RowCount := grid.FixedRows + 1;
+    grid.Rows[grid.FixedRows].Clear;
+    StatusMsg('No EXIF data found.');
   end;
-
-  HexEditor.LoadFromFile(AFileName);
-  FBuffer := THexEditorOpener(HexEditor).Buffer;
-  FBufferSize := THexEditorOpener(HexEditor).Size;
-  FCurrOffset := 0;
-  HexEditorClick(nil);
-
-  ScanIFDs;
-  UpdateMarkers;
-
-  L := FImgData.MetadataToXML;
-  try
-    XML_SynEdit.Lines.Assign(L);
-  finally
-    L.Free;
+  with grid do begin
+    Cells[ 1, 0] := 'TID';
+    Cells[ 2, 0] := 'TType';
+    Cells[ 3, 0] := 'TCode';
+    Cells[ 4, 0] := 'Tag';
+    Cells[ 5, 0] := 'Name';
+    Cells[ 6, 0] := 'Desc';
+    Cells[ 7, 0] := 'Code';
+    Cells[ 8, 0] := 'Data';
+    Cells[ 9, 0] := 'Raw';
+    Cells[10, 0] := 'PRaw';
+    Cells[11, 0] := 'FormatS';
+    Cells[12, 0] := 'Size';
+    Cells[13, 0] := 'CallBack';
+    Cells[14, 0] := 'id';
+    Cells[15, 0] := 'parentid';
   end;
-
-  Image.Picture.LoadFromFile(AFileName);
-  Image.Width := FWidth;
-  Image.Height := FHeight;
-  AcImgFitExecute(nil);
 end;
 
-procedure TMainForm.PopulateValueGrid;
+procedure TMainForm.Populate_ValueGrid;
 const
   MAX_LEN = 32;
 var
@@ -1790,7 +1886,6 @@ var
   Rct: TRect;
   i: Integer;
   s: String;
-  List: TStrings;
 begin
   ini := TMemIniFile.Create(CalcIniName);
   try
@@ -1809,20 +1904,6 @@ begin
     HexPanel.Width := ini.ReadInteger('MainForm', 'HexPanelWidth', HexPanel.Width);
     MainPageControl.PageIndex := ini.ReadInteger('MainForm', 'MainPageControl', 0);
     HexPageControl.PageIndex := ini.ReadInteger('MainForm', 'HexPageControl', 0);
-    MaxHistory := ini.ReadInteger('History', 'MaxCount', MaxHistory);
-    List := TStringList.Create;
-    try
-      ini.ReadSectionValues('History', List);
-      for i:=0 to List.Count-1 do begin
-        s := List[i];
-        if pos('MaxCount', s) = 1 then
-          continue;
-        Delete(s, 1, pos('=', s));
-        CbFile.Items.Add(s);
-      end;
-    finally
-      List.Free;
-    end;
   finally
     ini.Free;
   end;
@@ -1832,13 +1913,17 @@ procedure TMainForm.ScanIFDs;
 var
   tiffHeaderStart: Int64;
 
+  // p is at the start of a IFD or SubIFD.
   procedure ScanIFD(p: Int64);
   var
-    n: Integer;
+    n: word;
     i: Integer;
     TagID: Word;
     val: DWord;
   begin
+    if p > High(FBuffer^) then
+      exit;
+
     n := PWord(@FBuffer^[p])^;
     if FMotorolaOrder then n := BEToN(n);
     inc(p, 2);
@@ -1849,18 +1934,18 @@ var
       inc(p, 2);  // --> size
       inc(p, 4);  // --> value
       val := PDWord(@FBuffer^[p])^;
-      if FMotorolaOrder then val := BEToN(TagID);
+      if FMotorolaOrder then val := BEToN(val);
       if TagID = TAG_EXIF_OFFSET then begin
-        FIFDList[1] := val + tiffHeaderStart;
-        ScanIFD(FIFDList[1]);
+        IFDList[INDEX_EXIF] := val + tiffHeaderStart;
+        ScanIFD(IFDList[INDEX_EXIF]);
       end else
       if val = TAG_GPS_OFFSET then begin
-        FIFDList[3] := val + tiffHeaderStart;
-        ScanIFD(FIFDList[3]);
+        IFDList[INDEX_GPS] := val + tiffHeaderStart;
+        ScanIFD(IFDList[INDEX_GPS]);
       end else
       if val = TAG_INTEROP_OFFSET then begin
-        FIFDList[2] := val + tiffHeaderStart;
-        ScanIFD(FIFDList[2]);
+        IFDList[INDEX_INTEROP] := val + tiffHeaderStart;
+        ScanIFD(IFDList[INDEX_INTEROP]);
       end;
       inc(p, 4)  // --> next tag
     end;
@@ -1869,37 +1954,37 @@ var
 var
   p: Int64;
   n: word;
+  offs: DWord;
 begin
-  FillChar(FIFDList[0], SizeOf(FIFDList), -1);
+  FillChar(IFDList[0], SizeOf(IFDList), -1);
 
   tiffHeaderStart := FindTiffHeader;
-  FIFDList[0] := tiffHeaderStart + 8;
-  ScanIFD(FIFDList[0]);
+  IFDList[0] := tiffHeaderStart + 8;
+  ScanIFD(IFDList[0]);
 
   // Find IFD1
-  p := FIFDList[0];
+  p := IFDList[0];
   n := PWord(@FBuffer^[p])^;
   if FMotorolaOrder then n := BEToN(n);
   inc(p, 2 + n*12);
-  FIFDList[4] := PDWord(@FBuffer^[p])^;
-  if FMotorolaOrder then FIFDList[4] := BEToN(FIFDList[4]);
+  offs := PDWord(@FBuffer^[p])^;
+  if FMotorolaOrder then
+    offs := BEToN(offs);
+  if offs = 0 then
+    IFDList[Index_IFD1] := -1  // there is no IFD1
+  else
+    IFDList[INDEX_IFD1] := offs + tiffHeaderStart;
 end;
 
-
-procedure TMainForm.TagsGridCompareCells(Sender: TObject; ACol, ARow, BCol,
-  BRow: Integer; var Result: integer);
-var
-  sA, sB: String;
+procedure TMainForm.StatusMsg(const AMsg: String);
 begin
-  sA := TagsGrid.Cells[ACol, ARow];
-  sB := TagsGrid.Cells[BCol, BRow];
-  Result := CompareText(sA, sB);
-  if TagsGrid.SortOrder = soDescending then Result := -Result;
+  Statusbar.SimpleText := AMsg;
+  Statusbar.Refresh;
 end;
 
 procedure TMainForm.TbGotoAPP1ArrowClick(Sender: TObject);
 begin
-  UpdateIFD;
+  UpdateIFDs;
 end;
 
 procedure TMainForm.TbGotoIFD(Sender: TObject);
@@ -1907,10 +1992,16 @@ var
   p: Int64;
   TiffHeaderOffs: Int64;
   ok: Boolean;
+
+  function GetIFDIndex(AComponent: TComponent): PtrInt;
+  begin
+    Result := AComponent.Tag - (AcGotoTIFFHeader.Tag + 1);
+  end;
+
 begin
   p := FindMarker(MARKER_APP1);
   if p = -1 then begin
-    Statusbar.SimpleText := 'APP1 marker not found.';
+    StatusMsg('APP1 marker not found.');
     exit;
   end;
 
@@ -1921,7 +2012,7 @@ begin
   TiffHeaderOffs := p;
   inc(p, 8);  // Size of TIFF header
 
-  p := FIDList[TComponent(Sender).Tag - 1000];
+  p := IFDList[GetIFDIndex(TComponent(Sender))];
   {
   case TComponent(Sender).Tag of
     1001: p := FIFDList[0];   // IFD0
@@ -1934,22 +2025,22 @@ begin
 
   if p = -1 then
   begin
-    Statusbar.SimpleText := TAction(Sender).Caption + ' does not exit.';
+    StatusMsg(TAction(Sender).Caption + ' does not exit.');
     exit;
   end;
 
   GotoOffset(p);
 
-  case TComponent(Sender).Tag of
-    1000: ok := DisplayIFD(p, TiffHeaderOffs, 'IFD0 (Image file directory 0)');
-    1001: ok := DisplayIFD(p, TIFFHeaderOffs, 'EXIF SubIFD (Image file subdirectory)');
-    1002: ok := DisplayIFD(p, TiffHeaderOffs, 'Interoperability SubIFD (Image file subdirectory)');
-    1003: ok := DisplayIFD(p, TiffHeaderOffs, 'GPS SubIFD (Image file subdirectory)');
-    1004: ok := DisplayIFD(p, TiffHeaderOffs, 'IFD1 (Image file directory 1 - thumbnail)');
-    else  ok := true;
+  case GetIFDIndex(TComponent(Sender)) of
+    INDEX_IFD0    : ok := DisplayIFD(p, TiffHeaderOffs, 'IFD0 (Image file directory 0)');
+    INDEX_EXIF    : ok := DisplayIFD(p, TIFFHeaderOffs, 'EXIF SubIFD (Image file subdirectory)');
+    INDEX_INTEROP : ok := DisplayIFD(p, TiffHeaderOffs, 'Interoperability SubIFD (Image file subdirectory)');
+    INDEX_GPS     : ok := DisplayIFD(p, TiffHeaderOffs, 'GPS SubIFD (Image file subdirectory)');
+    INDEX_IFD1    : ok := DisplayIFD(p, TiffHeaderOffs, 'IFD1 (Image file directory 1 - thumbnail)');
+    else            ok := true;
   end;
   if not ok then
-    Statusbar.SimpleText := 'ERROR';
+    StatusMsg('ERROR');
 
   (*
   // IFD0
@@ -2067,9 +2158,9 @@ begin
   if p >= 0 then begin
     ok := DisplayMarker(p);
     if not ok then
-      Statusbar.SimpleText := 'ERROR';
+      StatusMsg('ERROR');
   end else
-    Statusbar.SimpleText := 'Marker not found.';
+    StatusMsg('Marker not found.');
 end;
 
 procedure TMainForm.TbGotoTIFFHeaderClick(Sender: TObject);
@@ -2079,7 +2170,7 @@ begin
   p := FindTIFFHeader;
 //  p := FindMarker(MARKER_APP1);
   if p = -1 then
-    Statusbar.SimpleText := 'TIFF header not found.'
+    StatusMsg('TIFF header not found.')
   else begin
 //    inc(p, 2 + 2 + Length('EXIF'#0#0));
     GotoOffset(p);
@@ -2096,19 +2187,25 @@ begin
   if p >= 0 then begin
     GotoOffset(p);
     if not DisplayMarker(p) then
-      Statusbar.SimpleText := 'ERROR';
+      StatusMsg('ERROR');
   end else
-    Statusbar.SimpleText := 'Marker not found.';
+    StatusMsg('Marker not found.');
 end;
 
-procedure TMainForm.UpdateIFD;
+procedure TMainForm.UpdateIFDs;
 var
   i: Integer;
-  tiffEnabled: Boolean;
+  ac: TAction;
+  startTag: PtrInt;
+  endTag: PtrInt;
 begin
-  tiffEnabled := (FindMarker(MARKER_APP1) <> -1) and (FindTIFFHeader <> -1);
-  for i:=0 to APP1Popup.Items.Count-1 do
-    App1Popup.Items[i].Enabled := tiffEnabled;
+  startTag := AcGotoTiffHeader.Tag + 1;
+  endtag := startTag + High(IFDList);
+  for i:=0 to ActionList.ActionCount-1 do begin
+    ac := TAction(ActionList[i]);
+    if (ac.Tag >= startTag) and (ac.Tag <= endTag) then
+      ac.Enabled := IFDList[ac.Tag - startTag] > -1;
+  end;
 end;
 
 procedure TMainForm.UpdateMarkers;
@@ -2152,9 +2249,9 @@ end;
 procedure TMainForm.UpdateStatusbar;
 begin
   if FCurrOffset > -1 then
-    Statusbar.SimpleText := Format('HexViewer offset: %d ($%x)', [FCurrOffset, FCurrOffset])
+    StatusMsg(Format('HexViewer offset: %d ($%x)', [FCurrOffset, FCurrOffset]))
   else
-    Statusbar.SimpleText := '';
+    StatusMsg('');
 end;
 
 procedure TMainForm.ValueGridClick(Sender: TObject);
@@ -2189,10 +2286,6 @@ begin
     ini.WriteInteger('MainForm', 'HexPanelWidth', HexPanel.Width);
     ini.WriteInteger('MainForm', 'HexPageControl', HexPageControl.PageIndex);
     ini.WriteInteger('MainForm', 'MainPageControl', MainPageControl.PageIndex);
-    ini.EraseSection('History');
-    ini.WriteInteger('History', 'MaxCount', MaxHistory);
-    for i:=0 to CbFile.Items.Count-1 do
-      ini.WriteString('History', 'Item' + IntToStr(i+1), CbFile.Items[i]);
   finally
     ini.Free;
   end;

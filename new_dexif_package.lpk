@@ -8,7 +8,7 @@
         <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)-$(LCLWidgetType)"/>
       </SearchPaths>
     </CompilerOptions>
-    <Files Count="5">
+    <Files Count="6">
       <Item1>
         <Filename Value="dEXIF.pas"/>
         <UnitName Value="dEXIF"/>
@@ -27,8 +27,12 @@
       </Item4>
       <Item5>
         <Filename Value="dglobal.pas"/>
-        <UnitName Value="dglobal"/>
+        <UnitName Value="dGlobal"/>
       </Item5>
+      <Item6>
+        <Filename Value="dtags.pas"/>
+        <UnitName Value="dTags"/>
+      </Item6>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

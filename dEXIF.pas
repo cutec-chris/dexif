@@ -33,7 +33,7 @@ uses
  {$ELSE}
   fpimage, fpreadjpeg,
  {$ENDIF}
-  dglobal, dIPTC;
+  dGlobal, dTags, dIPTC;
 
 Const
    DexifVersion: ansistring = '1.04';
@@ -502,7 +502,7 @@ const
 //-------------------------------------------------------
 
    GPSCnt = 31 - 4;
-   ExifTagCnt = 251 - 6;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 5;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -702,7 +702,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9000;  Name:'ExifVersion'            ),
   (TID:0;TType:0;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
   (TID:0;TType:0;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
-//  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Callback: GenCompConfig),
+  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
   (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@SSpeedCallBack),
   (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
@@ -1738,8 +1738,8 @@ end;
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
-var
-  idCnt : Word = 0;
+//var
+//  idCnt : Word = 0;
 
 procedure  TImageInfo.ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
   tagType:integer = ExifTag; prefix:string=''; parentID: word = 0);
@@ -1754,8 +1754,8 @@ var
   tmpDateTime: string;
   tagID: word;
 begin
-  if parentID = 0 then
-    idCnt := 1;
+//  if parentID = 0 then
+//    idCnt := 1;
 
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
@@ -1870,8 +1870,8 @@ begin
              // some mal-formed images have recursive references...
              // if (subDirStart <> DirStart) then
              if not testDirStack(SubDirStart,OffsetBase) then begin
-               tagID := IDCnt;
-               IDCnt := IDCnt + 1;
+               tagID := tag; //IDCnt;
+//               IDCnt := IDCnt + 1;
                ProcessExifDir(SubdirStart, OffsetBase, ExifLength, ExifTag, '', tagID);
              end;
            except
@@ -1882,8 +1882,8 @@ begin
            try
              SubdirStart := OffsetBase + LongInt(Get32u(ValuePtr));
              if not testDirStack(SubDirStart,OffsetBase) then begin
-               tagID := idCnt;
-               inc(idCnt);
+               tagID := tag; //idCnt;
+//               inc(idCnt);
                ProcessExifDir(SubdirStart, OffsetBase, ExifLength, GpsTag, '', tagID);
              end;
            except
@@ -1986,7 +1986,7 @@ Procedure TImageInfo.ProcessThumbnail;
 var start:integer;
 begin
   start := ThumbStart+9;
-  ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail');
+  ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail', 1);  // wp: added 1
 end;
 
 Procedure TImageInfo.removeThumbnail;

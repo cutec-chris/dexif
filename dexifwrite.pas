@@ -22,6 +22,8 @@ type
     FBigEndian: Boolean;
     FTiffHeaderPosition: Int64;
     FExifSegmentStartPos: Int64;
+    FHasThumbnail: Boolean;
+    procedure UpdateSegmentSize(AStream: TStream);
 
   protected
     function CalcOffsetFromTiffHeader(APosition: Int64): DWord;
@@ -29,9 +31,8 @@ type
     function FixEndian32(AValue: DWord): DWord;
 
     procedure WriteIFD(AStream: TStream; ASubIFDList: TInt64List;
-      var ATotalCount: Integer; ADirectoryID: Integer);
-    procedure WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List;
-      var ATotalCount: Integer);
+      ADirectoryID: TTagID);
+    procedure WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List);
     procedure WriteTag(AStream, AValueStream: TStream; ADataStartOffset: Int64;
       ATag: TTagEntry);
     procedure WriteTiffHeader(AStream: TStream);
@@ -49,10 +50,7 @@ type
 implementation
 
 uses
-  Math;
-
-const
-  OFFSET_TO_DATAVALUE = 2 * SizeOf(Word) + SizeOf(DWord);
+  Math, dTags;
 
 //------------------------------------------------------------------------------
 //  Constructor of the Exif writer
@@ -61,6 +59,7 @@ constructor TExifWriter.Create(AImgData: TImgData);
 begin
   inherited;
   FExifSegmentStartPos := -1;
+  FHasThumbnail := FImgData.HasThumbnail;
 end;
 
 //------------------------------------------------------------------------------
@@ -97,6 +96,33 @@ begin
     Result := AValue;
 end;
 
+//------------------------------------------------------------------------------
+// Updates the size of the APP1 segment
+//------------------------------------------------------------------------------
+procedure TExifWriter.UpdateSegmentSize(AStream: TStream);
+var
+  startPos: Int64;
+  segmentSize: DWord;
+begin
+  // If the exif structure is part of a jpeg file then WriteExifHeader has
+  // been called which determines the position where the Exif header starts.
+  if FExifSegmentStartPos < 0 then
+    exit;
+
+  // From the current stream position (at the end) and the position where
+  // the segment size must be written, we calculate the size of the segment
+  startPos := FExifSegmentStartPos + SizeOf(word);
+  segmentSize := AStream.Position - startPos;
+
+  // Move the stream to where the segment size must be written...
+  AStream.Position := startPos;
+
+  // ... and write the segment size.
+  AStream.WriteWord(BEToN(segmentSize));
+
+  // Rewind stream to the end
+  AStream.Seek(0, soFromEnd);
+end;
 
 //------------------------------------------------------------------------------
 //  Writes the Exif header needed by JPEG files.
@@ -121,7 +147,7 @@ end;
 // Writes all IFD record belonging to the same directory
 // -----------------------------------------------------------------------------
 procedure TExifWriter.WriteIFD(AStream: TStream; ASubIFDList: TInt64List;
-  var ATotalCount: Integer; ADirectoryID: Integer);
+  ADirectoryID: TTagID);
 var
   valueStream: TMemoryStream;
   i: Integer;
@@ -131,14 +157,19 @@ var
   dataStartOffset: Int64;
   startPos: Int64;
   sizeOfTagPart: DWord;
-  offsetToNextIFDPos: DWord;
+  offsetToIFD1: Int64;
+  dirID: TTagID;
 begin
+  // to do: remove when new reader is active
+  (*
   case ADirectoryID of
-    TAG_EXIF_OFFSET    : ADirectoryID := 1;
-    TAG_GPS_OFFSET     : ADirectoryID := 3;
-    TAG_INTEROP_OFFSET : ADirectoryID := 2;
+    1                  : dirID := 4;   // IFD1
+    TAG_EXIF_OFFSET    : dirID := 1;
+    TAG_GPS_OFFSET     : dirID := 3;
+    TAG_INTEROP_OFFSET : dirID := 2;
   end;
-
+  ADirectoryID := dirID;
+    *)
   valueStream := TMemoryStream.Create;
   try
     // Count IDF records in this directory
@@ -155,9 +186,9 @@ begin
 
     // The IFD begins at the current stream position...
     startPos := AStream.Position;
-    // ... and knowing the size of tag part of the subdirectory we can
+    // ... and, knowing the size of tag part of the subdirectory, we can
     // calculate where the data part of the subdirectory will begin
-    // This is needed in terms of offset from the Tiff header.
+    // This is needed as offset from the begin of the Tiff header.
     sizeOfTagPart := SizeOf(Word) +  // count of tags in IFD, as 16-bit integer
       count * SizeOf(TIFDRecord) +   // each tag occupies a TIFDRecord
       SizeOf(DWord);                 // offset to next IFD, as 32-bit integer.
@@ -175,48 +206,27 @@ begin
         // written ifd record. Since it is not clear at this moment where the
         // subdirectory will begin we store the offset to the ifd record in
         // ASubIFDlist for later correction.
-        if (tag.Tag = TAG_EXIF_OFFSET) or
-           (tag.Tag = TAG_GPS_OFFSET) or
-           (tag.Tag = TAG_INTEROP_OFFSET) or
-           (tag.Tag = TAG_SUBIFD_OFFSET)
-        then
+        if TagLinksToSubIFD(tag.Tag) then
           ASubIFDList.Add(AStream.Position);
 
         // Now write the tag
         WriteTag(AStream, valueStream, datastartOffset, tag);
-        inc(ATotalCount);
       end;
     end;
 
-    // Store the current stream position. We will have to write the offset
-    // to the next IFD here.
-    offsetToNextIFDPos := AStream.Position;
-    AStream.WriteDWord(0);
-
-    // copy the value stream to the end of the tag stream (AStream)
-    valueStream.Seek(0, soFromBeginning);
-    AStream.Seek(0, soFromEnd);
-    AStream.CopyFrom(valueStream, valueStream.Size);
-
-    // Now that the entire IFD has been written we must complete the skipped
-    // field for the offset to the next IFD (calculated from TIFF header start).
-    // All tags written?
-    inc(ATotalCount, count);
-    if ATotalCount = FImgData.ExifObj.FITagCount then
-      // yes: The field for the offset to the next IFD will get a zero.
-      offs := 0
-    else
-      // no: The next IFD will follow immediately, i.e. the value is determined
-      // by the current stream position;
-      offs := CalcOffsetFromTiffHeader(AStream.Position);
-
-    // Move to the position remembered above
-    AStream.Position := offsetToNextIFDPos;
-    // ... and write the offset value
+    // The last entry of the directory is the offset to the next IFD, or 0
+    // if not other IFD follows at the same level. This affects only IFD0
+    // where IFD1 can follow if an embedded thumbnail image exists.
+    if (ADirectoryID = 0) and FHasThumbnail then begin
+      offsetToIFD1 := AStream.Position + SizeOf(DWord) + valuestream.Size;
+      offs := CalcOffsetFromTiffHeader(offsetToIFD1);
+    end else
+      offs := 0;
     AStream.WriteDWord(FixEndian32(offs));
 
-    // Rewind the stream to its end
-    AStream.Seek(0, soFromEnd);
+    // Finally we copy the value stream to the end of the tag stream (AStream)
+    valueStream.Seek(0, soFromBeginning);
+    AStream.CopyFrom(valueStream, valueStream.Size);
 
   finally
     valueStream.Free;
@@ -230,13 +240,12 @@ end;
 // of the subdirectory and write the position where the subdirectory starts
 // to the tag's DataValue field in AStream.
 //------------------------------------------------------------------------------
-procedure TExifWriter.WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List;
-  var ATotalCount: Integer);
+procedure TExifWriter.WriteSubIFDs(AStream: TStream; ASubIFDList: TInt64List);
 var
   subIFDStartPos: Int64;
   tagPos: Int64;
   i: Integer;
-  id: DWord;
+  id: TTagID;
   rec: TIFDRecord = (TagID:0; DataType:0; DataSize:0; DataValue:0);
   offs: DWord;
 begin
@@ -255,8 +264,10 @@ begin
     // Read the tag's IFD record
     AStream.ReadBuffer(rec, SizeOf(rec));
 
-    // Get the TagID of the subdirectory
+    // Get the TagID of the subdirectory (note: this might be written as big-endian)
+    // The TagID is needed when calling WriteIFD
     if FBigEndian then id := BEToN(rec.TagID) else id := rec.TagID;
+
     // Write the correct subdirectory start position to the IFD record
     offs := CalcOffsetFromTiffHeader(subIFDStartPos);
     rec.DataValue := FixEndian32(offs);
@@ -268,7 +279,7 @@ begin
     // Now return the stream to the end (i.e. where the subdirectory should be)
     // and write the tags of the subdirectory.
     AStream.Seek(0, soFromEnd);
-    WriteIFD(AStream, ASubIFDList, ATotalCount, id);
+    WriteIFD(AStream, ASubIFDList, id);
 
     // Delete the current SubIFDList entry because it already has been handled.
     ASubIFDList.Delete(0);
@@ -306,7 +317,7 @@ begin
   end else
   if ATag.TType = FMT_BINARY then begin
     rec.DataSize := FixEndian32(Length(ATag.Raw));
-    rec.DataValue := ADataStartOffset + AValueStream.Position;
+    rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
     AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
   end else
   if BYTES_PER_FORMAT[ATag.TType] > 4 then begin
@@ -333,7 +344,7 @@ begin
     end;
   end else
   begin
-    // If the size of the data field is not more than 4 bytes
+    // If the size of the data field is not larger than 4 bytes
     // then the data value is written to the rec.DataValue field directly.
     rec.DataSize := FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
     case ATag.TType of
@@ -374,35 +385,25 @@ end;
 procedure TExifWriter.WriteToStream(AStream: TStream);
 var
   subIFDList: TInt64List;
-  totalcount: Integer;
-  i: Integer;
-  segmentSize: Word;
-  startPos: Int64;
 begin
   subIFDList := TInt64List.Create;
   try
-    totalCount := 0;
     FTiffHeaderPosition := AStream.Position;
     WriteTiffHeader(AStream);
 
     // Write IFD0
-    WriteIFD(AStream, subIFDList, totalCount, 0);
+    WriteIFD(AStream, subIFDList, 0);
 
     // Write IFD1
-    //WriteIFD(AStream, subIFDList, totalCount, 1);
+    if FHasThumbnail then
+      WriteIFD(AStream, subIFDList, 1);
 
     // Write special subIFDs collected in subIFDList
-    WriteSubIFDs(AStream, subIFDList, totalCount);
+    WriteSubIFDs(AStream, subIFDList);
 
-    if FExifSegmentStartPos > -1 then begin
-      // If WriteToStream is called within a JPEG structure we must update the
-      // size of the EXIF segment.
-      startPos := FExifSegmentStartPos + SizeOf(word);
-      segmentSize := AStream.Position - startPos;
-      AStream.Position := startPos;
-      AStream.WriteWord(BEToN(segmentSize));
-      AStream.Seek(0, soFromEnd);
-    end;
+    // If WriteToStream is called within a JPEG structure we must update the
+    // size of the EXIF segment.
+    UpdateSegmentSize(AStream);
 
   finally
     subIFDList.Free;
