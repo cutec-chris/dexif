@@ -63,19 +63,22 @@ const
     0,   // dummy for dEXIF --- to be removed
     1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8
   );
-  FMT_BYTE      =  1;
-  FMT_STRING    =  2;
-  FMT_USHORT    =  3;
-  FMT_ULONG     =  4;
-  FMT_URATIONAL =  5;
-  FMT_SBYTE     =  6;
-  FMT_UNDEFINED =  7;          // better: rename to FMT_BINARY
-  FMT_BINARY    =  7;
-  FMT_SSHORT    =  8;
-  FMT_SLONG     =  9;
-  FMT_SRATIONAL = 10;
-  FMT_SINGLE    = 11;
-  FMT_DOUBLE    = 12;
+  FMT_BYTE       =  1;
+  FMT_STRING     =  2;
+  FMT_USHORT     =  3;
+  FMT_ULONG      =  4;
+  FMT_URATIONAL  =  5;
+  FMT_SBYTE      =  6;
+  FMT_UNDEFINED  =  7;          // better: rename to FMT_BINARY
+  FMT_BINARY     =  7;
+  FMT_SSHORT     =  8;
+  FMT_SLONG      =  9;
+  FMT_SRATIONAL  = 10;
+  FMT_SINGLE     = 11;
+  FMT_DOUBLE     = 12;
+
+  ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
+  EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
 
 implementation

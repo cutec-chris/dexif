@@ -49,8 +49,6 @@ Const
    GenList = 4;
    VLMin = 0;
    VLMax = 1;
-   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
-   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
    {$IFDEF DELPHI}
    crlf: ansistring = #13#10;
    {$ELSE}
@@ -111,7 +109,7 @@ type
     procedure SetArtist(v: String);
 
     function GetExifComment: String;
-    procedure SetExifComment(const v: String);
+    procedure SetExifComment(v: String);
 
     function GetImageDescription: String;
     procedure SetImageDescription(const v: String);
@@ -489,6 +487,7 @@ var
 implementation
 
 uses
+  LazUTF8,
   dExifWrite, msData;
 
 const
@@ -1244,9 +1243,6 @@ begin
     Result := 0.0;
 end;
 
-
-
-
 function TImageInfo.GetDateTimeOriginal: TDateTime;
 begin
   if dt_orig_oset > 0 then
@@ -1256,7 +1252,18 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  if (AValue = 0) then begin
+    RemoveTag(TAG_DATETIME_ORIGINAL, p^.ID);
+    exit;
+  end;
+  p := GetTag(TAG_DATETIME_ORIGINAL, true, p^.ID, FMT_STRING);
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_orig_oset > 0 then
     SetDateTimeStr(dt_orig_oset, AValue)
   else
@@ -1272,7 +1279,18 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  if (AValue = 0) then begin
+    RemoveTag(TAG_DATETIME_DIGITIZED, p^.ID);
+    exit;
+  end;
+  p := GetTag(TAG_DATETIME_DIGITIZED, true, p^.ID, FMT_STRING);
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, AValue)
   else
@@ -1288,7 +1306,17 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeModify(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_DATETIME_MODIFY, true, p^.ID, FMT_STRING);
+  if AValue = 0 then begin
+    RemoveTag(TAG_DATETIME_MODIFY, p^.ID);
+    exit;
+  end;
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_modify_oset > 0 then
     SetDateTimeStr(dt_modify_oset, AValue)
   else
@@ -1756,9 +1784,6 @@ var
 begin
 //  if parentID = 0 then
 //    idCnt := 1;
-  WriteLn(Format('ENTER ProcessExifDir: DirStart: %d, Offsetbase: %d, ExifLength:%d, tagType:%d, prefix:%s, parentID:$%.4x, hasThumb:%d',
-    [DirStart, OffsetBase, ExifLength, tagType, prefix, parentid, ord(HasThumbnail)]));
-
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
   if (ExifTrace > 0) then
@@ -1800,9 +1825,6 @@ begin
 
     RawStr := copy(parent.EXIFsegment^.data,ValuePtr,ByteCount);
     fstr := '';
-
-    WriteLn(Format('  #%d - tag: $%.4x, Format: %d, ByteCount: %d, OffsetVal: %d, ValuePtr: %d, RawStr: %s, Number: %.3f',
-      [de, tag, TFormat, ByteCount, OffsetVal, valuePtr, MakePrintable(RawStr), GetNumber(RawStr, TFormat)]));
 
     if BuildList in [GenString, GenAll] then
     begin
@@ -2492,31 +2514,40 @@ var
   p : PTagEntry;
   w : WideString;
   n: Integer;
+  sa: AnsiString;
 begin
   Result := '';
   w := '';
-  p := GetTag(TAG_EXIF_OFFSET, false, 0, 4);
+  p := GetTag(TAG_EXIF_OFFSET);
   if (p = nil) then
     exit;
-  p := GetTag(TAG_USERCOMMENT, false, p^.ID, FMT_STRING);
+  p := GetTag(TAG_USERCOMMENT, false, p^.ID);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
-  if (Pos('ASCII', p^.Raw) = 1) then begin
-    SetLength(Result, Length(p^.Raw)-9);
-    Move(p^.Raw[9], Result[1], Length(p^.Raw)-9);
-  end else begin
-    SetLength(w, ((Length(p^.Raw) - 8) div 2));
-//    Move(p^.Raw[9], w[1], Length(p^.Raw)-10);
-    Move(p^.Raw[9], w[1], Length(w)*SizeOf(WideChar));
+
+  if Pos('UNICODE', p^.Raw) = 1 then begin
+    SetLength(w, (Length(p^.Raw) - 8) div SizeOf(WideChar));
+    Move(p^.Raw[9], w[1], Length(w) * SizeOf(WideChar));
     {$IF FPC_FULLVERSION < 30000}
     Result := UTF8Encode(w);
     {$ELSE}
     Result := w;
     {$ENDIF}
- end;
+  end else
+  if Pos('ASCII', p^.Raw) = 1 then begin
+    SetLength(Result, Length(p^.Raw)-9);
+    Move(p^.Raw[9], Result[1], Length(Result));
+  end else
+  if Pos(#0#0#0#0#0#0#0#0, p^.Raw) = 1 then begin
+    SetLength(sa, Length(p^.Raw) - 9);
+    Move(p^.raw[9], sa[1], Length(sa));
+    Result := WinCPToUTF8(sa);
+  end else
+  if Pos('JIS', p^.Raw) = 1 then
+    raise Exception.Create('JIS-encoded user comment is not supported.');
 end;
 
-procedure TImageInfo.SetExifComment(const v: String);
+procedure TImageInfo.SetExifComment(v: String);
 var
   p : PTagEntry;
   i : integer;
@@ -2528,7 +2559,34 @@ begin
     RemoveTag(TAG_USERCOMMENT, p^.ID);
     exit;
   end;
-  p := GetTag(TAG_USERCOMMENT, true, p^.ID, 7);
+  p := GetTag(TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
+  u := false;
+  for i:=1 to Length(v) do
+    if byte(v[i]) > 127 then begin
+      u := true;
+      break;
+    end;
+
+  if u then begin
+    p^.Raw := 'UNICODE'#0;
+    {$IF FPC_FULLVERSION < 30000}
+    w := UTF8Decode(p^.Raw);
+    {$ELSE}
+    w := v;
+    {$ENDIF}
+    SetLength(p^.Raw, Length(w) * SizeOf(WideChar) + 8);
+    Move(w[1], p^.Raw[9], Length(w) * SizeOf(WideChar));
+  end else begin
+    p^.Raw := 'ASCII'#0#0#0;
+    v := v + #0;
+    SetLength(p^.Raw, Length(v) + 8);
+    Move(v[1], p^.Raw[9], Length(v));
+  end;
+  (*
+
+
+
+
   u := false;
   w := v;
   for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin
@@ -2548,6 +2606,7 @@ begin
     end;
     p^.Raw := p^.Raw + #0;
   end;
+  *)
   p^.Size := Length(p^.Raw);
 end;
 
@@ -2584,7 +2643,6 @@ begin
  {$ELSE}
   p^.Raw := UTF8ToAnsi(v) + #0;
  {$ENDIF}
-  p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
 

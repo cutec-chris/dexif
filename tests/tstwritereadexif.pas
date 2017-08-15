@@ -48,7 +48,7 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math;
+  FileUtil, DateUtils, Math, dGlobal;
 
 type
   TWriteReadParamKind = (tkString, tkInteger, tkFloat);
@@ -155,9 +155,9 @@ var
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
-      6: DUT.ExifObj.ImageDescription := strValue;
+      6: DUT.ExifObj.ExifComment := strValue;
       7: DUT.ExifObj.ExifComment := strValue;
-      8: DUT.ExifObj.ExifComment := strValue;
+      8: DUT.ExifObj.ImageDescription := strValue;
       9: DUT.ExifObj.CameraMake := strValue;
     10: DUT.ExifObj.CameraMake := strValue;
     end;

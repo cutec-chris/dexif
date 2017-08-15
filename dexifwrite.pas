@@ -174,16 +174,6 @@ begin
     tagCount := FImgData.ExifObj.FITagCount;
   end;
 
-  write(Format('Writing directory %d ($%.4x) ', [ADirectoryID, ADirectoryID]));
-  if ADirectoryID = TAG_EXIF_OFFSET then
-    WriteLn('(EXIF)...')
-  else if ADirectoryID = TAG_GPS_OFFSET then
-    WriteLn('(GPS)...')
-  else if ADirectoryID = TAG_INTEROP_OFFSET then
-    WriteLn('(INTER_OP)...')
-  else
-    WriteLn;
-
   valueStream := TMemoryStream.Create;
   try
     // Count IDF records in this directory
@@ -231,8 +221,6 @@ begin
           ASubIFDList.Add(AStream.Position);
 
         // Now write the tag
-        WriteLn('  Tag: ', Format('%d ($%.4x)', [tag.Tag, tag.Tag]));
-
         WriteTag(AStream, valueStream, datastartOffset, tag);
       end;
     end;
