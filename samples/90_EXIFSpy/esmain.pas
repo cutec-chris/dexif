@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterXML, Forms, Controls,
-  Graphics, Dialogs, StdCtrls, ExtCtrls, EditBtn, Grids, ComCtrls, ValEdit,
+  Graphics, Dialogs, StdCtrls, ExtCtrls, EditBtn, Grids, ComCtrls,
   Buttons, ActnList, Menus, khexeditor, kfunctions, dEXIF, dIPTC, Types,
   mrumanager;
 
@@ -26,6 +26,7 @@ type
     AcFileQuit: TAction;
     AcFileReload: TAction;
     AcHelpAbout: TAction;
+    AcCfgUseDExif: TAction;
     ActionList: TActionList;
     CbHexAddressMode: TCheckBox;
     CbHexSingleBytes: TCheckBox;
@@ -34,8 +35,12 @@ type
     Image: TImage;
     ImageList: TImageList;
     AnalysisInfo: TLabel;
+    ImageList1: TImageList;
+    Images24: TImageList;
     MainMenu: TMainMenu;
     MainPageControl: TPageControl;
+    MnuCfgUseDExif: TMenuItem;
+    MnuCfg: TMenuItem;
     MnuTIFF: TMenuItem;
     MnuFileSeparator1: TMenuItem;
     MnuHelpAbout: TMenuItem;
@@ -56,7 +61,7 @@ type
     MnuFile: TMenuItem;
     OpenDialog: TOpenDialog;
     HexPageControl: TPageControl;
-    PageControl1: TPageControl;
+    dExifPageControl: TPageControl;
     Panel2: TPanel;
     HexPanel: TPanel;
     PgHex: TTabSheet;
@@ -113,6 +118,7 @@ type
     ValueGrid: TStringGrid;
     dExif_TagsGrid: TStringGrid;
     PgDExif: TTabSheet;
+    procedure AcCfgUseDExifExecute(Sender: TObject);
     procedure AcFileOpenExecute(Sender: TObject);
     procedure AcFileQuitExecute(Sender: TObject);
     procedure AcFileReloadExecute(Sender: TObject);
@@ -152,6 +158,7 @@ type
     IFDList: array[0..4] of Int64;
     FCurrIFDIndex: Integer;
     FMRUMenuManager : TMRUMenuManager;
+    FLoadDExif: Boolean;
     function DisplayGenericMarker(AOffset: Int64): Boolean;
     function DisplayMarker(AOffset: Int64): Boolean;
     function DisplayMarkerAPP0(AOffset: Int64): Boolean;
@@ -176,7 +183,7 @@ type
     function GotoNextIFD(var AOffset: Int64): Boolean;
     procedure GotoOffset(AOffset: Int64);
     function GotoSubIFD(ATag: Word; var AOffset: Int64; ATiffHeaderOffset: Int64): Boolean;
-    procedure OpenFile(const AFileName: String);
+    procedure LoadFile(const AFileName: String);
     procedure Populate_dExifGrid(Thumbs: Boolean);
     procedure Populate_ValueGrid;
     procedure ScanIFDs;
@@ -185,6 +192,7 @@ type
     procedure UpdateMarkers;
     procedure UpdateStatusbar;
 
+    procedure ReadArgs;
     procedure ReadFromIni;
     procedure WriteToIni;
 
@@ -302,10 +310,15 @@ end;
 
 { TMainForm }
 
+procedure TMainForm.AcCfgUseDExifExecute(Sender: TObject);
+begin
+  FLoadDExif := AcCfgUseDExif.Checked;
+end;
+
 procedure TMainForm.AcFileOpenExecute(Sender: TObject);
 begin
   if OpenDialog.Execute then
-    OpenFile(OpenDialog.Filename);
+    LoadFile(OpenDialog.Filename);
 end;
 
 procedure TMainForm.AcFileQuitExecute(Sender: TObject);
@@ -316,7 +329,7 @@ end;
 procedure TMainForm.AcFileReloadExecute(Sender: TObject);
 begin
   if FFilename <> '' then
-    OpenFile(FFileName);
+    LoadFile(FFileName);
 end;
 
 procedure TMainForm.AcHelpAboutExecute(Sender: TObject);
@@ -386,6 +399,7 @@ end;
 procedure TMainForm.BeforeRun;
 begin
   ReadFromIni;
+  ReadArgs;
 end;
 
 procedure TMainForm.CbHexAddressModeChange(Sender: TObject);
@@ -626,12 +640,14 @@ function TMainForm.DisplayIFD(AOffset: Int64; ATIFFHeaderOffset: Int64;
 var
   n: Int64;
   val: Int64;
+  valsng: Single absolute val;
   i, j: Integer;
   numBytes: byte;
   s: String;
   pTag: PTagEntry;
   dt: byte;
   ds: Integer;
+  nb: Integer;
 begin
   Result := false;
 
@@ -674,18 +690,18 @@ begin
     if not GetExifIntValue(AOffset, numbytes, val) then
       exit;
     case val of
-       1: s := 'UInt8';
-       2: s := 'Zero-term. byte-string';
-       3: s := 'UInt16';
-       4: s := 'UInt32';
-       5: s := 'Fraction';
-       6: s := 'Int8';
-       7: s := 'binary';
-       8: s := 'Int16';
-       9: s := 'Int32';
-      10: s := 'Signed fraction';
-      11: s := 'Single';
-      12: s := 'Double';
+       1: begin nb := 1;  s := 'UInt8'; nb := 1; end;
+       2: begin nb := 1;  s := 'Zero-term. byte-string'; end;
+       3: begin nb := 2;  s := 'UInt16'; end;
+       4: begin nb := 4;  s := 'UInt32'; end;
+       5: begin nb := 16; s := 'Fraction'; end;
+       6: begin nb := 1;  s := 'Int8'; end;
+       7: begin nb := 1;  s := 'binary'; end;
+       8: begin nb := 2;  s := 'Int16'; end;
+       9: begin nb := 4;  s := 'Int32'; end;
+      10: begin nb := 8;  s := 'Signed fraction'; end;
+      11: begin nb := 4;  s := 'Single'; end;
+      12: begin nb := 8;  s := 'Double'; end;
       else s := '';
     end;
     dt := val;
@@ -699,7 +715,7 @@ begin
     numbytes := 4;
     if not GetExifIntValue(AOffset, numbytes, val) then
       exit;
-    ds := val;
+    ds := val; // * nb;
     AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
     AnalysisGrid.Cells[2, j] := IntToStr(ds);
@@ -712,8 +728,20 @@ begin
       exit;
     AnalysisGrid.Cells[0, j] := Format(OFFSET_MASK, [AOffset]);
     AnalysisGrid.Cells[1, j] := IntToStr(numbytes);
-    s := IntToStr(val);
-    if ds > 4 then
+    if ds <= 4 then
+      case dt of
+        2:  begin
+              SetLength(s, ds);
+              Move(val, s[1], ds);
+            end;
+        7:  begin
+              SetLength(s, ds);
+              Move(val, s[1], ds);
+            end;
+        11: s := FloatToStr(valsng);
+       else s := IntToStr(val);
+      end
+    else
       s := s + ' --> ' + GetExifValue(ATiffHeaderOffset + val, dt, ds);
     AnalysisGrid.Cells[2, j] := s;
     AnalysisGrid.Cells[3, j] := '   if L <= 4: Data value, else: Offset to data from TIFF header';
@@ -1118,6 +1146,7 @@ var
   i: Integer;
 begin
   FCurrOffset := -1;
+  FLoadDExif := true;
 
   AcGotoIFD0.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_IFD0;
   AcGotoEXIFSubIFD.Tag := AcGotoTIFFHeader.Tag + 1 + INDEX_EXIF;
@@ -1567,10 +1596,10 @@ end;
 procedure TMainForm.MRUMenuManagerRecentFile(Sender: TObject;
   const AFileName: string);
 begin
-  OpenFile(AFileName);
+  LoadFile(AFileName);
 end;
 
-procedure TMainForm.OpenFile(const AFileName: String);
+procedure TMainForm.LoadFile(const AFileName: String);
 var
   i, j: Integer;
   t: TTagEntry;
@@ -1587,20 +1616,13 @@ begin
   end;
 
   FFilename := AFilename;
+  FMRUMenuManager.AddToRecent(AFileName);
+  Caption := Format('Exif Spy - "%s"', [FFilename]);
+  AcFileReload.Enabled := true;
 
   crs := Screen.Cursor;
   Screen.Cursor := crHourglass;
   try
-    FreeAndNil(FImgData);
-    FImgData := TImgData.Create;
-    FImgData.ProcessFile(AFileName);
-    FMotorolaOrder := FImgData.MotorolaOrder;
-    FWidth := FImgData.Width;
-    FHeight := FImgData.Height;
-
-    Populate_dExifGrid(false);
-    Populate_dExifGrid(true);
-
     HexEditor.LoadFromFile(AFileName);
     FBuffer := THexEditorOpener(HexEditor).Buffer;
     FBufferSize := THexEditorOpener(HexEditor).Size;
@@ -1611,22 +1633,30 @@ begin
     UpdateIFDs;
     UpdateMarkers;
 
-    L := FImgData.MetadataToXML;
-    try
-      XML_SynEdit.Lines.Assign(L);
-    finally
-      L.Free;
+    FreeAndNil(FImgData);
+    if FLoadDExif then begin
+      FImgData := TImgData.Create;
+      FImgData.ProcessFile(AFileName);
+      FMotorolaOrder := FImgData.MotorolaOrder;
+      FWidth := FImgData.Width;
+      FHeight := FImgData.Height;
+
+      Populate_dExifGrid(false);
+      Populate_dExifGrid(true);
+
+      L := FImgData.MetadataToXML;
+      try
+        XML_SynEdit.Lines.Assign(L);
+      finally
+        L.Free;
+      end;
     end;
+    PgDExif.TabVisible := FLoadDExif;
 
     Image.Picture.LoadFromFile(AFileName);
     Image.Width := FWidth;
     Image.Height := FHeight;
     AcImgFitExecute(nil);
-
-    FMRUMenuManager.AddToRecent(AFileName);
-    AcFileReload.Enabled := true;
-
-    Caption := Format('Exif Spy - "%s"', [FFilename]);
 
   finally
     Screen.Cursor := crs;
@@ -1917,6 +1947,24 @@ begin
   end;
 end;
 
+procedure TMainForm.ReadArgs;
+var
+  i: Integer;
+  arg: String;
+begin
+  for i:= 1 to ParamCount do begin
+    arg := lowercase(ParamStr(i));
+    if (arg[1] = '+') or (arg[1] = '-') then
+    begin
+      if arg = '-dexif' then
+        FLoadDexif := false
+      else if arg = '+dexif' then
+        FLoadDexif := true;
+    end else
+      Loadfile(ParamStr(i));
+  end;
+end;
+
 procedure TMainForm.ReadFromIni;
 var
   ini: TCustomIniFile;
@@ -1942,6 +1990,11 @@ begin
     HexPanel.Width := ini.ReadInteger('MainForm', 'HexPanelWidth', HexPanel.Width);
     MainPageControl.PageIndex := ini.ReadInteger('MainForm', 'MainPageControl', 0);
     HexPageControl.PageIndex := ini.ReadInteger('MainForm', 'HexPageControl', 0);
+    dExifPageControl.PageIndex := ini.ReadInteger('MainForm', 'dExifPageControl', 0);
+
+    FLoadDExif := ini.ReadBool('Configuration', 'Load dExif', FLoadDexif);
+    AcCfguseDExif.Checked := FLoadDExif;
+//    AcCfgUseDExifExecute();
   finally
     ini.Free;
   end;
@@ -1959,6 +2012,9 @@ var
     TagID: Word;
     val: DWord;
   begin
+    if FBuffer = nil then
+      exit;
+
     if p > High(FBuffer^) then
       exit;
 
@@ -2329,6 +2385,9 @@ begin
     ini.WriteInteger('MainForm', 'HexPanelWidth', HexPanel.Width);
     ini.WriteInteger('MainForm', 'HexPageControl', HexPageControl.PageIndex);
     ini.WriteInteger('MainForm', 'MainPageControl', MainPageControl.PageIndex);
+    ini.WriteInteger('MainForm', 'dExifPageControl', dExifPageControl.PageIndex);
+
+    ini.WriteBool('Configuration', 'Load dExif', FLoadDExif);
   finally
     ini.Free;
   end;

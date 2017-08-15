@@ -9,6 +9,7 @@
       <Title Value="ExifSpy"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
     </General>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -23,16 +24,16 @@
     </RunParams>
     <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="lazmrumenu"/>
+        <PackageName Value="dexif_package"/>
       </Item1>
       <Item2>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="lazmrumenu"/>
       </Item2>
       <Item3>
-        <PackageName Value="KControlsLaz"/>
+        <PackageName Value="SynEdit"/>
       </Item3>
       <Item4>
-        <PackageName Value="dexif_package"/>
+        <PackageName Value="KControlsLaz"/>
       </Item4>
       <Item5>
         <PackageName Value="LCL"/>
@@ -57,11 +58,11 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="ExifSpy"/>
+      <Filename Value="..\bin\$(TargetCPU)-$(TargetOS)\ExifSpy"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      <UnitOutputDirectory Value="..\ppu\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
       <Debugging>
