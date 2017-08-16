@@ -5,3 +5,6 @@
 
 
 <b>ExifSpy</b> is a tool for looking into JPEG and EXIF structure. It is now a standalone programm found her now https://github.com/wp-xyz/exif_spy
+
+
+![ExifSpy](ExifSpy.JPG)
