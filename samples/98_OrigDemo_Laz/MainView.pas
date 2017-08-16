@@ -194,7 +194,7 @@ begin
     );
     if ImgData.ExifObj.Comments <> cmt then
     begin
-      ImgData.ExifObj.SetExifComment(cmt);
+      ImgData.ExifObj.ExifComment := cmt; //SetExifComment(cmt);
       Memo.Lines.Add('Comment set to: '+cmt);
       ImgData.ExifObj.Comments := cmt;
     end;
@@ -251,7 +251,7 @@ begin
     begin
       WriteToMemo(' ');
       WriteToMemo('--- Comment Segment Available ---');
-      WriteToMemo(ImgData.GetCommentStr());
+      WriteToMemo(ImgData.Comment);
     end;
 
     if ImgData.IPTCSegment <> nil then
