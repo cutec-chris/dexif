@@ -89,7 +89,8 @@ implementation
 {$ENDIF}
 
 uses
-  About; //, ShellApi;
+  About,
+  dGlobal; //, ShellApi;
 
 const
   {$IFDEF DELPHI}

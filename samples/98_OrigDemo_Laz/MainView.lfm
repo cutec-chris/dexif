@@ -13,7 +13,8 @@ object Form1: TForm1
   OnShow = FormShow
   Position = poDefaultPosOnly
   ShowHint = True
-  LCLVersion = '1.9.0.0'
+  LCLVersion = '1.8.0.4'
+  Visible = False
   object ThumbnailImage: TImage
     Left = 728
     Height = 121
@@ -164,11 +165,11 @@ object Form1: TForm1
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'
     InitialDir = '.'
-    left = 144
-    top = 16
+    Left = 144
+    Top = 16
   end
   object JpegOut: TSavePictureDialog
-    left = 256
-    top = 16
+    Left = 256
+    Top = 16
   end
 end

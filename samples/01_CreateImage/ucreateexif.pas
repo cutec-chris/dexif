@@ -14,6 +14,7 @@ type
 
   TForm1 = class(TForm)
     BuCreateImage: TButton;
+    StaticText1: TStaticText;
     procedure BuCreateImageClick(Sender: TObject);
   private
     procedure CreateEXIF(const ImgData: TImgData);
