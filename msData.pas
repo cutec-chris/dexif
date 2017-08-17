@@ -31,7 +31,9 @@ unit msData;
 interface
 
 
-uses Sysutils,math,dEXIF,dIPTC;
+uses
+  Sysutils, math,
+  dglobal, dEXIF, dIPTC;
 
 
 type
@@ -424,7 +426,7 @@ begin
   valStr := DecodeField(decodeStr, AnsiString(inttostr(item)));
   if trim(string(valStr)) <> '' then
   begin
-    curTagArray.AddMSTag(fname,valStr,FMT_STRING);
+    curTagArray.AddMSTag(fname,valStr, FMT_STRING);
     result := crlf+fname+DexifDelim+valStr;
   end
   else
@@ -437,7 +439,7 @@ begin
   valStr := StrNth(instr,DexifDecodeSep,item);
   if trim(string(valStr)) <> '' then
   begin
-    curTagArray.AddMSTag(fname,valStr,FMT_STRING);
+    curTagArray.AddMSTag(fname,valStr, FMT_STRING);
     result := crlf+fname+DexifDelim+valStr;
   end
   else

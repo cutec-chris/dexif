@@ -33,7 +33,7 @@ uses
  {$ELSE}
   fpimage, fpreadjpeg,
  {$ENDIF}
-  dIPTC;
+  dGlobal, dTags, dIPTC;
 
 Const
    DexifVersion: ansistring = '1.04';
@@ -49,8 +49,6 @@ Const
    GenList = 4;
    VLMin = 0;
    VLMax = 1;
-   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
-   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
    {$IFDEF DELPHI}
    crlf: ansistring = #13#10;
    {$ELSE}
@@ -58,6 +56,18 @@ Const
    {$ENDIF}
 
 type
+  TImgData = class;
+
+  TBasicMetadataWriter = class
+  protected
+    FImgData: TImgData;
+    FErrLog: TStrings;
+  public
+    constructor Create(AImgData: TImgData); virtual;
+    destructor Destroy; override;
+    procedure LogError(const AMsg: String);
+    procedure WriteToStream(AStream: TStream); virtual;
+  end;
 
    { tEndInd }
 
@@ -75,8 +85,6 @@ type
    private
       llData: ansistring;
    end;
-
-  TimgData = class;
 
   { TImageInfo }
 
@@ -101,7 +109,7 @@ type
     procedure SetArtist(v: String);
 
     function GetExifComment: String;
-    procedure SetExifComment(const v: String);
+    procedure SetExifComment(v: String);
 
     function GetImageDescription: String;
     procedure SetImageDescription(const v: String);
@@ -295,6 +303,8 @@ type
         function ExtractThumbnailBuffer: ansistring;
         function ExtractThumbnailJpeg(AStream: TStream): Boolean;
 
+        procedure WriteToStream(AStream: TStream);
+
         function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
           freshExifBlock: Boolean=false): longint;
         procedure MergeToStream(AInputStream, AOutputStream: TStream;
@@ -467,24 +477,6 @@ Const
    Function SSpeedCallBack(instr: ansistring): ansistring;
    Function xpTranslate(instr: ansistring):ansistring;
 
-const
-//--------------------------------------------------------------------------
-// Describes format descriptor
-   BytesPerFormat: array [0..12] of integer = (0,1,1,2,4,8,1,1,2,4,8,4,8);
-   NUM_FORMATS   = 12;
-   FMT_BYTE      =  1;
-   FMT_STRING    =  2;
-   FMT_USHORT    =  3;
-   FMT_ULONG     =  4;
-   FMT_URATIONAL =  5;
-   FMT_SBYTE     =  6;
-   FMT_UNDEFINED =  7;
-   FMT_SSHORT    =  8;
-   FMT_SLONG     =  9;
-   FMT_SRATIONAL = 10;
-   FMT_SINGLE    = 11;
-   FMT_DOUBLE    = 12;
-
 var
   ExifNonThumbnailLength : integer;
   ShowTags: integer;
@@ -496,7 +488,8 @@ var
 implementation
 
 uses
-  msData;
+  LazUTF8,
+  dExifWrite, msData;
 
 const
 // Compression Type Constants
@@ -508,46 +501,8 @@ const
 // all others are found in tag array.
 //-------------------------------------------------------
 
-   TAG_EXIF_OFFSET        = $8769;
-   TAG_GPS_OFFSET         = $8825;
-   TAG_INTEROP_OFFSET     = $A005;
-   TAG_SUBIFD_OFFSET      = $014A;
-
-   TAG_IMAGEWIDTH         = $0100;
-   TAG_IMAGELENGTH        = $0101;
-   TAG_THUMBTYPE          = $0103;
-   TAG_IMAGEDESCRIPTION   = $010E;     // msta
-   TAG_MAKE               = $010F;
-   TAG_MODEL              = $0110;
-   TAG_DATETIME_MODIFY    = $0132;
-   TAG_ARTIST             = $013B;     // msta
-
-   TAG_EXPOSURETIME       = $829A;
-   TAG_FNUMBER            = $829D;
-
-   TAG_EXIFVER            = $9000;
-   TAG_DATETIME_ORIGINAL  = $9003;
-   TAG_DATETIME_DIGITIZED = $9004;
-   TAG_SHUTTERSPEED       = $9201;
-   TAG_APERTURE           = $9202;
-   TAG_MAXAPERTUREVALUE   = $9205;
-   TAG_SUBJECT_DISTANCE   = $9206;
-   TAG_LIGHT_SOURCE       = $9208;
-   TAG_FLASH              = $9209;
-   TAG_FOCALLENGTH        = $920A;
-   TAG_MAKERNOTE          = $927C;
-   TAG_USERCOMMENT        = $9286;
-
-   TAG_EXIF_IMAGEWIDTH    = $A002;
-   TAG_EXIF_IMAGELENGTH   = $A003;
-   TAG_FOCALPLANEXRES     = $A20E;
-   TAG_FOCALPLANEYRES     = $A20F;             // added by M. Schwaiger
-   TAG_FOCALPLANEUNITS    = $A210;
-   TAG_FOCALLENGTH35MM    = $A405;             // added by M. Schwaiger
-
-
    GPSCnt = 31 - 4;
-   ExifTagCnt = 251 - 6;  // NOTE: was 250 before, but "count" is 251
+   ExifTagCnt = 251 - 5;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
 var 
@@ -747,7 +702,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9000;  Name:'ExifVersion'            ),
   (TID:0;TType:0;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
   (TID:0;TType:0;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
-//  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Callback: GenCompConfig),
+  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
   (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:@SSpeedCallBack),
   (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
@@ -994,6 +949,38 @@ begin
       result := ProcessTable[i].desc;
 end;
 
+
+
+{------------------------------------------------------------------------------}
+{                        TBasicMetaDataWriter                                  }
+{------------------------------------------------------------------------------}
+
+constructor TBasicMetadataWriter.Create(AImgData: TImgData);
+begin
+  FImgData := AImgData;
+  FErrLog := TStringList.Create;
+end;
+
+destructor TBasicMetadataWriter.Destroy;
+begin
+  FErrLog.Free;
+  inherited;
+end;
+
+procedure TBasicMetadataWriter.LogError(const AMsg: String);
+begin
+  FErrLog.Add(AMsg);
+end;
+
+procedure TBasicMetadataWriter.WriteToStream(AStream: TStream);
+begin
+  FErrLog.Clear;
+end;
+
+
+{------------------------------------------------------------------------------}
+{                            TImageInfo                                        }
+{------------------------------------------------------------------------------}
 // These destructors provided by Keith Murray
 // of byLight Technologies - Thanks!
 Destructor TImageInfo.Destroy;
@@ -1269,9 +1256,6 @@ begin
     Result := 0.0;
 end;
 
-
-
-
 function TImageInfo.GetDateTimeOriginal: TDateTime;
 begin
   if dt_orig_oset > 0 then
@@ -1281,7 +1265,18 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  if (AValue = 0) then begin
+    RemoveTag(TAG_DATETIME_ORIGINAL, p^.ID);
+    exit;
+  end;
+  p := GetTag(TAG_DATETIME_ORIGINAL, true, p^.ID, FMT_STRING);
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_orig_oset > 0 then
     SetDateTimeStr(dt_orig_oset, AValue)
   else
@@ -1297,7 +1292,18 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  if (AValue = 0) then begin
+    RemoveTag(TAG_DATETIME_DIGITIZED, p^.ID);
+    exit;
+  end;
+  p := GetTag(TAG_DATETIME_DIGITIZED, true, p^.ID, FMT_STRING);
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, AValue)
   else
@@ -1313,7 +1319,17 @@ begin
 end;
 
 procedure TImageInfo.SetDateTimeModify(const AValue: TDateTime);
+var
+  p: PTagEntry;
 begin
+  p := GetTag(TAG_DATETIME_MODIFY, true, p^.ID, FMT_STRING);
+  if AValue = 0 then begin
+    RemoveTag(TAG_DATETIME_MODIFY, p^.ID);
+    exit;
+  end;
+  p^.Raw := FormatDateTime(ExifDateFormat, AValue);
+  p^.Size := Length(p^.Raw);
+
   if dt_modify_oset > 0 then
     SetDateTimeStr(dt_modify_oset, AValue)
   else
@@ -1518,7 +1534,7 @@ var buff2,os:ansistring;
     dv:double;
 begin
   os := '';
-  vlen := BytesPerFormat[fmt];
+  vlen := BYTES_PER_FORMAT[fmt];
   if vlen = 0 then
   begin
     result := '0';
@@ -1664,7 +1680,10 @@ var
   var
     i : integer;
   begin
-    if (t.parentID <> pid) or (t.TType >= Length(BytesPerFormat)) or (BytesPerFormat[t.TType] = 0) then Result := false
+    if (t.parentID <> pid) or (t.TType >= Length(BYTES_PER_FORMAT)) or
+       (BYTES_PER_FORMAT[t.TType] = 0)
+    then
+      Result := false
     else begin
       Result := Length(whitelist) = 0;
       for i := 0 to Length(whitelist)-1 do if (whitelist[i] = t.Tag) then begin
@@ -1733,7 +1752,7 @@ begin
     end
     else begin
       PWord(@Result[1+Length(head)+2+12*n+2])^ := fiTagArray[i].TType;
-      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BytesPerFormat[fiTagArray[i].TType];
+      PCardinal(@Result[1+Length(head)+2+12*n+4])^ := Length(fiTagArray[i].Raw) div BYTES_PER_FORMAT[fiTagArray[i].TType];
     end;
     {$ifdef CreateExifBufDebug}CreateExifBufDebug := CreateExifBufDebug + '  ' + fiTagArray[i].Name;{$endif}
     if (Length(fiTagArray[i].Raw) <= 4) and (fiTagArray[i].id = 0) then begin
@@ -1760,8 +1779,8 @@ end;
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
-var
-  idCnt : Word = 0;
+//var
+//  idCnt : Word = 0;
 
 procedure  TImageInfo.ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
   tagType:integer = ExifTag; prefix:string=''; parentID: word = 0);
@@ -1776,9 +1795,8 @@ var
   tmpDateTime: string;
   tagID: word;
 begin
-  if parentID = 0 then
-    idCnt := 1;
-
+//  if parentID = 0 then
+//    idCnt := 1;
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
   if (ExifTrace > 0) then
@@ -1807,7 +1825,7 @@ begin
     Tag := Get16u(DirEntry);
     TFormat := Get16u(DirEntry+2);
     Components := Get32u(DirEntry+4);
-    ByteCount := Components * BytesPerFormat[TFormat];
+    ByteCount := Components * BYTES_PER_FORMAT[TFormat];
     if ByteCount = 0 then
       continue;
     If ByteCount > 4 then
@@ -1892,8 +1910,8 @@ begin
              // some mal-formed images have recursive references...
              // if (subDirStart <> DirStart) then
              if not testDirStack(SubDirStart,OffsetBase) then begin
-               tagID := IDCnt;
-               IDCnt := IDCnt + 1;
+               tagID := tag; //IDCnt;
+//               IDCnt := IDCnt + 1;
                ProcessExifDir(SubdirStart, OffsetBase, ExifLength, ExifTag, '', tagID);
              end;
            except
@@ -1904,8 +1922,8 @@ begin
            try
              SubdirStart := OffsetBase + LongInt(Get32u(ValuePtr));
              if not testDirStack(SubDirStart,OffsetBase) then begin
-               tagID := idCnt;
-               inc(idCnt);
+               tagID := tag; //idCnt;
+//               inc(idCnt);
                ProcessExifDir(SubdirStart, OffsetBase, ExifLength, GpsTag, '', tagID);
              end;
            except
@@ -1913,7 +1931,7 @@ begin
          end;
        TAG_MAKE: FCameraMake := fstr;
        TAG_MODEL: CameraModel := fstr;
-       TAG_EXIFVER: ExifVersion := rawstr;
+       TAG_EXIFVERSION: ExifVersion := rawstr;
        TAG_DATETIME_MODIFY:
          begin
            dt_modify_oset := ValuePtr;
@@ -2008,7 +2026,7 @@ Procedure TImageInfo.ProcessThumbnail;
 var start:integer;
 begin
   start := ThumbStart+9;
-  ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail');
+  ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail', 1);  // wp: added 1
 end;
 
 Procedure TImageInfo.removeThumbnail;
@@ -2049,7 +2067,7 @@ begin
       Tag := Get16u(DirEntry);
       TFormat := Get16u(DirEntry+2);
       Components := Get32u(DirEntry+4);
-      ByteCount := Components * BytesPerFormat[TFormat];
+      ByteCount := Components * BYTES_PER_FORMAT[TFormat];
       OffsetVal := 0;
       If ByteCount > 4 then
       begin
@@ -2343,7 +2361,7 @@ begin
     exit;
 
   result := true;   // success
-  vlen := BytesPerFormat[te.TType];
+  vlen := BYTES_PER_FORMAT[te.TType];
   if vlen = 2 then
     TagWriteThru16(te,word(value))
   else
@@ -2509,31 +2527,40 @@ var
   p : PTagEntry;
   w : WideString;
   n: Integer;
+  sa: AnsiString;
 begin
   Result := '';
   w := '';
-  p := GetTag(TAG_EXIF_OFFSET, false, 0, 4);
+  p := GetTag(TAG_EXIF_OFFSET);
   if (p = nil) then
     exit;
-  p := GetTag(TAG_USERCOMMENT, false, p^.ID, FMT_STRING);
+  p := GetTag(TAG_USERCOMMENT, false, p^.ID);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
-  if (Pos('ASCII', p^.Raw) = 1) then begin
-    SetLength(Result, Length(p^.Raw)-9);
-    Move(p^.Raw[9], Result[1], Length(p^.Raw)-9);
-  end else begin
-    SetLength(w, ((Length(p^.Raw) - 8) div 2));
-//    Move(p^.Raw[9], w[1], Length(p^.Raw)-10);
-    Move(p^.Raw[9], w[1], Length(w)*SizeOf(WideChar));
+
+  if Pos('UNICODE', p^.Raw) = 1 then begin
+    SetLength(w, (Length(p^.Raw) - 8) div SizeOf(WideChar));
+    Move(p^.Raw[9], w[1], Length(w) * SizeOf(WideChar));
     {$IF FPC_FULLVERSION < 30000}
     Result := UTF8Encode(w);
     {$ELSE}
     Result := w;
     {$ENDIF}
- end;
+  end else
+  if Pos('ASCII', p^.Raw) = 1 then begin
+    SetLength(Result, Length(p^.Raw)-9);
+    Move(p^.Raw[9], Result[1], Length(Result));
+  end else
+  if Pos(#0#0#0#0#0#0#0#0, p^.Raw) = 1 then begin
+    SetLength(sa, Length(p^.Raw) - 9);
+    Move(p^.raw[9], sa[1], Length(sa));
+    Result := WinCPToUTF8(sa);
+  end else
+  if Pos('JIS', p^.Raw) = 1 then
+    raise Exception.Create('JIS-encoded user comment is not supported.');
 end;
 
-procedure TImageInfo.SetExifComment(const v: String);
+procedure TImageInfo.SetExifComment(v: String);
 var
   p : PTagEntry;
   i : integer;
@@ -2545,7 +2572,34 @@ begin
     RemoveTag(TAG_USERCOMMENT, p^.ID);
     exit;
   end;
-  p := GetTag(TAG_USERCOMMENT, true, p^.ID, 7);
+  p := GetTag(TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
+  u := false;
+  for i:=1 to Length(v) do
+    if byte(v[i]) > 127 then begin
+      u := true;
+      break;
+    end;
+
+  if u then begin
+    p^.Raw := 'UNICODE'#0;
+    {$IF FPC_FULLVERSION < 30000}
+    w := UTF8Decode(p^.Raw);
+    {$ELSE}
+    w := v;
+    {$ENDIF}
+    SetLength(p^.Raw, Length(w) * SizeOf(WideChar) + 8);
+    Move(w[1], p^.Raw[9], Length(w) * SizeOf(WideChar));
+  end else begin
+    p^.Raw := 'ASCII'#0#0#0;
+    v := v + #0;
+    SetLength(p^.Raw, Length(v) + 8);
+    Move(v[1], p^.Raw[9], Length(v));
+  end;
+  (*
+
+
+
+
   u := false;
   w := v;
   for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin
@@ -2565,6 +2619,7 @@ begin
     end;
     p^.Raw := p^.Raw + #0;
   end;
+  *)
   p^.Size := Length(p^.Raw);
 end;
 
@@ -2601,7 +2656,6 @@ begin
  {$ELSE}
   p^.Raw := UTF8ToAnsi(v) + #0;
  {$ENDIF}
-  p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
 
@@ -2646,7 +2700,6 @@ begin
 
   WriteThruString('Make', AValue);
 end;
-
 
 function TImageInfo.IterateFoundTags(TagId: integer;
         var retVal:TTagEntry):boolean;
@@ -2736,6 +2789,7 @@ var
   tmp:integer;
   CCDWidth, CCDHeight, fpu, fl, fl35, ratio : double;
   NewE, LookUpE : TTagEntry;
+  w: Word;
 begin
   if LookUpTag('FocalLengthin35mmFilm') >= 0 then
     exit;  // no need to calculate - already have it
@@ -2777,6 +2831,7 @@ begin
     ratio :=  Diag35mm / sqrt (sqr (CCDWidth) + sqr (CCDHeight));
 
   fl35 := fl *  ratio;
+  w := Round(fl35);
 
 // now load it into the tag array
     tmp := LookupTagDefn('FocalLengthIn35mmFilm');
@@ -2786,6 +2841,9 @@ begin
     NewE := LookupE;
     NewE.Data := ansistring(Format('%5.2f',[fl35]));
     NewE.FormatS := '%s mm';
+    SetLength(NewE.Raw, 2);
+    Move(w, NewE.Raw[1], 2);
+    NewE.TType := 3;
     AddTagToArray(NewE);
     TraceStr := TraceStr+crlf+
           siif(ExifTrace > 0,'tag[$'+AnsiString(inttohex(tmp,4))+']: ','')+
@@ -3020,6 +3078,7 @@ function TImgData.SaveExif(jfs2: TStream; EnabledMeta: Byte = $FF;
 var
   cnt: Longint;
   buff: AnsiString;
+  writer: TExifWriter;
 begin
   cnt := 0;
   buff := #$FF#$D8;
@@ -3045,6 +3104,16 @@ begin
       cnt := cnt + jfs2.Write(buff[1], Length(buff));
       buff := '';
     end else
+    if HasExif then begin
+      writer := TExifWriter.Create(self);
+      try
+        writer.WriteExifHeader(jfs2);
+        writer.WriteToStream(jfs2);
+      finally
+        writer.Free;
+      end;
+    end else
+    (*
     if (ExifSegment <> nil) then
       with ExifSegment^ do
       begin
@@ -3052,6 +3121,7 @@ begin
         cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
       end
     else
+    *)
     if (HeaderSegment <> nil) then
       with HeaderSegment^ do
       begin
@@ -3083,6 +3153,10 @@ begin
     end;
 
   Result := cnt;
+end;
+
+procedure TImgData.WriteToStream(AStream: TStream);
+begin
 end;
 
 function TImgData.ExtractThumbnailBuffer:ansistring;

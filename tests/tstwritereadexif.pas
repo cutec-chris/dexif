@@ -3,7 +3,6 @@ unit tstwritereadexif;
 {$mode objfpc}{$H+}
 
 {$DEFINE ERASE_TESTIMAGE}
-
 interface
 
 uses
@@ -48,7 +47,7 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math;
+  FileUtil, DateUtils, Math, dGlobal;
 
 type
   TWriteReadParamKind = (tkString, tkInteger, tkFloat);
@@ -63,6 +62,8 @@ type
 const
   // !!! INCREMENT WHEN ADDING TESTS !!!
   TestCount = 11;
+
+{$WARN 3177 off : Some fields coming after "$1" were not initialized}
 
   // !!! ADD NEW TESTS HERE !!!
   TestParams: Array[0..TestCount-1] of TWriteReadParam = (
@@ -155,9 +156,9 @@ var
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
-      6: DUT.ExifObj.ImageDescription := strValue;
+      6: DUT.ExifObj.ExifComment := strValue;
       7: DUT.ExifObj.ExifComment := strValue;
-      8: DUT.ExifObj.ExifComment := strValue;
+      8: DUT.ExifObj.ImageDescription := strValue;
       9: DUT.ExifObj.CameraMake := strValue;
     10: DUT.ExifObj.CameraMake := strValue;
     end;
@@ -170,7 +171,6 @@ begin
   srcDUT := TImgData.Create;
   try
     srcDUT.ProcessFile(FSourceFileName);
-
     // -------------------------------------------------------------------------
     // First test
     // -------------------------------------------------------------------------

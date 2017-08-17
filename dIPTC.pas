@@ -17,45 +17,24 @@ unit dIPTC;
 // This code is designed to be easily extended.  For each new field
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
-
+{$WARN 3177 off : Some fields coming after "$1" were not initialized}
 interface
 
 uses
-  classes, sysutils
+  classes, sysutils,
  {$IFDEF DELPHI}
-  {$IFNDEF dExifNoJpeg}, jpeg {$ENDIF}
+  {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
  {$ENDIF}
  {$IFDEF WINDOWS}
-  , windows
+  windows,
  {$ENDIF}
-  ;
+  dglobal;
 
 const
   dIPTCVersion: ansistring = '1.04';
   TagArrayGrowth = 25;
 
 type
-  StrFunct = function (instr:ansistring):ansistring;
-
-  TTagEntry = record
-    TID: integer;        // TagTableID - EXIF use
-    TType: word;         // tag type
-    ICode: Word;         // iptc code
-    Tag: word;           // primary key
-    Name:ansistring;        // searchable
-    Desc:ansistring;        // translatable
-    Code:ansistring;        // decode capability
-    Data:ansistring;        // display value
-    Raw:ansistring;         // unprocessed value
-    PRaw: integer;       // pointer to unprocessed
-    FormatS:ansistring;      // Format string
-    Size: integer;       // used by ITPC module
-    CallBack: StrFunct;  // formatting string
-    id : word;           // msta - used for exif-parent-child-structure
-    parentID : word;     // msta - used for exif-parent-child-structure
-  end;
-  PTagEntry = ^TTagEntry; // msta
-
   TTagDefArray = array of TTagEntry;
 
   {
