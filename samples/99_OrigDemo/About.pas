@@ -9,13 +9,20 @@
 //--------------------------------------------------------------------------
 unit About;
 
-{$MODE Delphi}
+{$IFDEF FPC}
+ {$MODE Delphi}
+{$ENDIF}
 
 interface
 
 uses
-  LCLIntf, LCLType, LMessages, SysUtils, Classes, Graphics, Forms, Controls,
-  StdCtrls, Buttons, ExtCtrls;
+ {$IFDEF FPC}
+  LCLIntf, LCLType, LMessages,
+ {$ELSE}
+  Windows, ShellAPI,
+ {$ENDIF}
+  SysUtils, Classes, Graphics, Forms, Controls, StdCtrls,
+  Buttons, ExtCtrls;
 
 type
   TAboutBox = class(TForm)
@@ -45,33 +52,39 @@ implementation
 
 uses dEXIF;
 
-{$IFDEF DELPHI}
+{$IFDEF FPC}
+ {$R *.lfm}
+{$ELSE}
  {$R *.dfm}
 {$ENDIF}
-{$IFDEF LCL}
- {$R *.lfm}
-{$ENDIF}
-
 
   ////////////////////
   //
   //   A couple of utility functions that are handy
   //   in an About box module...
   //
-  Procedure SendEMail(instr: string );
+  Procedure SendEMail(instr: string);
   var loc:string;
   begin
-    loc := 'mailto:'+trim(instr);
-    if loc <> 'mailto:' then
-       OpenDocument(pchar(loc))
+    if instr <> '' then begin
+      loc := 'mailto:' + trim(instr);
+      {$IFDEF FPC}
+      OpenDocument(loc)
+      {$ELSE}
+      ShellExecute(0, 'open', pChar(loc), '', '', sw_ShowNormal);
+      {$ENDIF}
+    end;
   end;
 
-  Procedure BrowseURL( instr:string );
+  Procedure BrowseURL(instr: string);
   begin
     if trim(instr) <> '' then
-       OpenDocument(pchar(instr))
+      {$IFDEF FPC}
+      OpenDocument(instr)
+      {$ELSE}
+      ShellExecute(0, 'open', pChar(instr), '', '', sw_ShowNormal)
+      {$ENDIF}
   end;
-
 
 procedure TAboutBox.FormSetup(pName,pVersion:string);
 begin

@@ -30,19 +30,13 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="4">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="LCLBase"/>
+        <PackageName Value="dexif_package"/>
       </Item1>
       <Item2>
         <PackageName Value="LCL"/>
       </Item2>
-      <Item3>
-        <PackageName Value="LazUtils"/>
-      </Item3>
-      <Item4>
-        <PackageName Value="dexif_package"/>
-      </Item4>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
@@ -59,9 +53,7 @@
       <Unit2>
         <Filename Value="About.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="AboutBox"/>
         <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit2>
     </Units>
   </ProjectOptions>

@@ -39,7 +39,7 @@ uses
 
 procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
-  CheckTrue(FileExists(co_DUTPicName01));
+  CheckTrue(FileExists(co_DUTPicName01), 'Test picture file does not exit');
 end;
 
 procedure TTsTBasic_dEXIF.TstImgDataCreate;

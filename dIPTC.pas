@@ -17,15 +17,21 @@ unit dIPTC;
 // This code is designed to be easily extended.  For each new field
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
-{$WARN 3177 off : Some fields coming after "$1" were not initialized}
+
+{$I dExif.inc}
+
+{$IFDEF FPC}
+ {$WARN 3177 off : Some fields coming after "$1" were not initialized}
+{$ENDIF}
+
 interface
 
 uses
   classes, sysutils,
- {$IFDEF DELPHI}
+ {$IFNDEF FPC}
   {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
  {$ENDIF}
- {$IFDEF WINDOWS}
+ {$IFDEF MSWINDOWS}
   windows,
  {$ENDIF}
   dglobal;
@@ -95,7 +101,7 @@ type
     procedure SetDateTime(TimeIn: TDateTime);
     procedure SetDateTimeExt(TimeIn: TDateTime; prefix:ansistring);
     function GetMultiPartTag(tagName:ansistring):tstringlist;
-   {$IFDEF DELPHI}
+   {$IFNDEF FPC}
     {$IFNDEF dExifNoJpeg}
     procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
     procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
@@ -596,7 +602,7 @@ begin
   result := ParseIPTCStrings(timgdata(parent).IPTCSegment^.Data);
 end;
 
-{$IFDEF DELPHI}
+{$IFNDEF FPC}
 {$IFNDEF dExifNoJpeg}
 procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
 var tmp:ansistring;

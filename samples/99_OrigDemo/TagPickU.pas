@@ -3,9 +3,13 @@ unit TagPickU;
 interface
 
 uses
- {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Messages, SysUtils, Classes, Graphics, Forms, Dialogs, Controls, StdCtrls,
-  Buttons,dEXIF;
+ {$IFDEF FPC}
+  LCLIntf, LCLType, LMessages,
+ {$ELSE}
+  Windows, Messages,
+ {$ENDIF}
+  SysUtils, Classes, Graphics, Forms, Dialogs, Controls, StdCtrls, Buttons,
+  dEXIF;
 
 type
   TTagPickDlg = class(TForm)
@@ -43,14 +47,17 @@ var
 
 implementation
 
-{$IFDEF DELPHI}
- {$R *.dfm}
-{$ENDIF}
-{$IFDEF LCL}
+{$IFDEF FPC}
  {$R *.lfm}
+{$ELSE}
+ {$R *.DFM}
 {$ENDIF}
 
-uses dIPTC,ViewIPTC;
+uses
+  dIPTC, ViewIPTC;
+
+const
+  LB_ERR = -1;
 
 procedure TTagPickDlg.IncludeBtnClick(Sender: TObject);
 var

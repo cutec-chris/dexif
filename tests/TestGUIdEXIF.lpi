@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="9"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -36,7 +36,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="11">
+    <Units Count="13">
       <Unit0>
         <Filename Value="TestGUIdEXIF.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -49,6 +49,7 @@
       <Unit2>
         <Filename Value="tstreadexif.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="tstreadexif"/>
       </Unit2>
       <Unit3>
         <Filename Value="tstselfimage.pas"/>
@@ -61,27 +62,42 @@
       <Unit5>
         <Filename Value="..\dEXIF.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dEXIF"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\dIPTC.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dIPTC"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\msData.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="msData"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\dexifwrite.pas"/>
+        <Filename Value="..\dExifWrite.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dexifwrite"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\dglobal.pas"/>
+        <Filename Value="..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dGlobal"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\dtags.pas"/>
+        <Filename Value="..\dTags.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dTags"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="..\dExif.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\dUtils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dUtils"/>
+      </Unit12>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -95,6 +111,14 @@
       <OtherUnitFiles Value=".."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Linking>
+      <Debugging>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="5">

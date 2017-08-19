@@ -16,31 +16,31 @@
 
 unit ViewIPTC;
 
-{$MODE Delphi}
+{$IFDEF FPC}
+ {$MODE Delphi}
+ {$DEFINE dExifNoJpeg}
+{$ENDIF}
 
 interface
 
 uses
- {$IFNDEF DELPHI}
-  LCLIntf, LCLType, LMessages,
+ {$IFDEF FPC}
+  {$IFDEF MSWINDOWS} Windows, Messages,
+  {$ELSE}
+   LCLIntf, LCLType, LCLProc, LMessages,
+  {$ENDIF}
+ {$ELSE}
+  Windows, Messages,
  {$ENDIF}
- {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   ExtCtrls, StdCtrls, ExtDlgs, ComCtrls, dEXIF, dIPTC, About, Grids;
 
 const
-  {$IFDEF DELPHI}
-  crlf = #13#10;
-  {$ELSE}
-  crlf = LineEnding;
-  {$ENDIF}
-  ProgName = 'IPTCView';
-  SC_TransMenuItem = WM_USER + 1;
+     crlf = #13#10;
+     ProgName = 'IPTCView';
+     SC_TransMenuItem = WM_USER + 1;
 
  type
-
-  { TIPTCform }
-
   TIPTCform = class(TForm)
     StatusBar1: TStatusBar;
     pdlg: TOpenPictureDialog;
@@ -65,7 +65,6 @@ const
     procedure btnWriteClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure btnSetDTClick(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
   private
     procedure Memo(s: string);
     procedure AddControlSet(idx:integer; vName,vValue:string;
@@ -88,11 +87,10 @@ implementation
 
 uses TagPickU;
 
-{$IFDEF DELPHI}
- {$R *.dfm}
-{$ENDIF}
-{$IFDEF LCL}
+{$IFDEF FPC}
  {$R *.lfm}
+{$ELSE}
+ {$R *.dfm}
 {$ENDIF}
 
 procedure TIPTCform.Memo(s:string);
@@ -110,11 +108,14 @@ procedure TIPTCform.FormCreate(Sender: TObject);
 var SysMenu : HMenu;
 begin
    ImgData := TimgData.Create;
+
    // Fun with Translations...
+   {$IFDEF MSWINDOWS}
    SysMenu := GetSystemMenu(Handle, FALSE);
    AppendMenu(SysMenu, MF_SEPARATOR, 0, '');
    AppendMenu(SysMenu, MF_STRING, SC_TransMenuItem, 'Write Translation file');
    IPTCReadTransFile('transIn.Txt');
+   {$ENDIF}
 
    verbose := false;
    Constraints.MinWidth := width;               // no smaller than
@@ -126,15 +127,9 @@ begin
    ScrollBox1.DoubleBuffered := true;
 end;
 
-procedure TIPTCform.FormDestroy(Sender: TObject);
-begin
-  FreeAndNil(ImgData);
-end;
-
 procedure TIPTCform.CleanScrollBox;
-var
-  i: integer;
-  tc: TControl;
+var i:integer;
+    tc:tControl;
 begin
   Memo1.Clear;
   for i := ScrollBox1.ControlCount-1 downto 0 do  // Wipe all controls from
@@ -147,9 +142,8 @@ end;
 
 procedure TIPTCform.AddControlSet(idx:integer; vName,vValue:string;
   MaxChars:integer);
-var
-  newLabel: TLabel;
-  newEdit: TEdit;
+var newLabel:TLabel;
+    newEdit:TEdit;
 begin
   newLabel := TLabel.Create(ScrollBox1);  // create new label
   newEdit := TEdit.Create(ScrollBox1);    // create new edit box
@@ -179,11 +173,10 @@ begin
 end;
 
 procedure TIPTCform.LoadDisplayFromArray;  // populate form
-var
-  maxChars: integer;
-  name, value:string;
-  i: integer;
-  tdTmp: TDateTime;
+var maxChars:integer;
+    name,value:string;
+    i:integer;
+    tdTmp:TDateTime;
 begin
  {$IFDEF DELPHI}
   scrollbox1.DisableAutoRange;    // Suspend repainting
@@ -213,9 +206,8 @@ begin
 end;
 
 procedure TIPTCform.CopyDisplayToArray;
-var
-  tc: TEdit;
-  i,insrt: integer;
+var tc:tEdit;
+    i,insrt:integer;
 begin
   for i := 0 to scrollbox1.ControlCount-1 do
      if scrollbox1.Controls[i] is TEdit then
@@ -252,7 +244,7 @@ end;
 
 procedure TIPTCform.Button1Click(Sender: TObject);
 begin
-  Close;
+  close;
 end;
 
 procedure TIPTCform.btnTagsClick(Sender: TObject);
@@ -266,18 +258,18 @@ end;
 
 procedure TIPTCform.btnWriteClick(Sender: TObject);
 begin
-  if not WriteDlg.Execute then
+ {$IFNDEF dExifNoJpeg}
+  if not WriteDlg.execute then
     exit;
   CopyDisplayToArray();              // Save form values
-
-  ShowMessage('To do: Implement saving IPTC to file');
-
-  //ImgData.IptcObj.WriteFile(WriteDlg.FileName,pdlg.FileName);   // Write to jpeg file
+  ImgData.IptcObj.WriteFile(WriteDlg.FileName,pdlg.FileName);   // Write to jpeg file
+ {$ELSE}
+  ShowMessage('This function is not implemented.');
+ {$ENDIF}
 end;
 
 procedure TIPTCform.Button2Click(Sender: TObject);
-var
-  xml: TStringList;
+var xml:tstringlist;
 begin
   xml := ImgData.MetaDataToXML;
   if xml = nil then
@@ -289,20 +281,17 @@ end;
 
 procedure TIPTCform.WMSysCommand(var Msg:TWMSysCommand);
 begin
-  if Msg.CmdType = SC_TransMenuItem then
-  begin
-    IPTCWriteTransFile('TransOut.txt');
-    MessageBeep(0);
-  end
-  else
-    inherited;
+ if Msg.CmdType = SC_TransMenuItem then
+ begin
+   IPTCWriteTransFile('TransOut.txt');
+   MessageBeep(0);
+ end
+ else
+   inherited;
 end;
 
 procedure TIPTCform.btnSetDTClick(Sender: TObject);
 begin
-  if ImgData.IptcObj = nil then
-    exit;
-
   // current valid date/time tag prefixes are:
   //  Release, Expire, and Digitize
   ImgData.IptcObj.SetDateTimeExt(now,'Release');

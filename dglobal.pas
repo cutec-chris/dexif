@@ -1,6 +1,8 @@
 unit dGlobal;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
@@ -9,6 +11,11 @@ uses
 
 
 type
+{$IFNDEF FPC}
+  DWord = Cardinal;
+  PDWord = ^DWord;
+{$ENDIF}
+
   TTagID = word;
 
   TStrFunc = function(s: AnsiString): AnsiString;
@@ -31,6 +38,8 @@ type
     parentID : word;     // msta - used for exif-parent-child-structure
   end;
   PTagEntry = ^TTagEntry; // msta
+
+  TTagArray = array of TTagEntry;
 
   TTiffHeader = packed record
     BOM: Array[0..1] of AnsiChar;   // 'II' for little endian, 'MM' for big endian

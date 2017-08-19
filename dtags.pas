@@ -1,6 +1,8 @@
 unit dTags;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
@@ -78,7 +80,10 @@ var
   i: Integer;
 begin
   for i:=0 to High(SubIFDTags) do
-    if SubIFDTags[i] = ATagID then exit(true);
+    if SubIFDTags[i] = ATagID then begin
+      Result := true;
+      exit;
+    end;
   Result := false;
 end;
 

@@ -24,9 +24,8 @@ unit msData;
 //      www.butaman.ne.jp/~tsuruzoh/Computer/Digicams/exif-e.html
 //
 //--------------------------------------------------------------------------
-{$IFDEF FPC}
-  {$mode DELPHI}
-{$ENDIF}
+
+{$I dExif.inc}
 
 interface
 
@@ -94,12 +93,12 @@ const
       (TID:0;TType:0;ICode: 2;Tag: $80;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
       (TID:0;TType:0;ICode: 2;Tag: $81;    Name:'ImageAdjustment';     Desc:'Image Adjustment'),
       (TID:0;TType:0;ICode: 2;Tag: $82;    Name:'Adapter';             Desc:'Adapter'),
-      (TID:0;TType:0;ICode: 2;Tag: $84;    Name:'LensInformation';     Desc:'Lens information'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@NikonLens),
+      (TID:0;TType:0;ICode: 2;Tag: $84;    Name:'LensInformation';     Desc:'Lens information'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:NikonLens),
       (TID:0;TType:0;ICode: 2;Tag: $85;    Name:'ManualFocusDistance'; Desc:'Manual Focus Distance'),
       (TID:0;TType:0;ICode: 2;Tag: $86;    Name:'DigitalZoom';         Desc:'Digital Zoom'),
       (TID:0;TType:0;ICode: 2;Tag: $88;    Name:'FocusArea';           Desc:'Focus Area'),
       (TID:0;TType:0;ICode: 2;Tag: $89;    Name:'Mode';                Desc:'Mode'),
-      (TID:0;TType:0;ICode: 2;Tag: $8D;    Name:'ColorMode';           Desc:'Color Mode'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@NikonColorMode),
+      (TID:0;TType:0;ICode: 2;Tag: $8D;    Name:'ColorMode';           Desc:'Color Mode'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:NikonColorMode),
       (TID:0;TType:0;ICode: 2;Tag: $8F;    Name:'SceneMode';           Desc:'Scene Mode'),
       (TID:0;TType:0;ICode: 2;Tag: $92;    Name:'HueAdjustment';       Desc:'Hue Adjustment'), // ??
       (TID:0;TType:0;ICode: 2;Tag: $94;    Name:'Saturation';          Desc:'Saturation'),
@@ -266,10 +265,10 @@ const
 
      Canon1Table : array [0..15] of TTagEntry =
      ((TID:0;TType:0;ICode: 2;Tag: $00;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $01;    Name:'ExposureInfo1';    Desc:'ExposureInfo1'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonExp1),
+      (TID:0;TType:0;ICode: 2;Tag: $01;    Name:'ExposureInfo1';    Desc:'ExposureInfo1'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:CanonExp1),
       (TID:0;TType:0;ICode: 2;Tag: $02;    Name:'Skip';   Desc:'Skip'),
       (TID:0;TType:0;ICode: 2;Tag: $03;    Name:'Skip';   Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $04;    Name:'ExposureInfo2';    Desc:'ExposureInfo2'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonExp2),
+      (TID:0;TType:0;ICode: 2;Tag: $04;    Name:'ExposureInfo2';    Desc:'ExposureInfo2'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:CanonExp2),
       (TID:0;TType:0;ICode: 2;Tag: $06;    Name:'ImageType';        Desc:'ImageType'),
       (TID:0;TType:0;ICode: 2;Tag: $07;    Name:'FirmwareVersion';  Desc:'FirmwareVersion'),
       (TID:0;TType:0;ICode: 2;Tag: $08;    Name:'ImageNumber';      Desc:'ImageNumber'),
@@ -279,7 +278,7 @@ const
       (TID:0;TType:0;ICode: 2;Tag: $0C;    Name:'CameraSerialNumber';  Desc:'CameraSerialNumber'),
       (TID:0;TType:0;ICode: 2;Tag: $0D;    Name:'Skip';  Desc:'Skip'),
       (TID:0;TType:0;ICode: 2;Tag: $0E;    Name:'Skip';  Desc:'Skip'),
-      (TID:0;TType:0;ICode: 2;Tag: $0F;    Name:'CustomFunctions';  Desc:'CustomFunctions'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:@CanonCustom1),
+      (TID:0;TType:0;ICode: 2;Tag: $0F;    Name:'CustomFunctions';  Desc:'CustomFunctions'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:0;CallBack:CanonCustom1),
       (TID:0;TType:0;ICode: 2;Tag: $10;    Name:'Skip';   Desc:'Skip'));
 
      Epson1Table : array [0..11] of TTagEntry =           //For Epson pc850Z     Lucas P.

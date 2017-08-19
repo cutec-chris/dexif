@@ -6,17 +6,17 @@
 
 unit dexifwrite;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+ {$mode Delphi}
+{$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, fgl,
-  dglobal, dEXIF;
+  Classes, SysUtils,
+  dGlobal, dUtils, dEXIF;
 
 type
-  TInt64List = specialize TFPGList<int64>;
-
   TExifWriter = class(TBasicMetadataWriter)
   private
     FBigEndian: Boolean;
@@ -47,6 +47,7 @@ type
   end;
 
   EExifWriter = class(Exception);
+
 
 implementation
 
@@ -105,6 +106,7 @@ procedure TExifWriter.UpdateSegmentSize(AStream: TStream);
 var
   startPos: Int64;
   segmentSize: Word;
+  w: Word;
 begin
   // If the exif structure is part of a jpeg file then WriteExifHeader has
   // been called which determines the position where the Exif header starts.
@@ -120,7 +122,8 @@ begin
   AStream.Position := startPos;
 
   // ... and write the segment size.
-  AStream.WriteWord(BEToN(segmentSize));
+  w := BEToN(segmentSize);
+  AStream.WriteBuffer(w, SizeOf(w));
 
   // Rewind stream to the end
   AStream.Seek(0, soFromEnd);
@@ -153,26 +156,31 @@ procedure TExifWriter.WriteIFD(AStream: TStream; ASubIFDList: TInt64List;
 var
   valueStream: TMemoryStream;
   i: Integer;
-  tag: TTagEntry;
   offs: DWord;
   count: Integer;
   dataStartOffset: Int64;
   startPos: Int64;
   sizeOfTagPart: DWord;
   offsetToIFD1: Int64;
-
-  tagArray: array of TTagEntry;
+  w: Word;
+  dw: DWord;
+  tag: TTagEntry;
+  tagArray: TTagArray; //Array of TTagEntry;
+  //tag, firstTag: PTagEntry;
   tagCount: Integer;
 begin
   if ADirectoryID = 1 then
   begin   // Thumbnail tags (IFD1)
-    tagArray := FImgdata.ExifObj.FIThumbArray;
+    tagArray := TTagArray(FImgdata.ExifObj.FIThumbArray);
+    //tag := @FImgData.ExifObj.FIThumbArray[0];
     tagCount := FImgData.ExifObj.FiThumbCount;
   end else
   begin   // IFD0 and its subIFDs
-    tagArray := FImgData.ExifObj.FITagArray;
+    tagArray := TTagArray(FImgData.ExifObj.FITagArray);
+    //tag := @FImgData.ExifObj.FITagArray[0];
     tagCount := FImgData.ExifObj.FITagCount;
   end;
+  //firstTag := tag;
 
   valueStream := TMemoryStream.Create;
   try
@@ -186,6 +194,7 @@ begin
         then
           inc(count);
       end;
+      //inc(tag);
     end;
 
     // No records in this directory? Nothing to do...
@@ -200,12 +209,14 @@ begin
     sizeOfTagPart := SizeOf(Word) +  // count of tags in IFD, as 16-bit integer
       count * SizeOf(TIFDRecord) +   // each tag occupies a TIFDRecord
       SizeOf(DWord);                 // offset to next IFD, as 32-bit integer.
-    dataStartOffset := startPos + sizeOfTagPart - FTiffHeaderPosition; // + 4;
+    dataStartOffset := startPos + sizeOfTagPart - FTiffHeaderPosition;
 
     // Write record count as 16-bit integer
-    AStream.WriteWord(FixEndian16(count));
+    w := FixEndian16(count);
+    AStream.WriteBuffer(w, SizeOf(w));
 
     // Now write all the records in this directory
+   // tag := firstTag;
     for i:=0 to tagCount-1 do begin
       tag := tagArray[i];
       if AHardwareSpecific and (tag.TID <> 1) then continue;
@@ -223,6 +234,7 @@ begin
         // Now write the tag
         WriteTag(AStream, valueStream, datastartOffset, tag);
       end;
+      //inc(tag);
     end;
 
     // The last entry of the directory is the offset to the next IFD, or 0
@@ -233,7 +245,8 @@ begin
       offs := CalcOffsetFromTiffHeader(offsetToIFD1);
     end else
       offs := 0;
-    AStream.WriteDWord(FixEndian32(offs));
+    dw := FixEndian32(offs);
+    AStream.WriteBuffer(dw, SizeOf(dw));
 
     // Copy the value stream to the end of the tag stream (AStream)
     valueStream.Seek(0, soFromBeginning);
@@ -260,7 +273,7 @@ var
   tagPos: Int64;
   i: Integer;
   id: TTagID;
-  rec: TIFDRecord = (TagID:0; DataType:0; DataCount:0; DataValue:0);
+  rec: TIFDRecord;
   offs: DWord;
 begin
   i := 0;
@@ -318,7 +331,7 @@ procedure TExifWriter.WriteTag(AStream, AValueStream: TStream;
 var
   rec: TIFDRecord;
   rat: TExifRational;
-  s: rawbytestring;
+  s: ansistring;
   n: DWord;
 begin
   rec.TagID := FixEndian16(ATag.Tag);
@@ -399,9 +412,9 @@ var
   header: TTiffHeader;
 begin
   if FBigEndian then
-    header.BOM := BIG_ENDIAN_BOM
+    Move(BIG_ENDIAN_BOM[0], header.BOM[0], 2)
   else
-    header.BOM := LITTLE_ENDIAN_BOM;
+    Move(LITTLE_ENDIAN_BOM[0], header.BOM[0], 2);
   header.Signature := 42;  // magic number
   header.IFDOffset := 0;   // we'll write IDF0 immediately afterwards
   header.IFDOffset := FixEndian32(8);

@@ -1,32 +1,34 @@
 object AboutBox: TAboutBox
   Left = 365
-  Height = 213
   Top = 189
-  Width = 315
   BorderStyle = bsDialog
   Caption = 'About'
   ClientHeight = 213
-  ClientWidth = 315
+  ClientWidth = 298
   Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  OldCreateOrder = True
   Position = poScreenCenter
-  LCLVersion = '1.9.0.0'
+  PixelsPerInch = 96
+  TextHeight = 13
   object Panel1: TPanel
     Left = 8
-    Height = 161
     Top = 8
-    Width = 298
-    Anchors = [akTop, akLeft, akRight]
+    Width = 281
+    Height = 161
     BevelInner = bvRaised
     BevelOuter = bvLowered
-    ClientHeight = 161
-    ClientWidth = 298
+    ParentColor = True
     TabOrder = 0
     object ProgramIcon: TImage
-      Left = 2
-      Height = 57
-      Top = 2
+      Left = 8
+      Top = 8
       Width = 65
+      Height = 57
       Picture.Data = {
         07544269746D617076020000424D760200000000000076000000280000002000
         0000200000000100040000000000000200000000000000000000100000000000
@@ -48,79 +50,83 @@ object AboutBox: TAboutBox
         EEE00EEEEE8EEEEEEEEEEEE999EEEEEEEEE00EEEEE8EEEEEEEEEEEEE99EEEEEE
         EEE00EEEEE8EEEEEEEEEEEEE9EEEEEEEEEE00EEEEE8EEEEEEEEEEEEEEEEEEEEE
         EEE00EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE00000000000000000000000000000
-        0000
-      }
+        0000}
       Stretch = True
+      IsControl = True
     end
     object ProductName: TLabel
-      Left = 82
-      Height = 16
-      Top = 10
+      Left = 88
+      Top = 16
       Width = 92
+      Height = 16
       Caption = 'Product Name: '
+      Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlack
       Font.Height = -13
       Font.Name = 'MS Sans Serif'
-      ParentColor = False
+      Font.Style = []
       ParentFont = False
+      IsControl = True
     end
     object Version: TLabel
-      Left = 82
-      Height = 15
-      Top = 34
-      Width = 44
+      Left = 88
+      Top = 40
+      Width = 41
+      Height = 13
       Caption = 'Version: '
-      ParentColor = False
+      IsControl = True
     end
     object Copyright: TLabel
-      Left = 11
-      Height = 15
-      Top = 74
-      Width = 273
+      Left = 8
+      Top = 80
+      Width = 247
+      Height = 13
       Caption = 'Copyright: 2002 Gerry McGuire - All Rights Reserved'
-      ParentColor = False
+      IsControl = True
     end
     object Label1: TLabel
-      Left = 11
-      Height = 15
-      Top = 98
-      Width = 56
-      Caption = 'Web Page:'
-      ParentColor = False
+      Left = 8
+      Top = 104
+      Width = 57
+      Height = 13
+      Caption = 'Web Page: '
     end
     object Label2: TLabel
-      Left = 30
-      Height = 15
-      Top = 122
-      Width = 37
+      Left = 24
+      Top = 128
+      Width = 32
+      Height = 13
       Caption = 'E-Mail:'
-      ParentColor = False
     end
     object Label3: TLabel
-      Left = 82
-      Height = 15
+      Left = 88
+      Top = 104
+      Width = 154
+      Height = 16
       Hint = 'Click Here'
-      Top = 98
-      Width = 138
       Caption = 'mcguirez.homestead.com'
+      Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
+      Font.Height = -13
+      Font.Name = 'MS Sans Serif'
       Font.Style = [fsUnderline]
-      ParentColor = False
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
       OnClick = Label3Click
     end
     object Label4: TLabel
-      Left = 82
-      Height = 15
+      Left = 96
+      Top = 128
+      Width = 140
+      Height = 16
       Hint = 'Click Here'
-      Top = 122
-      Width = 128
       Caption = 'mcguirez@hotmail.com'
+      Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
+      Font.Height = -13
+      Font.Name = 'MS Sans Serif'
       Font.Style = [fsUnderline]
-      ParentColor = False
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
@@ -129,9 +135,9 @@ object AboutBox: TAboutBox
   end
   object OKButton: TButton
     Left = 119
-    Height = 25
     Top = 180
     Width = 75
+    Height = 25
     Caption = 'OK'
     Default = True
     ModalResult = 1
