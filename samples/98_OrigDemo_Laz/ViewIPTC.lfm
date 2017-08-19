@@ -1,0 +1,156 @@
+object IPTCform: TIPTCform
+  Left = 122
+  Height = 391
+  Top = 231
+  Width = 388
+  Caption = 'IPTCform'
+  ClientHeight = 391
+  ClientWidth = 388
+  Color = clBtnFace
+  Font.Color = clWindowText
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  Position = poDefaultPosOnly
+  LCLVersion = '1.9.0.0'
+  object Splitter1: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 3
+    Top = 135
+    Width = 388
+    Align = alTop
+    ResizeAnchor = akTop
+  end
+  object ScrollBox1: TScrollBox
+    Left = 0
+    Height = 230
+    Top = 138
+    Width = 388
+    HorzScrollBar.Page = 1
+    VertScrollBar.Page = 1
+    VertScrollBar.Tracking = True
+    Align = alClient
+    TabOrder = 2
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 368
+    Width = 388
+    Panels = <>
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 135
+    Top = 0
+    Width = 388
+    Align = alTop
+    ClientHeight = 135
+    ClientWidth = 388
+    Font.Color = clWindowText
+    ParentFont = False
+    TabOrder = 0
+    object lblDateTime: TLabel
+      Left = 108
+      Height = 1
+      Top = 8
+      Width = 18
+      Anchors = [akTop, akLeft, akRight]
+      Font.Color = clBlue
+      Font.Height = -13
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsItalic]
+      ParentColor = False
+      ParentFont = False
+    end
+    object Memo1: TMemo
+      Left = 108
+      Height = 87
+      Top = 36
+      Width = 260
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Color = clBtnFace
+      ReadOnly = True
+      ScrollBars = ssVertical
+      TabOrder = 0
+      WantReturns = False
+    end
+    object btnAbout: TButton
+      Left = 54
+      Height = 25
+      Top = 95
+      Width = 41
+      Caption = 'About'
+      OnClick = btnAboutClick
+      TabOrder = 1
+    end
+    object btnLoad: TButton
+      Left = 6
+      Height = 25
+      Top = 2
+      Width = 89
+      Caption = 'Read IPTC File'
+      Default = True
+      OnClick = btnLoadClick
+      TabOrder = 2
+    end
+    object Button1: TButton
+      Left = 6
+      Height = 25
+      Top = 95
+      Width = 41
+      Cancel = True
+      Caption = 'Close'
+      ModalResult = 2
+      OnClick = Button1Click
+      TabOrder = 3
+    end
+    object btnTags: TButton
+      Left = 6
+      Height = 25
+      Top = 63
+      Width = 41
+      Caption = 'Tags'
+      OnClick = btnTagsClick
+      TabOrder = 4
+    end
+    object btnWrite: TButton
+      Left = 6
+      Height = 25
+      Top = 32
+      Width = 89
+      Caption = 'Write...'
+      Enabled = False
+      OnClick = btnWriteClick
+      TabOrder = 5
+    end
+    object Button2: TButton
+      Left = 54
+      Height = 25
+      Top = 63
+      Width = 41
+      Caption = 'XML'
+      OnClick = Button2Click
+      TabOrder = 6
+    end
+    object btnSetDT: TButton
+      Left = 292
+      Height = 25
+      Top = 4
+      Width = 75
+      Anchors = [akTop, akRight]
+      Caption = 'Release'
+      OnClick = btnSetDTClick
+      TabOrder = 7
+    end
+  end
+  object pdlg: TOpenPictureDialog
+    InitialDir = '.'
+    left = 176
+    top = 8
+  end
+  object WriteDlg: TSavePictureDialog
+    left = 256
+    top = 8
+  end
+end

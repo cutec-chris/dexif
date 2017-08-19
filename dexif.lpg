@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectGroup FileVersion="1">
+    <Targets Count="5">
+      <Target0 FileName="tests\TestGUIdEXIF.lpi">
+        <BuildModes Count="1"/>
+        <Mode1 Name="Default"/>
+      </Target0>
+      <Target1 FileName="dexif_package.lpk"/>
+      <Target2 FileName="samples\00_Basic\BaseSample.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target2>
+      <Target3 FileName="samples\98_OrigDemo_Laz\DExView.lpi">
+        <BuildModes Count="1"/>
+        <Mode1 Name="Default"/>
+      </Target3>
+      <Target4 FileName="samples\98_OrigDemo_Laz\IPTCView.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target4>
+    </Targets>
+  </ProjectGroup>
+</CONFIG>

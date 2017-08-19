@@ -1,0 +1,36 @@
+object Form1: TForm1
+  Left = 0
+  Height = 417
+  Top = 0
+  Width = 545
+  ActiveControl = BuCreateImage
+  Caption = 'Form1'
+  ClientHeight = 417
+  ClientWidth = 545
+  Visible = False
+  object BuCreateImage: TButton
+    Left = 8
+    Height = 25
+    Top = 8
+    Width = 112
+    Caption = 'Create Image'
+    OnClick = BuCreateImageClick
+    TabOrder = 0
+  end
+  object StaticText1: TStaticText
+    Left = 0
+    Height = 244
+    Top = 173
+    Width = 545
+    Align = alBottom
+    Alignment = taCenter
+    Caption = 'not working yet, pls wait'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -32
+    Font.Name = 'Algerian'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 1
+  end
+end

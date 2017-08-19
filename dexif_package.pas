@@ -7,7 +7,7 @@ unit dexif_package;
 interface
 
 uses
-  dEXIF, dIPTC, msData;
+  dEXIF, dIPTC, msData, dexifwrite, dGlobal, dTags;
 
 implementation
 
