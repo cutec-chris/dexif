@@ -30,7 +30,6 @@ interface
 
 uses
   sysutils, classes, math,
-
  {$IFDEF FPC}
   fpimage, fpreadjpeg, LazUTF8,
  {$ELSE}
@@ -38,25 +37,25 @@ uses
  {$ENDIF}
   dGlobal, dTags, dIPTC;
 
-Const
-   DexifVersion: ansistring = '1.04';
-   ExifTag = 1;  // default tag Types
-   GpsTag = 2;
-   ThumbTag = 4;
-   GenericEXIF = 0;
-   CustomEXIF = 1;
-   AllEXIF = -1;
-   GenNone = 0;
-   GenAll = 255;
-   GenString = 2;
-   GenList = 4;
-   VLMin = 0;
-   VLMax = 1;
-   {$IFDEF FPC}
-   crlf = LineEnding;
-   {$ELSE}
-   crlf: ansistring = #13#10;
-   {$ENDIF}
+const
+  DexifVersion: ansistring = '1.04';
+  ExifTag = 1;  // default tag Types
+  GpsTag = 2;
+  ThumbTag = 4;
+  GenericEXIF = 0;
+  CustomEXIF = 1;
+  AllEXIF = -1;
+  GenNone = 0;
+  GenAll = 255;
+  GenString = 2;
+  GenList = 4;
+  VLMin = 0;
+  VLMax = 1;
+  {$IFDEF FPC}
+  crlf = LineEnding;
+  {$ELSE}
+  crlf: ansistring = #13#10;
+  {$ENDIF}
 
 type
   TImgData = class;
@@ -72,22 +71,22 @@ type
     procedure WriteToStream(AStream: TStream); virtual;
   end;
 
-   { tEndInd }
+  { TEndInd }
 
-   tEndInd = class
-      MotorolaOrder: boolean;
-      function Get16u(oset: integer): word;
-      function Get32s(oset: integer): Longint;
-      function Get32u(oset: integer): Longword;
-      function Put32s(data: Integer): ansistring;
-      procedure WriteInt16(var buff:ansistring;int,posn:integer);
-      procedure WriteInt32(var buff:ansistring;int,posn:longint);
-      function GetDataBuff: ansistring;
-      procedure SetDataBuff(const Value: ansistring);
-      property DataBuff:ansistring read GetDataBuff write SetDataBuff;
-   private
-      llData: ansistring;
-   end;
+  TEndInd = class
+    MotorolaOrder: boolean;
+    function Get16u(oset: integer): word;
+    function Get32s(oset: integer): Longint;
+    function Get32u(oset: integer): Longword;
+    function Put32s(data: Integer): ansistring;
+    procedure WriteInt16(var buff:ansistring;int,posn:integer);
+    procedure WriteInt32(var buff:ansistring;int,posn:longint);
+    function GetDataBuff: ansistring;
+    procedure SetDataBuff(const Value: ansistring);
+    property DataBuff:ansistring read GetDataBuff write SetDataBuff;
+  private
+    llData: ansistring;
+  end;
 
   { TImageInfo }
 
@@ -97,6 +96,7 @@ type
     iterThumb:integer;
 
     FCameraMake: String;
+    FCameraModel: String;
 
     // Getter / setter
     function GetDateTimeOriginal: TDateTime;
@@ -117,34 +117,36 @@ type
     function GetImageDescription: String;
     procedure SetImageDescription(const v: String);
 
-    function GetCameraMake: String;
     procedure SetCameraMake(const AValue: String);
+    procedure SetCameraModel(const AValue: String);
+
+    function GetTagElement(TagID: integer): TTagEntry;
+    procedure SetTagElement(TagID: integer; const Value: TTagEntry);
+
+    function GetTagByName(TagName: ansistring): TTagEntry;
+    procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
 
     // misc
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
-    function getTag(TagID: integer; forceCreate: Boolean=false; parentID: word=
-      0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
-    function GetTagElement(TagID: integer): TTagEntry;
-    procedure removeTag(TagID: integer; parentID: word=0);
-    procedure SetTagElement(TagID: integer; const Value: TTagEntry);
-    function GetTagByName(TagName: ansistring): TTagEntry;
-    procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
+
+    function GetTag(TagID: integer; forceCreate: Boolean=false;
+      parentID: word=0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
+    procedure RemoveTag(TagID: integer; parentID: word=0);
     procedure TagWriteThru16(te: ttagentry; NewVal16: word);
     procedure TagWriteThru32(te: ttagentry; NewVal32: longint);
-    procedure pushDirStack(dirStart, offsetbase: Integer);
-    function testDirStack(dirStart, offsetbase: Integer): boolean;
-    procedure clearDirStack;
+
+    procedure PushDirStack(dirStart, offsetbase: Integer);
+    function TestDirStack(dirStart, offsetbase: Integer): boolean;
+    procedure ClearDirStack;
 
   public
     FITagArray: array of TTagEntry;
     FITagCount: integer;
     MaxTag: integer;
-    parent: timgdata;
-    exifVersion : string[ 6];
-//    CameraMake:   string[32];
-    CameraModel:  string[40];
+    Parent: timgdata;
+    ExifVersion : string[ 6];
     DateTime:     string[20];
-    Height,Width,HPosn,WPosn: integer;
+    Height, Width, HPosn, WPosn: integer;
     FlashUsed: integer;
     BuildList: integer;
     MakerNote: ansistring;
@@ -173,9 +175,6 @@ type
     msName:ansistring;
     MakerOffset : integer;
 
-//  The following functions format this structure into a string
-    function  toShortString:ansistring;   //  Summarizes in a single line
-    function  toLongString:ansistring;
 //    procedure SetExifComment(newComment: ansistring);
 
 //  The following functions manage the date
@@ -188,33 +187,36 @@ type
 
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
       tagType: integer=ExifTag; prefix: string=''; parentID: word=0);
-    Procedure ProcessThumbnail;
+    procedure ProcessThumbnail;
     procedure ProcessHWSpecific(MakerBuff:ansistring;
                   TagTbl: array of TTagEntry;
                   DirStart:longint;
                   aMakerOffset:Longint;
                   spOffset:integer = 0);
 
-    Procedure AddMSTag(fname,fstr:ansistring;fType:word);
+    procedure AddMSTag(fname,fstr:ansistring;fType:word);
     function CvtInt(buff: ansistring): longint;
-    Function FormatNumber(buffer: ansistring; fmt: integer; fmtStr:ansistring;
+    function FormatNumber(buffer: ansistring; fmt: integer; fmtStr:ansistring;
       decodeStr: ansistring=''): ansistring;
-    Function GetNumber(buffer: ansistring; fmt: integer): double;
+    function GetNumber(buffer: ansistring; fmt: integer): double;
     procedure removeThumbnail;
     procedure AdjExifSize(nh,nw:longint);
-    Function LookupTag(SearchStr:ansistring):integer; virtual;
-    Function LookupTagVal(SearchStr:ansistring):ansistring; virtual;
-    Function LookupTagDefn(item: ansistring): integer;
-    Function LookupTagByDesc(SearchStr: ansistring): integer;
+
+    function GetTagByDesc(SearchStr: ansistring): TTagEntry;
+    function LookupTag(SearchStr:ansistring):integer; virtual;
+    function LookupTagVal(SearchStr:ansistring):ansistring; virtual;
+    function LookupTagDefn(item: ansistring): integer;
+    function LookupTagByDesc(SearchStr: ansistring): integer;
+
     function AddTagToArray(nextTag: iTag): integer;
     function AddTagToThumbArray(nextTag: iTag): integer;
-    Procedure ResetIterator;
-    Function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
-    Function GetTagByDesc(SearchStr: ansistring): TTagEntry;
-    Function HasThumbnail:boolean;
+
+    procedure ResetIterator;
+    function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
     function IterateFoundThumbTags(TagId: integer;
       var retVal: TTagEntry): boolean;
     procedure ResetThumbIterator;
+
     procedure Calc35Equiv;
     function EXIFArrayToXML: tstringlist;
     function LookupTagInt(SearchStr: ansistring): integer;
@@ -223,13 +225,17 @@ type
     function LookupRatio: double;
     function WriteThruInt(tname: ansistring; value: Integer): boolean;
     function WriteThruString(tname, value: ansistring): boolean;
+    Function HasThumbnail:boolean;
 
   public
     constructor Create(p: TImgData; BuildCode: integer = GenAll);
     procedure Assign(source: TImageInfo);
     destructor Destroy; override;
 
-  public
+    //  The following functions format this structure into a string
+    function ToShortString: String;   //  Summarizes in a single line
+    function ToLongString: String;
+
     property ITagArray[TagID:integer]: TTagEntry
         read GetTagElement write SetTagElement; default;
     property Data[TagName:ansistring]: TTagEntry
@@ -241,20 +247,20 @@ type
     property Artist: String read GetArtist write SetArtist;
     property ExifComment: String read GetExifComment write SetExifComment;
     property ImageDescription: String read GetImageDescription write SetImageDescription;
-    property CameraMake: String read GetCameraMake write SetCameraMake;
+    property CameraMake: String read FCameraMake write SetCameraMake;
+    property CameraModel: String read FCameraModel write SetCameraModel;
 
   end; // TInfoData
 
-  tSection = record
-    data: ansistring;
-    dtype:integer;
-    size:longint;
-    base:longint;
+  TSection = record
+    Data: ansistring;
+    DType: integer;
+    Size: longint;
+    Base: longint;
   end;
-  pSection = ^tSection;
+  pSection = ^TSection;
 
  // TTagTableArray = array of TTagEntry;
-  TGpsFormat = (gf_DD,gf_DM,gf_DMS);
 
   TImgData = class(tEndInd) // One per image object
   private
@@ -268,71 +274,88 @@ type
     function GetComment: String;
     procedure SetComment(v: String);
 
+  protected
+    function ReadJpegSections(var f: TStream):boolean;
+    function ReadTiffSections(var f: TStream):boolean;
+    function SaveExif(jfs2: TStream; EnabledMeta: Byte=$FF;
+      FreshExifBlock: Boolean=false): longint;
+
   public
-        sections: array [1..21] of tSection;
-        TiffFmt: boolean;
-        BuildList: integer;
-        SectionCnt : integer;
-        ExifSegment: pSection;
-        IPTCSegment: pSection;
-        CommentSegment: pSection;
-        HeaderSegment : pSection;
-        Filename: ansistring;
-        FileDateTime: tDateTime;
-        FileSize: longint;
-        ErrStr: ansistring;
-        ExifObj: TImageInfo;
-        IptcObj: TIPTCData;
-        TraceLevel: integer;
-        procedure reset;
-        procedure SetFileInfo(fname:ansistring);
-        function ReadExifInfo(fname:ansistring):boolean;
-        Procedure MakeIPTCSegment(buff:ansistring);
-        Procedure MakeCommentSegment(buff:ansistring);
-        function  GetCommentStr:ansistring;
-        Function  GetCommentSegment:ansistring;
-        function ProcessFile(const AFileName: string):boolean;
-        function ReadJpegSections (var f: tstream):boolean;
-        function ReadJpegFile(const AFileName: string):boolean;
-        function ReadTiffSections (var f: tstream):boolean;
-        function ReadTiffFile(const AFileName: string):boolean;
-        procedure ClearSections;
-        procedure ClearEXIF;
-        procedure ClearIPTC;
-        procedure ClearComments;
-        procedure ProcessEXIF;
-        procedure CreateIPTCObj;
-        function HasMetaData:boolean;
-        function HasEXIF: boolean;
-        function HasIPTC: boolean;
-        function HasComment: boolean;
-        function HasThumbnail: boolean;
-        function ReadIPTCStrings(fname: ansistring):tstringlist;
-        function ExtractThumbnailBuffer: ansistring;
+    Sections: array [1..21] of TSection;
+    TiffFmt: boolean;
+    BuildList: integer;
+    SectionCnt : integer;
+    ExifSegment: pSection;
+    IPTCSegment: pSection;
+    CommentSegment: pSection;
+    HeaderSegment : pSection;
+    Filename: ansistring;
+    FileDateTime: tDateTime;
+    FileSize: longint;
+    ErrStr: ansistring;
+    ExifObj: TImageInfo;
+    IptcObj: TIPTCData;
+    TraceLevel: integer;
 
-        function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
-          freshExifBlock: Boolean=false): longint;
-        procedure MergeToStream(AInputStream, AOutputStream: TStream;
-          AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
-        {$IFDEF FPC}
-        function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
-        procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
-        procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
-        procedure WriteEXIFJpeg(AFileName: String); overload;
-        {$ENDIF}
-        {$IFNDEF dExifNoJpeg}
-        function ExtractThumbnailJpeg: TJpegImage; overload;
-        procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
-          AdjSize: boolean = true);  overload;
-        procedure WriteEXIFJpeg(fname: String); overload;
-        procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
-        {$ENDIF}
+    procedure Reset;
+    procedure SetFileInfo(fname:ansistring);
+    procedure MakeIPTCSegment(buff:ansistring);
+    procedure MakeCommentSegment(buff:ansistring);
+    function GetCommentStr:ansistring;
+    Function GetCommentSegment:ansistring;
+    procedure ClearSections;
+    procedure ClearEXIF;
+    procedure ClearIPTC;
+    procedure ClearComments;
+    procedure CreateIPTCObj;
 
-        function MetaDataToXML: tstringlist;
-        function FillInIptc:boolean;
+    function ReadIPTCStrings(fname: ansistring):tstringlist;
+    function ReadJpegFile(const AFileName: string):boolean;
+    function ReadTiffFile(const AFileName: string):boolean;
+
+    function MetaDataToXML: TStringList;
+    function FillInIptc: boolean;
+
   public
     constructor Create(buildCode: integer = GenAll);
     destructor Destroy; override;
+
+    // Reading
+    function ReadExifInfo(AFilename: String): boolean;
+
+    // Processing
+    procedure ProcessEXIF;
+    function ProcessFile(const AFileName: string):boolean;
+
+    // Thumbnail
+    function ExtractThumbnailBuffer: ansistring;
+    {$IFDEF FPC}
+    function ExtractThumbnailJpeg(AStream: TStream): Boolean;
+    {$ELSE}
+    function ExtractThumbnailJpeg: TJpegImage;
+    {$ENDIF}
+
+    // Status
+    function HasMetaData:boolean;
+    function HasEXIF: boolean;
+    function HasIPTC: boolean;
+    function HasComment: boolean;
+    function HasThumbnail: boolean;
+
+    // Writing
+   {$IFDEF FPC}
+    procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
+    procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
+    procedure WriteEXIFJpeg(AFileName: String); overload;
+   {$ENDIF}
+   {$IFNDEF dExifNoJpeg}
+    procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
+      AdjSize: boolean = true);  overload;
+    procedure WriteEXIFJpeg(fname: String); overload;
+    procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
+   {$ENDIF}
+    procedure MergeToStream(AInputStream, AOutputStream: TStream;
+      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
 
     property Height: Integer read GetHeight;
     property Width: Integer read GetWidth;
@@ -362,40 +385,14 @@ type
   function FindExifTag(ATag: Word): PTagEntry;
   function FindGPSTag(ATag: Word): PTagEntry;
 
-Var
-   DexifDataSep   : ansistring = ', ';
-   DexifDecodeSep : ansistring = ',';
-   DexifDelim     : ansistring = ' = ';
-   DexifDecode    : boolean = true;
-   estimateValues : boolean = false;
-   TiffReadLimit  : longint = 256000;
-   curTagArray    : TImageInfo = nil;
-   fmtInt: tfmtInt = defIntFmt;
-   fmtReal: tfmtReal = defRealFmt;
-   fmtFrac: tfmtFrac = defFracFmt;
+var
+  CurTagArray    : TImageInfo = nil;
+  fmtInt: tfmtInt = defIntFmt;
+  fmtReal: tfmtReal = defRealFmt;
+  fmtFrac: tfmtFrac = defFracFmt;
 
-Const
-   GpsFormat = gf_DMS;
-   validHeader: ansistring = 'Exif'#0;
-
-{ object declared in dIPTC unit
-  TTagEntry = record
-    TID: integer;        // TagTableID - EXIF use
-    TType: word;         // tag type
-    ICode: Word;         // iptc code
-    Tag: word;           // primary key
-    Name:ansistring;        // searchable
-    Desc:ansistring;        // translatable
-    Code:ansistring;        // decode capability
-    Data:ansistring;         // display value
-    Raw:ansistring;          // unprocessed value
-    Fmt:ansistring;          // Format string
-    Size: integer;       // used by ITPC module
-    CallBack: StrFunct;  // formatting string
-  end;
-}
-   EmptyEntry: ttagEntry = ( TID:0; TType:0; ICode:0; Tag:0; Name: '';
-       Desc: ''; Code:''; Data:'';Raw:'';PRaw:0; FormatS:''; Size:0);
+const
+  ValidHeader: ansistring = 'Exif'#0;
 
 //--------------------------------------------------------------------------
 // JPEG markers consist of one or more= $FF bytes, followed by a marker
@@ -466,7 +463,6 @@ Const
      ( TID:0;TType:0;ICode: 0;Tag: 0;        Name:'';Desc: 'Unknown')
     );
 
-   Function CvtIrrational( instr:ansistring ):double;
    Function LookupType(idx:integer):ansistring;
 
    Function MakePrintable(s:ansistring):ansistring;
@@ -907,30 +903,6 @@ begin
   end;
 end;
 
-Function CvtIrrational( instr:ansistring ):double;
-var
-  b1,b2:ansistring;
-  intMult,op:integer;
-begin
-  result := 0.0;
-  instr := AnsiString(trim(string(instr)));
-  try
-    op := Pos(' ',instr);
-    if op > 0 then
-    begin
-      intMult := StrToint(string(copy(instr,1,op-1)));
-      instr := copy(instr,op+1,length(instr));
-    end
-    else
-      intMult := 0;
-    op := Pos('/',instr);
-    b1 := copy(instr,1,op-1);
-    b2 := copy(instr,op+1,length(instr));
-    result := (intMult*StrToInt(string(b2))+StrToInt(string(b1))) / StrToInt(string(b2));
-  except
-  end;
-end;
-
 function LookupMTagID(idx:integer; ManuTable: array of TTagEntry):integer;
 var i:integer;
 begin
@@ -1188,7 +1160,6 @@ begin
     end;
 end;
 
-
 // Careful : this function's arguments are always
 // evaluated which may have unintended side-effects
 // (thanks to Jan Derk for pointing this out)
@@ -1202,7 +1173,7 @@ end;
 procedure TImageInfo.Assign(Source: TImageInfo);
 begin
   FCameraMake     := Source.FCameraMake;
-  CameraModel     := Source.CameraModel;
+  FCameraModel    := Source.FCameraModel;
   DateTime        := Source.DateTime;
   Height          := Source.Height;
   Width           := Source.Width;
@@ -1217,7 +1188,7 @@ end;
 
 const BadVal = -1;
 
-function TImageInfo.ExifDateToDateTime(dstr:ansistring):TDateTime;
+function TImageInfo.ExifDateToDateTime(dstr:ansistring): TDateTime;
 type
   TConvert= packed record
      year: Array [1..4] of ansichar; f1:ansichar;
@@ -1397,13 +1368,13 @@ begin
    result := instr;                   // if error return input string
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);        // get first irrational number
-   tHours := CvtIrrational(tb);       // bottom of lens speed range
+   tHours := CvtRational(tb);         // bottom of lens speed range
    instr := copy(instr,i+sl-1,64);
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);        // get second irrational number
-   tMin := CvtIrrational(tb);     // minimum focal length
+   tMin := CvtRational(tb);           // minimum focal length
    instr := copy(instr,i+1,64);
-   tSec := CvtIrrational(instr);  // maximum focal length
+   tSec := CvtRational(instr);        // maximum focal length
    // Ok we'll send the result back as Degrees with
    // Decimal Minutes.  Alternatively send back as Degree
    // Minutes, Seconds or Decimal Degrees.
@@ -1441,13 +1412,13 @@ begin
    result := instr;                     // if error return input string
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get first irrational number
-   gDegree := CvtIrrational(tb);        // degrees
+   gDegree := CvtRational(tb);          // degrees
    instr := copy(instr,i+sl-1,64);
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get second irrational number
-   gMin := CvtIrrational(tb);           // minutes
+   gMin := CvtRational(tb);             // minutes
    instr := copy(instr,i+sl-1,64);
-   gSec := CvtIrrational(instr);        // seconds
+   gSec := CvtRational(instr);          // seconds
    if gSec = 0 then  // camera encoded as decimal minutes
    begin
      gSec := ((gMin-trunc(gMin))*100);  // seconds as a fraction of degrees
@@ -1472,26 +1443,25 @@ Function GpsAltitude(instr:ansistring) :ansistring;
 var
   gAltitude:double;
 begin
-   result := instr;                     // if error return input string
-
-   gAltitude := CvtIrrational(instr);        // meters/multiplier, e.g.. 110/10
-
-   result := ansistring(format('%1.2f Meters', [gAltitude]));
+  Result := instr;                        // if error return input string
+  gAltitude := CvtRational(instr);        // meters/multiplier, e.g.. 110/10
+  Result := ansistring(format('%1.2f Meters', [gAltitude]));
 end;
 
 function DecodeField(DecodeStr,idx:ansistring):ansistring;
-var stPos:integer;
-    ts:ansistring;
+var
+  stPos:integer;
+  ts:ansistring;
 begin
-   result := '';
-   idx := DexifDecodeSep+AnsiString(trim(string(idx)))+':';   // ease parsing
-   decodeStr := DexifDecodeSep+decodeStr+DexifDecodeSep;
-   stPos := Pos(idx,DecodeStr);
-   if stPos > 0 then
-   begin
-     ts := copy(DecodeStr,stPos+length(idx),length(decodeStr));
-     result := copy(ts,1,Pos(DexifDecodeSep,ts)-1);
-   end
+  Result := '';
+  idx := DexifDecodeSep+AnsiString(trim(string(idx)))+':';   // ease parsing
+  decodeStr := DexifDecodeSep+decodeStr+DexifDecodeSep;
+  stPos := Pos(idx,DecodeStr);
+  if stPos > 0 then
+  begin
+    ts := copy(DecodeStr,stPos+length(idx),length(decodeStr));
+    result := copy(ts,1,Pos(DexifDecodeSep,ts)-1);
+  end;
 end;
 
 function TImageInfo.AddTagToArray(nextTag:iTag):integer;
@@ -1524,9 +1494,10 @@ begin
   result := fIThumbCount-1;
 end;
 
-function TImageInfo.CvtInt(buff:ansistring):longint;
-var i:integer;
-    r:Int64;
+function TImageInfo.CvtInt(buff: ansistring): longint;
+var
+  i: integer;
+  r: Int64;
 begin
   r := 0;
   try
@@ -2239,7 +2210,7 @@ function SSpeedCallBack(instr:ansistring):ansistring;
 var
   expoTime:double;
 begin
-  expoTime := CvtIrrational(instr);
+  expoTime := CvtRational(instr);
   expoTime := (1/exp(expoTime*ln(2)));
   result := AnsiString(Format('%4.4f sec',[expoTime]))+
             siif(ExpoTime <= 0.5,
@@ -2264,54 +2235,55 @@ begin
   result := ts;
 end;
 
-function TImageInfo.toLongString:ansistring;
+function TImageInfo.ToLongString: String;
 var
-  tmpStr: ansistring;
+  tmpStr: String;
   FileDateTime: String;
 begin
   if parent.ExifSegment = nil then
-    result := ''
-  else if Parent.errstr <> '<none>' then
-    result := 'File Name:  '   + AnsiString(ExtractFileName(parent.Filename)) + crlf +
-              'Exif Error: '   + Parent.errstr
+    Result := ''
+  else
+  if Parent.errstr <> '<none>' then
+    Result := 'File Name:  '   + ExtractFileName(parent.Filename) + crlf +
+              'Exif Error: '   + Parent.ErrStr
   else
   begin
     DateTimeToString(FileDateTime, ISODateFormat, parent.FileDateTime);
 
-    result := 'File Name:     ' + AnsiString(ExtractFileName(parent.Filename)) + crlf +
-              'File Size:     ' + AnsiString(IntToStr(parent.FileSize div 1024)) + 'k' + crlf +
-              'File Date:     ' + AnsiString(FileDateTime) + crlf +
-              'Photo Date:    ' + AnsiString(DateTime) + crlf +
-              'Make (Model):  ' + FCameraMake + ' ('+CameraModel+')' + crlf +
-              'Dimensions:    ' + AnsiString(IntToStr(Width)) + ' x '+ AnsiString(IntToStr(Height));
+    result := 'File Name:     ' + ExtractFileName(parent.Filename) + crlf +
+              'File Size:     ' + IntToStr(parent.FileSize div 1024) + 'k' + crlf +
+              'File Date:     ' + FileDateTime + crlf +
+              'Photo Date:    ' + DateTime + crlf +
+              'Make (Model):  ' + FCameraMake + ' (' + CameraModel + ')' + crlf +
+              'Dimensions:    ' + IntToStr(Width) + ' x '+ IntToStr(Height);
 
     if BuildList in [GenString,GenAll] then
     begin
       tmpStr := LookupTagVal('ExposureTime');
       if tmpStr <> '' then
-        result := result+crlf+'Exposure Time: '+tmpStr
+        result := result + crlf + 'Exposure Time: ' + tmpStr
       else
       begin
         tmpStr := LookupTagVal('ShutterSpeedValue');
         if tmpStr <> '' then
-          result := result+crlf+'Exposure Time: '+tmpStr
+          result := result + crlf + 'Exposure Time: ' + tmpStr
       end;
 
       tmpStr := LookupTagVal('FocalLength');
       if tmpStr <> '' then
-        result := result+crlf+'Focal Length:  '+tmpStr;
+        result := result + crlf + 'Focal Length:  ' + tmpStr;
 
       tmpStr := LookupTagVal('FocalLengthin35mm');
       if tmpStr <> '' then
-        result := result+crlf+'Focal Length (35mm): '+tmpStr;
+        result := result + crlf + 'Focal Length (35mm): ' + tmpStr;
 
       tmpStr := LookupTagVal('FNumber');
       if tmpStr <> '' then
-        result := result+crlf+'FNumber:       '+tmpStr;
+        result := result + crlf + 'FNumber:       ' + tmpStr;
 
       tmpStr := LookupTagVal('ISOSpeedRatings');
       if tmpStr <> '' then
-        result := result+crlf+'ISO:           '+tmpStr;
+        result := result + crlf + 'ISO:           ' + tmpStr;
     end;
 
     result := result + crlf +
@@ -2319,18 +2291,19 @@ begin
   end;
 end;
 
-function TImageInfo.toShortString:ansistring;
+function TImageInfo.ToShortString: String;
 begin
   if parent.ExifSegment = nil then
-    result := ''
-  else if Parent.errstr <> '<none>' then
-    result := AnsiString(ExtractFileName(parent.Filename)) + ' Exif Error: '+Parent.errstr
+    Result := ''
   else
-    result := AnsiString(ExtractFileName(parent.Filename)) + ' ' +
-              AnsiString(IntToStr(parent.FileSize div 1024))+'k '+
-              AnsiString(DateTime) + ' ' +
-              AnsiString(IntToStr(Width))+'w '+AnsiString(IntToStr(Height))+'h '+
-              siif(odd(FlashUsed),' Flash','');
+  if Parent.ErrStr <> '<none>' then
+    Result := ExtractFileName(parent.Filename) + ' Exif Error: '+Parent.ErrStr
+  else
+    Result := ExtractFileName(parent.Filename) + ' ' +
+              IntToStr(parent.FileSize div 1024) + 'k '+
+              DateTime + ' ' +
+              IntToStr(Width) + 'w ' + IntToStr(Height)+'h '+
+              siif(odd(FlashUsed),' Flash', '');
 end;
 
 (*************************************************
@@ -2691,27 +2664,6 @@ begin
   p^.Size := Length(p^.Raw);
 end;
 
-function TImageInfo.GetCameraMake: String;
-var
-  p: PTagEntry;
-  v: AnsiString;
-begin
-//  Result := FCameraMake;
-
-  Result := '';
-  p := GetTag(TAG_MAKE, false, 0, FMT_STRING);
-  if p = nil then
-    exit;
-  SetLength(v, Length(p^.Raw) - 1);
-  Move(p^.Raw[1], v[1], Length(p^.Raw) - 1);
-  v := trim(v);
- {$IFDEF FPC}
-  Result := AnsiToUTF8(trim(v));
- {$ELSE}
-  Result := trim(v);
- {$ENDIF}
-end;
-
 procedure TImageInfo.SetCameraMake(const AValue: String);
 var
   p: PTagEntry;
@@ -2729,11 +2681,32 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 
+  FCameraMake := AValue;
   WriteThruString('Make', AValue);
 end;
 
-function TImageInfo.IterateFoundTags(TagId: integer;
-        var retVal:TTagEntry):boolean;
+procedure TImageInfo.SetCameraModel(const AValue: String);
+var
+  p: PTagEntry;
+begin
+  if (AValue = '') then begin
+    RemoveTag(TAG_MODEL, 0);
+    exit;
+  end;
+  p := GetTag(TAG_MODEL, true, 0, FMT_STRING);
+ {$IFDEF FPC}
+  p^.Raw := UTF8ToAnsi(AValue) + #0;
+ {$ELSE}
+  p^.Raw := AnsiString(AValue) + #0;
+ {$ENDIF}
+  p^.Data := p^.Raw;
+  p^.Size := Length(p^.Raw);
+
+  FCameraModel := AValue;
+  WriteThruString('Model', AValue);
+end;
+
+function TImageInfo.IterateFoundTags(TagId: integer; var retVal: TTagEntry): boolean;
 begin
   InitTagEntry(retval);
   //FillChar(retVal,sizeof(retVal),0);
@@ -3560,9 +3533,9 @@ begin
   {$ENDIF}
 end;
 
-function TImgData.ReadExifInfo(fname:ansistring):boolean;
+function TImgData.ReadExifInfo(AFilename: String): boolean;
 begin
-  ProcessFile(fname);
+  ProcessFile(AFilename);
   result := HasMetaData();
 end;
 
@@ -3932,7 +3905,7 @@ end;
 
 function TImgData.HasThumbnail: boolean;
 begin
-  result := (EXIFsegment <> nil) and EXIFobj.hasThumbnail;
+  result := (EXIFsegment <> nil) and EXIFobj.HasThumbnail;
 end;
 
 function TImgData.HasIPTC: boolean;

@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -49,7 +49,6 @@
       <Unit2>
         <Filename Value="tstreadexif.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tstreadexif"/>
       </Unit2>
       <Unit3>
         <Filename Value="tstselfimage.pas"/>
@@ -58,22 +57,18 @@
       <Unit4>
         <Filename Value="tstwritereadexif.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="tstwritereadexif"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\dEXIF.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dEXIF"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\dIPTC.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dIPTC"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\msData.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="msData"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\dExifWrite.pas"/>
@@ -83,12 +78,10 @@
       <Unit9>
         <Filename Value="..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dGlobal"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dTags.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dTags"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\dExif.inc"/>
@@ -116,9 +109,6 @@
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
     </Linking>
-    <Other>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="5">

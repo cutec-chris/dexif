@@ -314,6 +314,9 @@ function StrCount( xx:ansistring ; delim:ansistring ):integer;
 
 implementation
 
+uses
+  dUtils;
+  
 ////////////////
 // Callback Functions - one per field
 //
@@ -342,17 +345,17 @@ begin
    result := instr;                     // if error return input string
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get first irrational number
-   MinFL := CvtIrrational(tb);          // bottom of lens speed range
+   MinFL := CvtRational(tb);            // bottom of lens speed range
    instr := copy(instr,i+sl-1,64);
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get second irrational number
-   MaxFL := CvtIrrational(tb);          // top of lens speed range
+   MaxFL := CvtRational(tb);            // top of lens speed range
    instr := copy(instr,i+sl-1,64);
    i := Pos(DexifDataSep,instr);
    tb    := copy(instr,1,i-1);          // get third irrational number
-   MinSp := CvtIrrational(tb);          // minimum focal length
+   MinSp := CvtRational(tb);            // minimum focal length
    instr := copy(instr,i+sl-1,64);
-   MaxSp := CvtIrrational(instr);       // maximum focal length
+   MaxSp := CvtRational(instr);         // maximum focal length
    result := AnsiString(format('%0.1f-%0.1f(mm)  F%0.1f-F%0.1f',
                         [MinFl,MaxFl,MinSp,MaxSp]));
 end;

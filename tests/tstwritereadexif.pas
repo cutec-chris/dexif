@@ -36,11 +36,13 @@ type
     procedure Test_CommentSegment;
     procedure Test_CommentSegment_UTF8;
     procedure Test_Artist;
+    procedure Test_Artist_Umlaut;
     procedure Test_ExifComment_ASCII;
     procedure Test_ExifComment_UNICODE;
     procedure Test_ImageDescription;
     procedure Test_CameraMake;
     procedure Test_CameraMake_TooLong;
+    procedure Test_CameraModel;
 
   end;
 
@@ -61,7 +63,7 @@ type
 
 const
   // !!! INCREMENT WHEN ADDING TESTS !!!
-  TestCount = 11;
+  TestCount = 13;
 
 {$WARN 3177 off : Some fields coming after "$1" were not initialized}
 
@@ -73,11 +75,13 @@ const
      (Kind:tkString; Tag:'Comment section';    Value:'This is a comment.'),
      (Kind:tkString; Tag:'Comment section';    Value:'This is a comment - äöüß.'),
 {5}  (Kind:tkString; Tag:'Artist';             Value:'Ansel Adams'),
+     (Kind:tkString; Tag:'Artist';             Value:'Hansi Müller'),   // Arist with Umlaut
      (Kind:tkString; Tag:'ExifComment';        Value:'This is a comment'),
      (Kind:tkString; Tag:'ExifComment';        Value:'äöü αβγ'),
      (Kind:tkString; Tag:'ImageDescription';   Value:'My image'),
-     (Kind:tkString; Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
-     (Kind:tkString; Tag:'CameraMake';         Value:'Minolta')  // longer than text in file --> fail
+{10} (Kind:tkString; Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
+     (Kind:tkString; Tag:'CameraMake';         Value:'Minolta'), // longer than text in file --> fail
+     (Kind:tkString; Tag:'CameraModel';        Value:'My Super Camera')
   );
 
 
@@ -135,11 +139,13 @@ var
       3: Result := DUT.Comment;
       4: Result := DUT.Comment;
       5: Result := DUT.ExifObj.Artist;
-      6: Result := DUT.ExifObj.ExifComment;
+      6: Result := DUT.ExifObj.Artist;
       7: Result := DUT.ExifObj.ExifComment;
-      8: Result := DUT.ExifObj.ImageDescription;
-      9: Result := DUT.ExifObj.CameraMake;
+      8: Result := DUT.ExifObj.ExifComment;
+      9: Result := DUT.ExifObj.ImageDescription;
      10: Result := DUT.ExifObj.CameraMake;
+     11: Result := DUT.ExifObj.CameraMake;
+     12: Result := DUT.ExifObj.CameraModel;
     end;
   end;
 
@@ -156,11 +162,13 @@ var
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
-      6: DUT.ExifObj.ExifComment := strValue;
+      6: DUT.ExifObj.Artist := strValue;
       7: DUT.ExifObj.ExifComment := strValue;
-      8: DUT.ExifObj.ImageDescription := strValue;
-      9: DUT.ExifObj.CameraMake := strValue;
-    10: DUT.ExifObj.CameraMake := strValue;
+      8: DUT.ExifObj.ExifComment := strValue;
+      9: DUT.ExifObj.ImageDescription := strValue;
+     10: DUT.ExifObj.CameraMake := strValue;
+     11: DUT.ExifObj.CameraMake := strValue;
+     12: DUT.ExifObj.CameraModel := strValue;
     end;
   end;
 
@@ -282,33 +290,45 @@ begin
   GenericTest(5);
 end;
 
+{ Artist with Umlaut}
+procedure TTstWriteReadFile_dEXIF.Test_Artist_Umlaut;
+begin
+  GenericTest(6);
+end;
+
 { UserComment in EXIF segment - ASCII }
 procedure TTstWriteReadFile_dEXIF.Test_ExifComment_ASCII;
 begin
-  GenericTest(6);
+  GenericTest(7);
 end;
 
 { UserComment in EXIF - UNICODE }
 procedure TTstWriteReadFile_dEXIF.Test_ExifComment_UNICODE;
 begin
-  GenericTest(7);
+  GenericTest(8);
 end;
 
 { Image description }
 procedure TTstWriteReadFile_dEXIF.Test_ImageDescription;
 begin
-  GenericTest(8);
+  GenericTest(9);
 end;
 
 { Camera make }
 procedure TTstWriteReadFile_dEXIF.Test_CameraMake;
 begin
-  GenericTest(9);
+  GenericTest(10);
 end;
 
 procedure TTstWriteReadFile_dEXIF.Test_CameraMake_TooLong;
 begin
-  GenericTest(10);
+  GenericTest(11);
+end;
+
+{ Camera model }
+procedure TTstWriteReadFile_dEXIF.Test_CameraModel;
+begin
+  GenericTest(12);
 end;
 
 

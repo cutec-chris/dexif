@@ -64,6 +64,9 @@ type
   end;
   PExifRational = ^TExifRational;
 
+  TGpsFormat = (gf_DD, gf_DM, gf_DMS);
+
+
 const
   // Format of data in an IFD record
   NUM_FORMATS   = 12;
@@ -89,6 +92,18 @@ const
   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
+  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Name:''; Desc:'';
+    Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0);
+
+  GpsFormat = gf_DMS;
+
+var
+  dExifDataSep   : ansistring = ', ';
+  dExifDecodeSep : ansistring = ',';
+  dExifDelim     : ansistring = ' = ';
+  dExifDecode    : boolean = true;
+  EstimateValues : boolean = false;
+  TiffReadLimit  : longint = 256000;
 
 implementation
 
