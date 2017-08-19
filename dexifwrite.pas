@@ -138,7 +138,7 @@ const
   SEGMENT_MARKER = #$FF#$E1;
   EXIF_SIGNATURE = 'Exif'#0#0;
 var
-  header: String;
+  header: ansistring;
 begin
   header := SEGMENT_MARKER + #$0 + #$0 + EXIF_SIGNATURE;
   // The two zero bytes are the size of the entire Exif segiment, They will be
@@ -368,7 +368,7 @@ begin
     // with all the IDFRecords is not complete at this moment we store the
     // offsets to these fields in the OffsetList for correction later.
     // For this reason, we do not take care of endianness here as well.
-    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]; //1; //FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
+    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType];
     rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
     case ATag.TType of
       FMT_URATIONAL, FMT_SRATIONAL:
@@ -429,6 +429,7 @@ var
 begin
   subIFDList := TInt64List.Create;
   try
+    // Tiff header
     FTiffHeaderPosition := AStream.Position;
     WriteTiffHeader(AStream);
 

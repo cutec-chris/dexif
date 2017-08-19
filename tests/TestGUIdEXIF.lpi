@@ -58,6 +58,7 @@
       <Unit4>
         <Filename Value="tstwritereadexif.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="tstwritereadexif"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\dEXIF.pas"/>
@@ -96,7 +97,6 @@
       <Unit12>
         <Filename Value="..\dUtils.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dUtils"/>
       </Unit12>
     </Units>
   </ProjectOptions>

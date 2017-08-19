@@ -310,27 +310,22 @@ type
         function ReadIPTCStrings(fname: ansistring):tstringlist;
         function ExtractThumbnailBuffer: ansistring;
 
-        procedure WriteToStream(AStream: TStream);
-
         function SaveExif(jfs2: tstream; EnabledMeta: Byte=$FF;
           freshExifBlock: Boolean=false): longint;
         procedure MergeToStream(AInputStream, AOutputStream: TStream;
           AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
-
         {$IFDEF FPC}
         function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
         procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
-        procedure WriteEXIFJpeg(AJPeg: TStream; AFileName, AOrigName: String;
-          AdjSize: Boolean = true); overload;
+        procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
         procedure WriteEXIFJpeg(AFileName: String); overload;
         {$ENDIF}
-
         {$IFNDEF dExifNoJpeg}
         function ExtractThumbnailJpeg: TJpegImage; overload;
-        procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring;origName:ansistring;
-                  adjSize:boolean = true);  overload;
-        procedure WriteEXIFJpeg(fname:ansistring); overload;
-        procedure WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);  overload;
+        procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
+          AdjSize: boolean = true);  overload;
+        procedure WriteEXIFJpeg(fname: String); overload;
+        procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
         {$ENDIF}
 
         function MetaDataToXML: tstringlist;
@@ -3143,6 +3138,7 @@ begin
       try
         writer.WriteExifHeader(jfs2);
         writer.WriteToStream(jfs2);
+        cnt := jfs2.Position;
       finally
         writer.Free;
       end;
@@ -3187,10 +3183,6 @@ begin
     end;
 
   Result := cnt;
-end;
-
-procedure TImgData.WriteToStream(AStream: TStream);
-begin
 end;
 
 function TImgData.ExtractThumbnailBuffer:ansistring;
@@ -3303,9 +3295,9 @@ begin
     AJpeg.Position := 0;                          // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
      {$IFDEF FPC3+}
-     imgSize := TFPReaderJpeg.ImageSize(AJpeg);  // Read image size from stream
+      imgSize := TFPReaderJpeg.ImageSize(AJpeg);  // Read image size from stream
      {$ELSE}
-     imgSize := JPGImageSize(AJpeg);
+      imgSize := JPGImageSize(AJpeg);
      {$ENDIF}
       EXIFobj.AdjExifSize(imgSize.Y, imgSize.X);  // Adjust EXIF to image size
       AJpeg.Position := 0;                        // Rewind stream
@@ -3326,24 +3318,25 @@ begin
   end;
 end;
 
-{ Merges the EXIF data of file AOrigName into the specified stream and saves
-  it as AFileName. Image data are provided in the stream AJpeg. }
-procedure TImgData.WriteEXIFJpeg(AJPeg: TStream; AFileName, AOrigName: String;
+{ Replaces or adds the currently loaded EXIF data to the image in AOrigName
+  and saves as AFileName }
+procedure TImgData.WriteEXIFJpeg(AFileName, AOrigName: String;
   AdjSize: Boolean = true);
 var
-  fs: TFileStream;
+  js: TMemoryStream;
 begin
   if AOrigName = '' then
     exit;  // nothing to do --
-  if ReadExifInfo(AOrigName) then
-    WriteEXIFJpeg(AJpeg, AFileName, AdjSize)
-  else begin
-    fs := TFileStream.Create(AFileName, fmCreate + fmShareExclusive);
-    try
-      fs.CopyFrom(AJpeg, AJpeg.Size);
-    finally
-      fs.Free;
-    end;
+
+  js := TMemoryStream.Create;
+  try
+    js.LoadFromFile(AOrigName);
+    if ReadExifInfo(AOrigName) then
+      WriteEXIFJpeg(js, AFilename, AdjSize)
+    else
+      js.SaveToFile(AFilename);
+  finally
+    js.Free;
   end;
 end;
 
@@ -3354,7 +3347,7 @@ var
 begin
   imgStream := TMemoryStream.Create;
   try
-    imgStream.LoadFromFile(AFileName);
+    imgStream.LoadFromFile(FileName);
     WriteEXIFJpeg(imgstream, AFileName, false);
   finally
     imgStream.Free;
@@ -3376,16 +3369,19 @@ begin
     if (tb = '') then
       exit;
     x := TStringStream.Create(tb);
-    ti := TJPEGImage.Create;
-    x.Seek(0,soFromBeginning);
-    ti.LoadFromStream(x);
-    x.Free;
-    result := ti;
+    try
+      ti := TJPEGImage.Create;
+      x.Seek(0,soFromBeginning);
+      ti.LoadFromStream(x);
+      result := ti;
+    finally
+      x.Free;
+    end;
   end;
 end;
 
-procedure TImgData.WriteEXIFJpeg(j:tjpegimage; fname, origName:ansistring;
-  adjSize:boolean = true);
+procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname, origName: String;
+  AdjSize: boolean = true);
 begin
   if origName = '' then
     origName := fname;
@@ -3397,30 +3393,38 @@ begin
   WriteEXIFJpeg(j,fname,adjSize);
 end;
 
-procedure TImgData.WriteEXIFJpeg(fname:ansistring);
-var img:tjpegimage;
+procedure TImgData.WriteEXIFJpeg(fname: String);
+var
+  img: TJpegImage;
 begin
   img := TJPEGImage.Create;
-  img.LoadFromFile(Filename);
-  WriteEXIFJpeg(img,fname,false);
-  img.Free;
+  try
+    img.LoadFromFile(Filename);
+    WriteEXIFJpeg(img, fname, false);
+  finally
+    img.Free;
+  end;
 end;
 
-procedure TImgData.WriteEXIFJpeg(j:tjpegimage;fname:ansistring; adjSize:boolean = true);
-var jms:tmemorystream;
-    jfs:TFileStream;
-//    pslen:integer;
-//    tb:array[0..12] of byte;
+procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname: String;
+  AdjSize:boolean = true);
+var
+  jms: tmemorystream;
+  jfs: TFileStream;
+  NewExifBlock: Boolean;
 begin
-  //pslen := 2;
+  NewExifBlock := (ExifObj = nil);
+
+  // to do: Create a new exif block here if AdjSize is true
+  if AdjSize and (EXIFobj <> nil) then
+    EXIFobj.AdjExifSize(j.height,j.width);
+
   jms := tmemorystream.Create;
   try  { Thanks to Erik Ludden... }
-    jfs := tfilestream.Create(fname,fmCreate or fmShareExclusive);
+    j.SaveToStream(jms);
+    jfs := TFileStream.Create(fname, fmCreate or fmShareExclusive);
     try
-      if adjSize and (EXIFobj <> nil) then
-        EXIFobj.AdjExifSize(j.height,j.width);
-      SaveExif(jfs);
-      MergeToStream(jms, jfs); // msta
+      MergeToStream(jms, jfs, 255, NewExifBlock); // msta
     finally
       jfs.Free;
     end
@@ -3440,7 +3444,6 @@ type
   end;
 var
   header: TSegmentHeader;
-  ms: TMemoryStream;
   n, count: Integer;
   savedPos: Int64;
 begin

@@ -33,10 +33,9 @@ uses
   Windows, Messages,
  {$ENDIF}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtCtrls, StdCtrls, ExtDlgs, ComCtrls, dEXIF, dIPTC, About, Grids;
+  ExtCtrls, StdCtrls, ExtDlgs, ComCtrls, dEXIF, dIPTC, About;
 
 const
-     crlf = #13#10;
      ProgName = 'IPTCView';
      SC_TransMenuItem = WM_USER + 1;
 

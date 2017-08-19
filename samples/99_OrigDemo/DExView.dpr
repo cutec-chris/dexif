@@ -2,7 +2,7 @@ program DExView;
 
 
 
-{%File 'InkNames'}
+
 
 uses
   Forms,

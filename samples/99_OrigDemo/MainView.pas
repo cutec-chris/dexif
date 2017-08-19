@@ -41,27 +41,24 @@ type
     cbDecode: TCheckBox;
     btnCmt: TButton;
     Image1: TImage;
-    procedure btnLoadClick(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
     procedure btnAboutClick(Sender: TObject);
+    procedure btnCmtClick(Sender: TObject);
+    procedure btnLoadClick(Sender: TObject);
     procedure btnTreeClick(Sender: TObject);
-    procedure cbVerboseClick(Sender: TObject);
     procedure btnWriteClick(Sender: TObject);
     procedure cbDecodeClick(Sender: TObject);
-    procedure btnCmtClick(Sender: TObject);
+    procedure cbVerboseClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
+    procedure CleanupPreview;
     procedure dumpSections;
-    procedure Memo(s: string);
     procedure dumpEXIF;
     procedure dumpMSpecific;
     procedure dumpThumb;
+    procedure Memo(s: string);
     procedure ReadExifDir(start:string;justcnt:boolean);
-    procedure CleanupPreview;
-    { Private declarations }
   public
-    { Public declarations }
-    exifBuffer: string;
     lastDir: string;
     jpgcnt: integer;
     scrar:real;
@@ -157,14 +154,15 @@ begin
 end;
 
 procedure TForm1.btnLoadClick(Sender: TObject);
-var i:integer;
-    ts:tstringlist;
-    tmp:string;
-    {$IFDEF FPC}
-    jpegThumb: TMemoryStream;
-    {$ELSE}
-    jpegThumb:tjpegimage;
-    {$ENDIF}
+var
+  i: integer;
+  ts: tstringlist;
+  tmp:string;
+  {$IFDEF FPC}
+  jpegThumb: TMemoryStream;
+  {$ELSE}
+  jpegThumb:tjpegimage;
+  {$ENDIF}
 begin
   btnWrite.enabled := false;
   btnCmt.enabled := false;
@@ -197,6 +195,35 @@ begin
     begin
       ImgData.ExifObj.ProcessThumbnail;
       dumpThumb;
+
+      {$IFDEF FPC}
+      jpegThumb := TMemoryStream.Create;
+      try
+        imgData.ExtractThumbnailJpeg(jpegthumb);
+        if jpegthumb.Size > 0 then begin
+          jpegThumb.Position := 0;
+          Image1.Picture.LoadFromStream(jpegThumb);
+        end else
+        begin
+          Memo(' ');
+          Memo('Thumbnail expected, but not found');
+        end;
+      finally
+        jpegThumb.Free;
+      end;
+      {$ELSE}
+      jpegThumb := imgData.ExtractThumbnailJpeg();
+      try
+        if jpegThumb <> nil then
+          image1.Picture.Assign(jpegThumb)
+        else begin
+          Memo(' ');
+          Memo('Thumbnail expected, but not found');
+        end;
+      finally
+        jpegThumb.Free;
+      end;
+      {$ENDIF}
     end
     else
       Memo('No Thumbnail');
@@ -232,8 +259,14 @@ begin
       jpegThumb := TMemoryStream.Create;
       try
         imgData.ExtractThumbnailJpeg(jpegthumb);
-        jpegThumb.Position := 0;
-        Image1.Picture.LoadFromStream(jpegThumb);
+        if jpegthumb.Size > 0 then begin
+          jpegThumb.Position := 0;
+          Image1.Picture.LoadFromStream(jpegThumb);
+        end else
+        begin
+          Memo(' ');
+          Memo('Thumbnail expected, but not found');
+        end;
       finally
         jpegThumb.Free;
       end;
@@ -476,12 +509,13 @@ begin
 end;
 
 procedure TForm1.btnWriteClick(Sender: TObject);
-var Orig,Smaller:tjpegimage;
-    buffer:tbitmap;
-    smallFname:string;
-   {$IFDEF FPC}
-    stream: TMemoryStream;
-   {$ENDIF}
+var
+  Orig, Smaller: TJpegImage;
+  buffer: tbitmap;
+  smallFname:string;
+  {$IFDEF FPC}
+  stream: TMemoryStream;
+  {$ENDIF}
 begin
   smallFname := copy(ImgData.Filename,1,length(ImgData.Filename)-4)
     +'_smaller.jpg';
@@ -531,7 +565,7 @@ begin
       stream.Free;
     end;
     {$ELSE}
-    ImgData.WriteEXIFjpeg(Smaller,SmallFName);
+    ImgData.WriteEXIFjpeg(Smaller, SmallFName);
     {$ENDIF}
   finally // Cleanup
     Buffer.free;
@@ -548,19 +582,31 @@ begin
 end;
 
 procedure TForm1.btnCmtClick(Sender: TObject);
-var cmt:string;
+var
+  cmt:string;
+  fn: String;
+  jpeg: TJpegImage;
+  ms: TMemoryStream;
 begin
   if ImgData.ExifObj.ExifComment = '' then
     ShowMessage('No EXIF comment field detected')
   else
   begin
-    cmt := InputBox('Enter EXIF comment:',
-       'Enter a new comment',
-       ImgData.ExifObj.ExifComment);
+    // Input (new) comment
+    cmt := InputBox('Enter EXIF comment:', 'Enter a new comment',
+      ImgData.ExifObj.ExifComment);
     if ImgData.ExifObj.ExifComment <> cmt then
     begin
+      // Change comment in EXIF
       ImgData.ExifObj.ExifComment := cmt;
+      Memo1.Lines.Add('');
       Memo1.Lines.Add('Comment set to: '+cmt);
+
+      // Save to file ("_comment" appended to filename)
+      fn := ChangeFileExt(ImgData.FileName, '') + '_comment.jpg';
+      ImgData.WriteEXIFJpeg(fn);
+      Memo1.Lines.Add('');
+      Memo1.Lines.Add('Image saved in: ' + fn );
     end;
   end;
 end;
@@ -568,7 +614,7 @@ end;
 procedure TForm1.FormShow(Sender: TObject);
 begin
   if not memo1.DoubleBuffered then
-      memo1.DoubleBuffered := true;
+    memo1.DoubleBuffered := true;
 end;
 
 end.

@@ -1,7 +1,7 @@
 object IPTCform: TIPTCform
-  Left = 122
+  Left = 279
   Height = 391
-  Top = 231
+  Top = 238
   Width = 388
   Caption = 'IPTCform'
   ClientHeight = 391
@@ -12,7 +12,7 @@ object IPTCform: TIPTCform
   Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
   Position = poDefaultPosOnly
-  LCLVersion = '1.9.0.0'
+  LCLVersion = '1.4.4.0'
   object Splitter1: TSplitter
     Cursor = crVSplit
     Left = 0
