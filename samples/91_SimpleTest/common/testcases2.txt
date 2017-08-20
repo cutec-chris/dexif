@@ -1,0 +1,5 @@
+Artist	Hansi Müller
+ImageDescription	Hübsches Bild
+UserComment	Hübsch!
+Make	ÄÖÜ camera make
+Model	äöü camera model

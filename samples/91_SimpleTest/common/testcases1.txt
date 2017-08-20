@@ -1,0 +1,5 @@
+Artist	Ansel Adams
+ImageDescription	A nice image
+UserComment	Nice!
+Make	My camera make
+Model	My camera model
