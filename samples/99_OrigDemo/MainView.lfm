@@ -1,11 +1,11 @@
 object Form1: TForm1
   Left = 287
-  Height = 295
+  Height = 330
   Top = 191
-  Width = 592
+  Width = 706
   Caption = 'Delphi EXIF Jpeg Viewer'
-  ClientHeight = 295
-  ClientWidth = 592
+  ClientHeight = 330
+  ClientWidth = 706
   Color = clBtnFace
   Font.Color = clWindowText
   OnCreate = FormCreate
@@ -13,9 +13,9 @@ object Form1: TForm1
   Position = poDefaultPosOnly
   LCLVersion = '1.9.0.0'
   object Image1: TImage
-    Left = 393
+    Left = 523
     Height = 121
-    Top = 16
+    Top = 8
     Width = 169
     Anchors = [akTop, akRight]
   end
@@ -30,10 +30,14 @@ object Form1: TForm1
   end
   object Memo1: TMemo
     Left = 120
-    Height = 217
+    Height = 291
     Top = 8
-    Width = 247
+    Width = 394
     Anchors = [akTop, akLeft, akRight, akBottom]
+    Font.Color = clWindowText
+    Font.Height = -12
+    Font.Name = 'Courier New'
+    ParentFont = False
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 1
@@ -41,8 +45,8 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 272
-    Width = 592
+    Top = 307
+    Width = 706
     Panels = <>
   end
   object cbClearOnLoad: TCheckBox
@@ -58,7 +62,7 @@ object Form1: TForm1
   object btnAbout: TButton
     Left = 24
     Height = 25
-    Top = 208
+    Top = 274
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'About...'
@@ -77,8 +81,8 @@ object Form1: TForm1
   object PBar: TProgressBar
     Left = 128
     Height = 16
-    Top = 230
-    Width = 450
+    Top = 265
+    Width = 564
     Anchors = [akLeft, akRight, akBottom]
     Step = 1
     TabOrder = 6

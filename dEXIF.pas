@@ -35,7 +35,7 @@ uses
  {$ELSE}
   {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
  {$ENDIF}
-  dGlobal, dTags, dIPTC;
+  dGlobal, dUtils, dTags, dIPTC;
 
 const
   ExifTag = 1;  // default tag Types
@@ -370,28 +370,13 @@ type
     property YResolution: Integer read GetYResolution;
     property ResolutionUnit: String read GetResolutionUnit;
     property Comment: String read GetComment write SetComment;  // Comment from COM segment
-
   end; // TImgData
-
-  // these function variables can be overridden to
-  // alter the default formatting for various data types
-  tfmtInt  = function (inInt:integer):ansistring;
-  tfmtReal = function (inReal:double):ansistring;
-  tfmtFrac = function (inNum,inDen:integer):ansistring;
-
-  // These formatting functions can be used elsewhere
-  function defIntFmt (inInt:integer):ansistring;
-  function defRealFmt(inReal:double):ansistring;
-  function defFracFmt(inNum,inDen:integer):ansistring;
-
-  function DecodeField(DecodeStr, idx: ansistring): ansistring;
-  function CvtTime(instr: ansistring): ansistring;
 
   function FindExifTag(ATag: Word): PTagEntry;
   function FindGPSTag(ATag: Word): PTagEntry;
 
 var
-  CurTagArray    : TImageInfo = nil;
+  CurTagArray: TImageInfo = nil;
   fmtInt: tfmtInt = defIntFmt;
   fmtReal: tfmtReal = defRealFmt;
   fmtFrac: tfmtFrac = defFracFmt;
@@ -472,16 +457,6 @@ const
 
    Function MakePrintable(s:ansistring):ansistring;
 
-   //  Formatting callbacks
-   Function GpsPosn(instr:ansistring) :ansistring;
-   Function GpsAltitude(instr:ansistring) :ansistring;
-   Function GenCompConfig(instr:ansistring): ansistring;
-   Function ExposCallBack(instr: ansistring): ansistring;
-   Function FlashCallBack(instr: ansistring): ansistring;
-   Function ExtractComment(instr: ansistring):ansistring;
-   Function SSpeedCallBack(instr: ansistring): ansistring;
-   Function xpTranslate(instr: ansistring):ansistring;
-
 var
   ExifNonThumbnailLength : integer;
   ShowTags: integer;
@@ -493,7 +468,7 @@ var
 implementation
 
 uses
-  dUtils, dExifWrite, msData;
+  dExifWrite, msData;
 
 const
 // Compression Type Constants
@@ -757,7 +732,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
   (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:FlashCallBack),
-  (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'), {190}
+  (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%0.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
   (TID:0;TType:0;ICode: 2;Tag: $920D;  Name:'Noise'                   ),
@@ -773,7 +748,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9217;  Name:'SensingMethod'          ),
   (TID:0;TType:0;ICode: 2;Tag: $923F;  Name:'StoNits'                ),
   (TID:0;TType:0;ICode: 2;Tag: $927C;  Name:'MakerNote'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $9286;  Name:'UserComment'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback: ExtractComment),
+  (TID:0;TType:0;ICode: 2;Tag: $9286;  Name:'UserComment'            ),
   (TID:0;TType:0;ICode: 2;Tag: $9290;  Name:'SubSecTime'             ),
   (TID:0;TType:0;ICode: 2;Tag: $9291;  Name:'SubSecTimeOriginal'     ),
   (TID:0;TType:0;ICode: 2;Tag: $9292;  Name:'SubSecTimeDigitized'    ),
@@ -1336,16 +1311,6 @@ begin
     end;
 end;
 
-// Careful : this function's arguments are always
-// evaluated which may have unintended side-effects
-// (thanks to Jan Derk for pointing this out)
-function siif( const cond:boolean; const s1:ansistring; const s2:ansistring=''):ansistring;
-begin
-  if cond
-    then result := s1
-    else result := s2;
-end;
-
 procedure TImageInfo.Assign(Source: TImageInfo);
 begin
 //  FCameraMake     := Source.FCameraMake;
@@ -1532,112 +1497,6 @@ begin
     SetDateTimeStr(dt_orig_oset, ADateTime);
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, ADateTime);
-end;
-
-
-Function CvtTime(instr:ansistring) :ansistring;
-var i,sl:integer;
-    tb:ansistring;
-    tHours,tMin,tSec:double;
-begin
-   sl := length(DexifDataSep);
-   result := instr;                   // if error return input string
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);        // get first irrational number
-   tHours := CvtRational(tb);         // bottom of lens speed range
-   instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);        // get second irrational number
-   tMin := CvtRational(tb);           // minimum focal length
-   instr := copy(instr,i+1,64);
-   tSec := CvtRational(instr);        // maximum focal length
-   // Ok we'll send the result back as Degrees with
-   // Decimal Minutes.  Alternatively send back as Degree
-   // Minutes, Seconds or Decimal Degrees.
-   result := ansistring(format('%0.0f:%0.0f:%0.0f', [tHours,tMin,tSec]));
-end;
-
-
-Function GenCompConfig(instr:ansistring) :ansistring;
-var i,ti:integer;
-    ts:ansistring;
-begin
-  ts := '';
-  for i := 1+1 to 4+1 do  // skip first char...
-  begin
-    ti := integer(instr[i]);
-    case ti of
-      1: ts := ts+'Y';
-      2: ts := ts+'Cb';
-      3: ts := ts+'Cr';
-      4: ts := ts+'R';
-      5: ts := ts+'G';
-      6: ts := ts+'B';
-    else
-    end;
-  end;
-  result := ts;
-end;
-
-Function GpsPosn(instr:ansistring) :ansistring;
-var i,sl:integer;
-    tb:ansistring;
-    gDegree,gMin,gSec:double;
-begin
-   sl := length(DexifDataSep);
-   result := instr;                     // if error return input string
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);          // get first irrational number
-   gDegree := CvtRational(tb);          // degrees
-   instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);          // get second irrational number
-   gMin := CvtRational(tb);             // minutes
-   instr := copy(instr,i+sl-1,64);
-   gSec := CvtRational(instr);          // seconds
-   if gSec = 0 then  // camera encoded as decimal minutes
-   begin
-     gSec := ((gMin-trunc(gMin))*100);  // seconds as a fraction of degrees
-     gSec := gSec * 0.6;                // convert to seconds
-     gMin := trunc(gMin);               // minutes is whole portion
-   end;
-   // Ok we'll send the result back as Degrees with
-   // Decimal Minutes.  Alternatively send back as Degree
-   // Minutes, Seconds or Decimal Degrees.
-   case GpsFormat of
-     gf_DD: result :=
-          ansistring(format('%1.4f Decimal Degrees',[gDegree + ((gMin + (gSec/60))/60)]));
-     gf_DM: result :=
-          ansistring(format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + (gsec/60)]));
-     gf_DMS: result :=
-          ansistring(format('%0.0f Degrees %0.0f Minutes %0.0f Seconds', [gDegree,gMin,gSec]));
-   else
-   end;
-end;
-
-Function GpsAltitude(instr:ansistring) :ansistring;
-var
-  gAltitude:double;
-begin
-  Result := instr;                        // if error return input string
-  gAltitude := CvtRational(instr);        // meters/multiplier, e.g.. 110/10
-  Result := ansistring(format('%1.2f Meters', [gAltitude]));
-end;
-
-function DecodeField(DecodeStr,idx:ansistring):ansistring;
-var
-  stPos:integer;
-  ts:ansistring;
-begin
-  Result := '';
-  idx := DexifDecodeSep+AnsiString(trim(string(idx)))+':';   // ease parsing
-  decodeStr := DexifDecodeSep+decodeStr+DexifDecodeSep;
-  stPos := Pos(idx,DecodeStr);
-  if stPos > 0 then
-  begin
-    ts := copy(DecodeStr,stPos+length(idx),length(decodeStr));
-    result := copy(ts,1,Pos(DexifDecodeSep,ts)-1);
-  end;
 end;
 
 function TImageInfo.AddTagToArray(nextTag:iTag):integer;
@@ -2349,72 +2208,6 @@ begin
   end;
 
    SetDataBuff(parent.DataBuff);
-end;
-
-
-Function ExtractComment(instr:ansistring):ansistring;
-begin
-//  CommentHeader := copy(instr,1,8);  // fixed length string
-  result := copy(instr,9,maxint);
-end;
-
-Function FlashCallBack(instr:ansistring):ansistring;
-var
-  tmp: integer;
-  tmpS:ansistring;
-begin
-  tmp := strToInt(string(instr));
-  tmps :=      siif(tmp and  1 =  1,'On','Off');              // bit0
-  tmps := tmps+siif(tmp and  6 =  2,', UNKNOWN');             // bit1
-  tmps := tmps+siif(tmp and  6 =  4,', no strobe return');    // bit2
-  tmps := tmps+siif(tmp and  6 =  6,', strobe return');       // bit1+2
-  tmps := tmps+siif(tmp and 24 =  8,', forced');              // bit3
-  tmps := tmps+siif(tmp and 24 = 16,', surpressed');          // bit4
-  tmps := tmps+siif(tmp and 24 = 24,', auto mode');           // bit3+4
-  tmps := tmps+siif(tmp and 32 = 32,', no flash function');   // bit5
-  tmps := tmps+siif(tmp and 64 = 64,', red-eye reduction');   // bit6
-  result := tmps;
-end;
-
-function ExposCallBack(instr:ansistring):ansistring;
-var
-  expoTime:double;
-begin
-  expoTime := strToFloat(string(instr));
-  result := AnsiString(Format('%4.4f sec',[expoTime]))+
-            siif(ExpoTime <= 0.5,
-                 AnsiString(format(' (1/%d)',[round(1/ExpoTime)])),
-                 '');
-// corrected by M. Schwaiger - adding ".5" is senseless when using "round"!
-end;
-
-function SSpeedCallBack(instr:ansistring):ansistring;
-var
-  expoTime:double;
-begin
-  expoTime := CvtRational(instr);
-  expoTime := (1/exp(expoTime*ln(2)));
-  result := AnsiString(Format('%4.4f sec',[expoTime]))+
-            siif(ExpoTime <= 0.5,
-                 AnsiString(format(' (1/%d)',[round(1/ExpoTime)])),
-                 '');
-end;
-
-function xpTranslate(instr:ansistring):ansistring;
-var
-  i:integer;
-  ts:ansistring;
-  cv:ansichar;
-begin
-  ts := '';
-  for i := 1 to StrCount(instr,',') do
-    if odd(i) then
-    begin
-       cv := ansichar(strtoint(string(StrNth(instr,',',i))));
-       if cv <> #0 then
-         ts := ts+cv;
-    end;
-  result := ts;
 end;
 
 function TImageInfo.ToLongString(ALabelWidth: Integer = 15): String;
@@ -4076,26 +3869,6 @@ begin
   end;
   buff.add('</dImageFile>');
   result := buff;
-end;
-
-function defIntFmt (inInt:integer):ansistring;
-begin
-  result := AnsiString(IntToStr(inInt));
-end;
-
-function defRealFmt(inReal:double):ansistring;
-begin
-  result := AnsiString(FloatToStr(inReal));
-end;
-
-function defFracFmt(inNum,inDen:integer):ansistring;
-begin
-  result := ansistring(format('%d/%d',[inNum,inDen]));
- // result := fmtRational(inNum,inDen);
- //
- // It turns out this is not a good idea generally
- // because some std. calculation use rational
- // representations internally
 end;
 
 {$IFDEF dEXIFpredeclare}

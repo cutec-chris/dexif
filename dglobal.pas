@@ -18,6 +18,12 @@ type
 
   TTagID = word;
 
+  // these function variables can be overridden to alter the default formatting
+  //  for various data types
+  TFmtInt  = function(inInt: integer): AnsiString;
+  TFmtReal = function(inReal: double): AnsiString;
+  TFmtFrac = function(inNum, inDenom: integer): AnsiString;
+
   TStrFunc = function(s: AnsiString): AnsiString;
 
   TTagEntry = record

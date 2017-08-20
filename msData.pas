@@ -307,10 +307,6 @@ const
      ((TID:0;TType:0;ICode: 2;Tag: $00;      Name:'ModelID';  Desc:'ModelID'),
       (TID:0;TType:0;ICode: 2;Tag: $0E00;    Name:'PIMdata';  Desc:'PIMdata')) ;
 
-function StrBefore( xx,target : ansistring):ansistring;
-function StrAfter( xx,target : ansistring):ansistring;
-function StrNth( xx:ansistring ; delim:ansistring ; n:integer ):ansistring;
-function StrCount( xx:ansistring ; delim:ansistring ):integer;
 
 implementation
 
@@ -360,67 +356,8 @@ begin
                         [MinFl,MaxFl,MinSp,MaxSp]));
 end;
 
-const
-  crlf: ansistring = #13#10;
-
 type
   strArray = array of ansistring;
-
-function StrBefore( xx,target : ansistring):ansistring;
-var i:integer;
-begin
-  i := Pos(target,xx);
-  if i = 0 then
-    result := xx
-  else
-    result := copy(xx,1,i-1)
-end;
-
-function StrAfter( xx,target : ansistring):ansistring;
-var i:integer;
-begin
-  i := Pos(target,xx);
-  if i = 0 then
-  begin
-    if target = ''
-      then result := xx
-      else result := '';
-  end
-  else
-    result := copy(xx,i+length(target),length(xx)-length(target)-i+1)
-end;
-
-function StrNth( xx:ansistring ; delim:ansistring ; n:integer ):ansistring;
-var i:integer;
-begin
-  for i := 2 to n do
-    xx := strAfter(xx,delim);
-  Result := strBefore(xx,delim);
-end;
-
-function StrCount( xx:ansistring ; delim:ansistring ):integer;
-var i:integer;
-begin
-  i := 0;
-  while Pos(delim,xx) <> 0 do
-  begin
-    xx := StrAfter(xx,delim);
-    inc(i);
-  end;
-  Result := i;
-end;
-
-Function aPick(info:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var s,r:ansistring;
-begin
-  try
-    s := StrNth(info,',',item+1);
-    r := DecodeField(decodeStr,s);
-  except
-    r := '0';
-  end;
-  result := r;
-end;
 
 Function CustBld(fname:ansistring; item:integer; decodeStr:ansistring):ansistring;
 var valStr:ansistring;

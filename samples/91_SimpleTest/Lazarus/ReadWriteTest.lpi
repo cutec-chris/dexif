@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -42,12 +42,10 @@
         <ComponentName Value="MainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="rwMain"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\..\dEXIF.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dEXIF"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\..\dExif.inc"/>
@@ -56,12 +54,10 @@
       <Unit5>
         <Filename Value="..\..\..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dGlobal"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\dUtils.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dUtils"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\dExifWrite.pas"/>
@@ -103,9 +99,6 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
