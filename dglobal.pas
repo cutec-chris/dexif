@@ -97,6 +97,14 @@ const
 
   GpsFormat = gf_DMS;
 
+  dExifVersion: ansistring = '1.04';
+
+  {$IFDEF FPC}
+  crlf = LineEnding;
+  {$ELSE}
+  crlf: ansistring = #13#10;
+  {$ENDIF}
+
 var
   dExifDataSep   : ansistring = ', ';
   dExifDecodeSep : ansistring = ',';

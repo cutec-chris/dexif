@@ -59,20 +59,34 @@ type
   TStringArray = array of string;
 
 function Split(s: String; Separator: Char = #9): TStringArray;
+const
+  BLOCK_SIZE = 20;
 var
-  L: TStrings;
-  i: Integer;
+  p, p1: PChar;
+  i, j, n, L: Integer;
+  part: String;
 begin
-  L := TStringList.Create;
-  try
-    L.Delimiter := Separator;
-//    L.StrictDelimiter := true;
-    L.DelimitedText := s;
-    SetLength(Result, L.Count);
-    for i:=0 to L.Count-1 do Result[i] := L[i];
-  finally
-    L.Free;
+  if s = '' then begin
+    SetLength(Result, 0);
+    exit;
   end;
+  L := Length(s);
+  SetLength(Result, BLOCK_SIZE);
+  i := 1;
+  j := 1;
+  n := 0;
+  while (i <= L) do begin
+    if (s[i] = Separator) or (i = L)  then begin
+      if i=L then inc(i);
+      Result[n] := Copy(s, j, i-j);
+      inc(n);
+      if n mod BLOCK_SIZE = 0 then
+        SetLength(Result, Length(Result) + BLOCK_SIZE);
+      j := i+1;
+    end;
+    inc(i);
+  end;
+  SetLength(Result, n);
 end;
 
 
@@ -131,8 +145,10 @@ begin
     ImgData.ProcessFile(EdTestFile.Text);
 
     fn := 'test-image.jpg';   // File name of the modified test image
+
+    j := 0;
     for i:=0 to testCases.Count-1 do begin
-      if TestCases[i] = '' then
+      if (TestCases[i] = '') or (TestCases[i][1] = ';') then
         Continue;
 
       // Extract test parameters
@@ -176,7 +192,7 @@ begin
     ImgData.ProcessFile(fn);
     j := 0;
     for i:=0 to testCases.Count-1 do begin
-      if testcases[i] = '' then
+      if (testcases[i] = '') or (testcases[i][1] = ';') then
         Continue;
       testdata := Split(testCases[i]);
       tagname := testdata[0];

@@ -1,5 +1,6 @@
+;IMPORTANT: This file must be stored in ANSI encoding
 Artist	Hansi Müller
 ImageDescription	Hübsches Bild
-UserComment	Hübsch!
+UserComment	Hübscher Kommentar!
 Make	ÄÖÜ camera make
 Model	äöü camera model

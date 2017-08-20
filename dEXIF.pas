@@ -38,7 +38,6 @@ uses
   dGlobal, dTags, dIPTC;
 
 const
-  DexifVersion: ansistring = '1.04';
   ExifTag = 1;  // default tag Types
   GpsTag = 2;
   ThumbTag = 4;
@@ -51,11 +50,6 @@ const
   GenList = 4;
   VLMin = 0;
   VLMax = 1;
-  {$IFDEF FPC}
-  crlf = LineEnding;
-  {$ELSE}
-  crlf: ansistring = #13#10;
-  {$ENDIF}
 
 type
   TImgData = class;
@@ -129,8 +123,8 @@ type
     // misc
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
 
-    function GetTag(TagID: integer; forceCreate: Boolean=false;
-      parentID: word=0; TagType: word=65535; forceID: Boolean=false): PTagEntry;
+    function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
+      ATagType: word=65535; AForceID: Boolean=false): PTagEntry;
     procedure RemoveTag(TagID: integer; parentID: word=0);
     procedure TagWriteThru16(te: ttagentry; NewVal16: word);
     procedure TagWriteThru32(te: ttagentry; NewVal32: longint);
@@ -2449,32 +2443,32 @@ begin
  if (j <> 0) then SetLength(fiTagArray, Length(fiTagArray)-j);
 end;
 
-function TImageInfo.getTag(TagID:integer; forceCreate:Boolean=false;
-  parentID:word=0; TagType:word=65535; forceID:Boolean=false): PTagEntry; // msta
+function TImageInfo.GetTag(ATagID: word; AForceCreate: Boolean=false;
+  AParentID:word=0; ATagType: word=65535; AForceID: Boolean=false): PTagEntry;
 var
   i, j: integer;
 begin
   Result := nil;
   for i := 0 to Length(fiTagArray)-1 do
-    if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then
+    if (fiTagArray[i].ParentID = AParentID) and (fiTagArray[i].Tag = ATagID) then
     begin
       Result := @fiTagArray[i];
       exit;
     end;
-  if (forceCreate) then begin
+  if AForceCreate then begin
     i := Length(fiTagArray);
     SetLength(fiTagArray, i+1);
-    fiTagArray[i].Tag := TagID;
+    fiTagArray[i].Tag := ATagID;
     for j := 0 to Length(TagTable)-1 do
-      if (TagTable[j].Tag = TagID) then begin
+      if (TagTable[j].Tag = ATagID) then begin
         fiTagArray[i] := TagTable[j];
         break;
       end;
-    if (TagType <> 65535) then
-      fiTagArray[i].TType := TagType;
-    fiTagArray[i].ParentID := parentID;
+    if (ATagType <> 65535) then
+      fiTagArray[i].TType := ATagType;
+    fiTagArray[i].ParentID := AParentID;
     fiTagArray[i].Id := 0;
-    if (forceID) then begin
+    if AForceID then begin
       j := 1;
       for i := 0 to Length(fiTagArray)-1 do
         if (fiTagArray[i].id >= j) then

@@ -1,5 +1,6 @@
+; IMPORTANT: This file must be stored in ANSI encoding
 Artist	Ansel Adams
 ImageDescription	A nice image
-UserComment	Nice!
+UserComment	Nice comment!
 Make	My camera make
 Model	My camera model
