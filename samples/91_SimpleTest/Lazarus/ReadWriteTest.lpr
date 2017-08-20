@@ -5,7 +5,7 @@ program ReadWriteTest;
 uses
   Interfaces, // this includes the LCL widgetset
   Forms,
-  rwMain;
+  rwMain, dEXIF, dExifWrite, dGlobal, dIPTC, dTags, dUtils, msData;
 
 {$R *.res}
 

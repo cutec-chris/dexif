@@ -213,11 +213,6 @@ end;
 
 function TMainForm.ReadTagValue(ATagName: String): String;
 begin
-  // This is not yet working...
-  {
-  Result := ImgData.ExifObj.Data[TagName];
-  }
-  // Therefore, do this instead
   if ATagName = 'Artist' then
     Result := ImgData.ExifObj.Artist
   else if ATagName = 'ImageDescription' then
@@ -229,16 +224,11 @@ begin
   else if ATagName = 'Model' then
     Result := ImgData.ExifObj.CameraModel
   else
-    raise Exception.Create('Tag name of test case not found.');
+    Result := ImgData.ExifObj.TagValueAsString[ATagName];
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
 begin
-  // This is not yet working...
-  {
-  ImgData.ExifObj.Data[ATagName] := ATagValue;
-  }
-  // Therefore, do this instead
   if ATagName = 'Artist' then
     ImgData.ExifObj.Artist := ATagValue
   else if ATagName = 'ImageDescription' then
@@ -250,7 +240,7 @@ begin
   else if ATagName = 'Model' then
     ImgData.ExifObj.CameraModel := ATagValue
   else
-    raise Exception.Create('Tag name of test case not found.');
+    ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue;
 end;
 
 end.

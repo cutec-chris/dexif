@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 135
   Top = 179
   Caption = 'Delphi EXIF Jpeg Viewer'
-  ClientHeight = 278
-  ClientWidth = 576
+  ClientHeight = 336
+  ClientWidth = 743
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,12 +14,12 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    576
-    278)
+    743
+    336)
   PixelsPerInch = 96
   TextHeight = 13
   object Image1: TImage
-    Left = 393
+    Left = 560
     Top = 16
     Width = 169
     Height = 121
@@ -37,17 +37,23 @@ object Form1: TForm1
   object Memo1: TMemo
     Left = 120
     Top = 8
-    Width = 247
-    Height = 249
+    Width = 414
+    Height = 307
     Anchors = [akLeft, akTop, akRight, akBottom]
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    Font.Style = []
+    ParentFont = False
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 259
-    Width = 576
+    Top = 317
+    Width = 743
     Height = 19
     Panels = <>
     SimplePanel = True
@@ -64,7 +70,7 @@ object Form1: TForm1
   end
   object btnAbout: TButton
     Left = 24
-    Top = 230
+    Top = 288
     Width = 75
     Height = 25
     Anchors = [akLeft, akBottom]
@@ -83,8 +89,8 @@ object Form1: TForm1
   end
   object PBar: TProgressBar
     Left = 120
-    Top = 236
-    Width = 450
+    Top = 294
+    Width = 617
     Height = 16
     Anchors = [akLeft, akRight, akBottom]
     Step = 1

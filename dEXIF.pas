@@ -54,6 +54,8 @@ const
 type
   TImgData = class;
 
+  { TBasicMetadataWriter }
+
   TBasicMetadataWriter = class
   protected
     FImgData: TImgData;
@@ -68,29 +70,30 @@ type
   { TEndInd }
 
   TEndInd = class
-    MotorolaOrder: boolean;
-    function Get16u(oset: integer): word;
-    function Get32s(oset: integer): Longint;
-    function Get32u(oset: integer): Longword;
-    function Put32s(data: Integer): ansistring;
-    procedure WriteInt16(var buff:ansistring;int,posn:integer);
-    procedure WriteInt32(var buff:ansistring;int,posn:longint);
-    function GetDataBuff: ansistring;
-    procedure SetDataBuff(const Value: ansistring);
-    property DataBuff:ansistring read GetDataBuff write SetDataBuff;
   private
-    llData: ansistring;
+    FData: ansistring;
+  public
+    MotorolaOrder: boolean;
+    function Get16u(AOffs: integer): word;
+    function Get32s(AOffs: integer): Longint;
+    function Get32u(AOffs: integer): Longword;
+    function Put32s(data: Integer): AnsiString;
+    procedure WriteInt16(var buff: AnsiString; int,posn: integer);
+    procedure WriteInt32(var buff: AnsiString; int,posn: longint);
+    function GetDataBuff: Ansistring;
+    procedure SetDataBuff(const Value: AnsiString);
+    property DataBuff: AnsiString read GetDataBuff write SetDataBuff;
   end;
 
   { TImageInfo }
 
-  TImageInfo = class(tEndind)
+  TImageInfo = class(tEndInd)
   private
     iterator:integer;
     iterThumb:integer;
 
-    FCameraMake: String;
-    FCameraModel: String;
+//    FCameraMake: String;
+//    FCameraModel: String;
 
     // Getter / setter
     function GetDateTimeOriginal: TDateTime;
@@ -111,7 +114,10 @@ type
     function GetImageDescription: String;
     procedure SetImageDescription(const v: String);
 
+    function GetCameraMake: String;
     procedure SetCameraMake(const AValue: String);
+
+    function GetCameraModel: String;
     procedure SetCameraModel(const AValue: String);
 
     function GetTagElement(TagID: integer): TTagEntry;
@@ -120,18 +126,25 @@ type
     function GetTagByName(TagName: ansistring): TTagEntry;
     procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
 
-    // misc
-    function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
+    function GetTagValueAsString(ATagName: String): String;
+    procedure SetTagValueAsString(ATagName: String; AValue: String);
 
+    // misc
     function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
-      ATagType: word=65535; AForceID: Boolean=false): PTagEntry;
+      ATagType: word=65535; AForceID: Boolean=false): PTagEntry; overload;
     procedure RemoveTag(TagID: integer; parentID: word=0);
     procedure TagWriteThru16(te: ttagentry; NewVal16: word);
     procedure TagWriteThru32(te: ttagentry; NewVal32: longint);
 
+    procedure ClearDirStack;
     procedure PushDirStack(dirStart, offsetbase: Integer);
     function TestDirStack(dirStart, offsetbase: Integer): boolean;
-    procedure ClearDirStack;
+
+  protected
+    function AddTagToArray(nextTag: iTag): integer;
+    function AddTagToThumbArray(nextTag: iTag): integer;
+
+    function CreateExifBuf(parentID: word=0; offsetBase: integer=0): String;
 
   public
     FITagArray: array of TTagEntry;
@@ -180,7 +193,7 @@ type
     procedure OverwriteDateTime(ADateTime: TDateTime);   //  Contains embedded CR/LFs
 
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
-      tagType: integer=ExifTag; prefix: string=''; parentID: word=0);
+      ATagType: integer=ExifTag; APrefix: string=''; AParentID: word=0);
     procedure ProcessThumbnail;
     procedure ProcessHWSpecific(MakerBuff:ansistring;
                   TagTbl: array of TTagEntry;
@@ -197,13 +210,12 @@ type
     procedure AdjExifSize(nh,nw:longint);
 
     function GetTagByDesc(SearchStr: ansistring): TTagEntry;
-    function LookupTag(SearchStr:ansistring):integer; virtual;
-    function LookupTagVal(SearchStr:ansistring):ansistring; virtual;
+    function LookupTag(SearchStr: ansistring): integer; virtual;
+    function LookupTagVal(SearchStr: ansistring): ansistring; virtual;
+//    function LookupTagValue(ASearchStr: String): String;
     function LookupTagDefn(item: ansistring): integer;
     function LookupTagByDesc(SearchStr: ansistring): integer;
-
-    function AddTagToArray(nextTag: iTag): integer;
-    function AddTagToThumbArray(nextTag: iTag): integer;
+    function LookupTagInt(SearchStr: ansistring): integer;
 
     procedure ResetIterator;
     function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
@@ -213,7 +225,6 @@ type
 
     procedure Calc35Equiv;
     function EXIFArrayToXML: tstringlist;
-    function LookupTagInt(SearchStr: ansistring): integer;
     function GetRawFloat(tagName: ansistring): double;
     function GetRawInt(tagName: ansistring): integer;
     function LookupRatio: double;
@@ -228,12 +239,14 @@ type
 
     //  The following functions format this structure into a string
     function ToShortString: String;   //  Summarizes in a single line
-    function ToLongString: String;
+    function ToLongString(ALabelWidth: Integer = 15): String;
 
-    property ITagArray[TagID:integer]: TTagEntry
+    property ITagArray[TagID: Integer]: TTagEntry
         read GetTagElement write SetTagElement; default;
-    property Data[TagName:ansistring]: TTagEntry
+    property Data[TagName: AnsiString]: TTagEntry
         read GetTagByName write SetTagByName;
+    property TagValueAsString[ATagName: String]: String
+        read GetTagValueAsString write SetTagValueAsString;
 
     property DateTimeOriginal: TDateTime read GetDateTimeOriginal write SetDateTimeOriginal;
     property DateTimeDigitized: TDateTime read GetDateTimeDigitized write SetDateTimeDigitized;
@@ -241,9 +254,8 @@ type
     property Artist: String read GetArtist write SetArtist;
     property ExifComment: String read GetExifComment write SetExifComment;
     property ImageDescription: String read GetImageDescription write SetImageDescription;
-    property CameraMake: String read FCameraMake write SetCameraMake;
-    property CameraModel: String read FCameraModel write SetCameraModel;
-
+    property CameraMake: String read GetCameraMake write SetCameraMake;
+    property CameraModel: String read GetCameraModel write SetCameraModel;
   end; // TInfoData
 
   TSection = record
@@ -254,9 +266,9 @@ type
   end;
   pSection = ^TSection;
 
- // TTagTableArray = array of TTagEntry;
+  { TImgData }
 
-  TImgData = class(tEndInd) // One per image object
+  TImgData = class(TEndInd) // One per image object
   private
     FHeight: Integer;
     FWidth: Integer;
@@ -275,7 +287,7 @@ type
       FreshExifBlock: Boolean=false): longint;
 
   public
-    Sections: array [1..21] of TSection;
+    Sections: array[1..21] of TSection;
     TiffFmt: boolean;
     BuildList: integer;
     SectionCnt : integer;
@@ -351,6 +363,7 @@ type
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
 
+    // Basic properties
     property Height: Integer read GetHeight;
     property Width: Integer read GetWidth;
     property XResolution: Integer read GetXResolution;
@@ -370,9 +383,7 @@ type
   function defIntFmt (inInt:integer):ansistring;
   function defRealFmt(inReal:double):ansistring;
   function defFracFmt(inNum,inDen:integer):ansistring;
-  function fmtRational( num,den:integer):ansistring;
 
-  function getbyte( var f : tstream) : byte;
   function DecodeField(DecodeStr, idx: ansistring): ansistring;
   function CvtTime(instr: ansistring): ansistring;
 
@@ -498,12 +509,52 @@ const
    ExifTagCnt = 251 - 5;  // NOTE: was 250 before, but "count" is 251
    TotalTagCnt = GPSCnt + ExifTagCnt;
 
-var 
-  whitelist: array [0..37] of Word = (
-    $8769,  $100,  $101,  $102,  $103,  $106,  $10E,  $10F,  $110,  $132,
-    $13B,   $13E,  $301,  $304, $5010, $5011, $8298, $829A, $882A, $9003,
-    $9004, $9201, $9202, $9203, $9204, $9205, $9206, $9208, $9209, $920A,
-    $920B, $920D, $9286, $9C9B, $9C9C, $9C9D, $9C9E, $9C9F);
+var
+  Whitelist: array [0..37] of Word = (
+    TAG_EXIF_OFFSET,
+    TAG_IMAGEWIDTH,
+    TAG_IMAGELENGTH,
+    TAG_BITSPERSAMPLE,
+    TAG_COMPRESSION,
+    TAG_PHOTOMETRICINTERPRETATION,
+    TAG_IMAGEDESCRIPTION,
+    TAG_MAKE,
+    TAG_MODEL,
+    TAG_DATETIME_MODIFY,
+    TAG_ARTIST,
+    TAG_WHITEPOINT,          // $013E
+    (*
+    $8769,  $100,  $101,  $102,
+    $103,  $106,
+    $10E,  $10F,  $110,  $132,
+    $13B,   $13E,                    *)
+     $301,
+     $304,
+     $5010,
+     $5011,
+    TAG_COPYRIGHT,           // $8298,
+    TAG_EXPOSURETIME,        // $829A,
+    TAG_TIMEZONEOFFSET,      // $882A,
+    TAG_DATETIME_ORIGINAL,   //$9003,
+    TAG_DATETIME_DIGITIZED,  // $9004,
+    TAG_SHUTTERSPEED,        // $9201,
+    TAG_APERTURE,            // $9202,
+    TAG_BRIGHTNESSVALUE,     // $9203,
+    TAG_EXPOSUREBIASVALUE,   // $9204,
+    TAG_MAXAPERTUREVALUE,    // $9205,
+    TAG_SUBJECT_DISTANCE,    // $9206,
+    TAG_LIGHT_SOURCE,        // $9208,
+    TAG_FLASH,               // $9209,
+    TAG_FOCALLENGTH,         // $920A,
+    TAG_FLASH_ENERGY,        // $920B,
+    TAG_NOISE,               // $920D,
+    TAG_USERCOMMENT,         // $9286,
+    TAG_XP_TITLE,            // $9C9B,
+    TAG_XP_COMMENT,          // $9C9C,
+    TAG_XP_AUTHOR,           // $9C9D,
+    TAG_XP_KEYWORDS,         // $9C9E,
+    TAG_XP_SUBJECT           // $9C9F
+  );
 
 {   Many tags added based on Php4 source...
 http://lxr.php.net/source/php4/ext/exif/exif.c
@@ -947,6 +998,109 @@ begin
 end;
 
 
+//--------------------------------------------------------------------------
+//   tEndInd
+//
+// Here we implement the Endian Independent layer.  Outside of these methods
+// we don't care about endian issues.
+//--------------------------------------------------------------------------
+function tEndInd.GetDataBuff: AnsiString;
+begin
+  result := FData;
+end;
+
+procedure tEndInd.SetDataBuff(const Value: AnsiString);
+begin
+  FData := Value;
+end;
+
+procedure tEndInd.WriteInt16(var buff: AnsiString; int,posn: integer);
+begin
+  if MotorolaOrder then
+  begin
+    buff[posn+1] := ansichar(int mod 256);
+    buff[posn]   := ansichar(int div 256);
+  end
+  else
+  begin
+    buff[posn]   := ansichar(int mod 256);
+    buff[posn+1] := ansichar(int div 256);
+  end
+end;
+
+procedure tEndInd.WriteInt32(var buff: ansistring; int, posn: longint);
+begin
+  if MotorolaOrder then
+  begin
+    buff[posn+3] := ansichar(int mod 256);
+    buff[posn+2] := ansichar((int shr  8) mod 256);
+    buff[posn+1] := ansichar((int shr 16) mod 256);
+    buff[posn]   := ansichar((int shr 24) mod 256);
+  end
+  else
+  begin
+    buff[posn]   := ansichar(int mod 256);
+    buff[posn+1] := ansichar((int shr  8) mod 256);
+    buff[posn+2] := ansichar((int shr 16) mod 256);
+    buff[posn+3] := ansichar((int shr 24) mod 256);
+  end
+end;
+
+// Convert a 16 bit unsigned value from file's native byte order
+function tEndInd.Get16u(AOffs: integer):word;
+// var hibyte,lobyte:byte;
+begin
+// To help debug, uncomment the following two lines
+//  hibyte := byte(llData[oset+1]);
+//  lobyte := byte(llData[oset]);
+  if MotorolaOrder then
+    result := (byte(FData[AOffs]) shl 8) or byte(FData[AOffs+1])
+  else
+    result := (byte(FData[AOffs+1]) shl 8) or byte(FData[AOffs]);
+end;
+
+// Convert a 32 bit signed value from file's native byte order
+function tEndInd.Get32s(AOffs: integer):Longint;
+begin
+  if MotorolaOrder then
+    result := (byte(FData[AOffs])   shl 24)
+           or (byte(FData[AOffs+1]) shl 16)
+           or (byte(FData[AOffs+2]) shl 8)
+           or  byte(FData[AOffs+3])
+  else
+    result := (byte(FData[AOffs+3]) shl 24)
+           or (byte(FData[AOffs+2]) shl 16)
+           or (byte(FData[AOffs+1]) shl 8)
+           or  byte(FData[AOffs]);
+end;
+
+// Convert a 32 bit unsigned value from file's native byte order
+function tEndInd.Put32s(data: Longint): AnsiString;
+var
+  data2: integer;
+  buffer: string[4] absolute data2;
+  bbuff: AnsiChar;
+begin
+  data2 := data;
+  if MotorolaOrder then
+  begin
+    bbuff     := buffer[1];
+    buffer[1] := buffer[4];
+    buffer[4] := bbuff;
+    bbuff     := buffer[2];
+    buffer[2] := buffer[3];
+    buffer[3] := bbuff;
+  end;
+  Result := buffer;
+end;
+
+// Convert a 32 bit unsigned value from file's native byte order
+function tEndInd.Get32u(AOffs: integer): Longword;
+begin
+  result := Longword(Get32S(AOffs)) and $FFFFFFFF;
+end;
+
+
 {------------------------------------------------------------------------------}
 {                            TImageInfo                                        }
 {------------------------------------------------------------------------------}
@@ -967,35 +1121,61 @@ begin
   inherited;
 end;
 
-//  This function returns the index of a tag name
-//  in the tag buffer.
-Function TImageInfo.LookupTag(SearchStr:ansistring):integer;
-var i: integer;
+//  This function returns the index of a tag name in the tag buffer.
+function TImageInfo.LookupTag(SearchStr: ansistring): integer;
+var
+  i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to fiTagCount-1 do
-   if AnsiString(AnsiUpperCase(fiTagArray[i].Name)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
+  SearchStr := AnsiString(AnsiUpperCase(SearchStr));
+  result := -1;
+  for i := 0 to fiTagCount-1 do
+    if AnsiString(AnsiUpperCase(fiTagArray[i].Name)) = SearchStr then
+    begin
+      result := i;
+      break;
+    end;
 end;
 
-//  This function returns the data value for a
-//  given tag name.
-Function TImageInfo.LookupTagVal(SearchStr:ansistring):ansistring;
-var i: integer;
+//  This function returns the data value for a given tag name.
+function TImageInfo.LookupTagVal(SearchStr: ansistring): ansistring;
+var
+  i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := '';
- for i := 0 to fiTagCount-1 do
-   if AnsiString(AnsiUpperCase(fiTagArray[i].Name)) = SearchStr then
-   begin
-     result := fiTagArray[i].Data;
-     break;
-   end;
+  SearchStr := AnsiString(AnsiUpperCase(SearchStr));
+  result := '';
+  for i := 0 to fiTagCount-1 do
+    if AnsiString(AnsiUpperCase(fiTagArray[i].Name)) = SearchStr then
+    begin
+      result := fiTagArray[i].Data;
+      break;
+    end;
 end;
+(*
+function TImageInfo.LookupTagValue(ASearchStr: String): String;
+var
+  i: Integer;
+  searchStr: AnsiString;
+  s: AnsiString;
+begin
+  Result := '';
+  searchStr := AnsiString(Uppercase(ASearchStr));
+  for i := 0 to fiTagCount - 1 do
+    if searchstr = AnsiUppercase(fiTagArray[i].Name) then
+    begin
+      s := fiTagArray[i].Raw;
+      while s[Length(s)] = #0 do Delete(s, Length(s), 1);
+      {$IFDEF FPC}
+       {$IFNDEF FPC3+}
+       Result := AnsiToUTF8(s);
+       {$ELSE}
+       Result := s;
+       {$ENDIF}
+     {$ELSE}
+      Result := s;
+     {$ENDIF}
+    end;
+end;
+     *)
 
 //  This function returns the integer data value for a given tag name.
 Function TImageInfo.LookupTagInt(SearchStr:ansistring):integer;
@@ -1044,20 +1224,22 @@ end;
 //  in the tag buffer. It searches by the description
 //  which is most likely to be used as a label
 Function TImageInfo.LookupTagByDesc(SearchStr:ansistring):integer;
-var i: integer;
+var
+  i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to FITagCount-1 do
-   if AnsiString(AnsiUpperCase(fiTagArray[i].Desc)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
+  SearchStr := AnsiString(AnsiUpperCase(SearchStr));
+  result := -1;
+  for i := 0 to FITagCount-1 do
+    if AnsiString(AnsiUpperCase(fiTagArray[i].Desc)) = SearchStr then
+    begin
+      result := i;
+      break;
+    end;
 end;
 
 Function TImageInfo.GetTagByDesc(SearchStr:ansistring):TTagEntry;
-var i:integer;
+var
+  i:integer;
 begin
   i := LookupTagByDesc(SearchStr);
   if i >= 0 then
@@ -1066,10 +1248,10 @@ begin
     result := EmptyEntry;
 end;
 
-//  This function returns the index of a tag definition
-//  for a given tag name.
+//  This function returns the index of a tag definition for a given tag name.
 function TImageInfo.LookupTagDefn(item:ansistring): integer;
-var i:integer;
+var
+  i: integer;
 begin
   result := -1;
   for i := 0 to ExifTagCnt-1 do
@@ -1166,8 +1348,8 @@ end;
 
 procedure TImageInfo.Assign(Source: TImageInfo);
 begin
-  FCameraMake     := Source.FCameraMake;
-  FCameraModel    := Source.FCameraModel;
+//  FCameraMake     := Source.FCameraMake;
+//  FCameraModel    := Source.FCameraModel;
   DateTime        := Source.DateTime;
   Height          := Source.Height;
   Width           := Source.Width;
@@ -1690,11 +1872,16 @@ var
   end;
 
 begin
-  {$ifdef CreateExifBufDebug}if (parentID = 0) then CreateExifBufDebug := '';{$endif}
-  if (parentID = 0) then head := #0#0                 // APP1 block size (calculated later)
-        + 'Exif' + #$00+#$00                         // Exif Header
-        + 'II' + #$2A+#$00 + #$08+#$00+#$00+#$00     // TIFF Header (Intel)
-  else head := '';
+  {$ifdef CreateExifBufDebug}
+  if (parentID = 0) then CreateExifBufDebug := '';
+  {$endif}
+
+  if (parentID = 0) then
+    head := #0#0                        // APP1 block size (calculated later)
+          + 'Exif' + #$00+#$00                         // Exif Header
+          + 'II' + #$2A+#$00 + #$08+#$00+#$00+#$00     // TIFF Header (Intel)
+  else
+    head := '';
   n := 0;
   size := 0;
   for i := 0 to Length(fiTagArray)-1 do begin
@@ -1759,12 +1946,9 @@ end;
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
-//var
-//  idCnt : Word = 0;
-
 procedure  TImageInfo.ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
-  tagType:integer = ExifTag; prefix:string=''; parentID: word = 0);
-var 
+  ATagType:integer = ExifTag; APrefix:string=''; AParentID: word = 0);
+var
   ByteCount: integer;
   tag,TFormat,components: integer;
   de,DirEntry,OffsetVal,NumDirEntries,ValuePtr,subDirStart: Longint;
@@ -1775,8 +1959,6 @@ var
   tmpDateTime: string;
   tagID: word;
 begin
-//  if parentID = 0 then
-//    idCnt := 1;
   pushDirStack(dirStart,OffsetBase);
   NumDirEntries := Get16u(DirStart);
   if (ExifTrace > 0) then
@@ -1791,9 +1973,9 @@ begin
 //format('%d,%d,%d,%d+%s',[DirStart,NumDirEntries,OffsetBase,ExifLength,
 //parent.errstr]);
 //  Uncomment to trace directory structure
-  if (tagType = ExifTag) and (ThumbStart = 0) and not TiffFmt then
+  if (ATagType = ExifTag) and (ThumbStart = 0) and not TiffFmt then
   begin
-    DirEntry := DirStart+2+12*NumDirEntries;
+    DirEntry := DirStart + 2 + 12*NumDirEntries;
     ThumbStart := Get32u(DirEntry);
     ThumbLength := OffsetBase+ExifLength-ThumbStart;
   end;
@@ -1821,18 +2003,19 @@ begin
 
     if BuildList in [GenString, GenAll] then
     begin
-      LookUpE := FetchTagByID(tag,tagType);
+      LookUpE := FetchTagByID(tag, ATagType);
 
       with LookUpE do
       begin
         case tformat of
-          FMT_UNDEFINED: fStr := '"'+StrBefore(RawStr,#0)+'"';
-             FMT_STRING:
-             begin
-                fStr := copy(parent.EXIFsegment^.data, ValuePtr,ByteCount);
-                if fStr[ByteCount] = #0 then
-                  fStr := copy(fStr,1,ByteCount-1);
-             end;
+          FMT_UNDEFINED:
+            fStr := '"' + StrBefore(RawStr,#0) + '"';
+          FMT_STRING:
+            begin
+              fStr := copy(parent.EXIFsegment^.data, ValuePtr,ByteCount);
+              if fStr[ByteCount] = #0 then
+                fStr := copy(fStr, 1, ByteCount-1);
+            end;
         else
           fStr := FormatNumber(RawStr, TFormat, FormatS, Code);
         end;
@@ -1847,7 +2030,7 @@ begin
        TAG_USERCOMMENT:
          begin
            // here we strip off comment header
-           fStr := trim(copy(RawStr,9,ByteCount-8));    // msta - one letter is missing, when using ByteCount-9...    // old one is erroneous
+           fStr := trim(copy(RawStr, 9, ByteCount-8));    // msta - one letter is missing, when using ByteCount-9...    // old one is erroneous
 //           Comments := AnsiString(trim(string(copy(RawStr,9,ByteCount-9))));
 //           fStr := Comments;  // old one is erroneous
 //
@@ -1860,7 +2043,7 @@ begin
          begin
            //Konvertierung des EXIF-Formats ins System-Format///////////////////
            DateTimeToString(tmpDateTime, ISODateFormat, ExifDateToDateTime(fStr));
-           Fstr:=AnsiString(tmpDateTime);
+           Fstr := AnsiString(tmpDateTime);
            /////////////////////////////////////////////////////////////////////
          end;
       else
@@ -1873,7 +2056,7 @@ begin
           siif(ExifTrace > 0,' [size: '+AnsiString(inttostr(ByteCount))+']','')+
           siif(ExifTrace > 0,' [start: '+AnsiString(inttostr(ValuePtr))+']','');
 
-      if tagType = ThumbTag then
+      if ATagType = ThumbTag then
         Thumbtrace := ThumbTrace + tmpTR
       else
         TraceStr := TraceStr + tmpTR;
@@ -1909,9 +2092,14 @@ begin
            except
            end;
          end;
-       TAG_MAKE: FCameraMake := fstr;
-       TAG_MODEL: CameraModel := fstr;
-       TAG_EXIFVERSION: ExifVersion := rawstr;
+       (*
+       TAG_MAKE:
+         FCameraMake := fstr;
+       TAG_MODEL:
+         CameraModel := fstr;
+         *)
+       TAG_EXIFVERSION:
+         ExifVersion := rawstr;
        TAG_DATETIME_MODIFY:
          begin
            dt_modify_oset := ValuePtr;
@@ -1949,7 +2137,7 @@ begin
              Width := round(getNumber(RawStr, TFormat));
            end;
        TAG_THUMBTYPE:
-           if tagType = ThumbTag then
+           if ATagType = ThumbTag then
              ThumbType := round(getNumber(RawStr, TFormat));
     else
       // no special processing
@@ -1964,9 +2152,9 @@ begin
         NewE.Size := length(RawStr);
         NewE.PRaw := ValuePtr;
         NewE.TType := tFormat;
-        NewE.parentID := parentID;
+        NewE.ParentID := AParentID;
         NewE.id := tagID;
-        if tagType = ThumbTag then
+        if ATagType = ThumbTag then
           AddTagToThumbArray(NewE)
         else
           AddTagToArray(NewE);
@@ -2132,7 +2320,7 @@ begin
         *)
       end;
 
-      if (BuildList in [GenList,GenAll]) and (TagID > 0) then
+      if (BuildList in [GenList, GenAll]) and (TagID > 0) then
       begin
         try
           NewE := TagTbl[TagID];
@@ -2229,59 +2417,68 @@ begin
   result := ts;
 end;
 
-function TImageInfo.ToLongString: String;
+function TImageInfo.ToLongString(ALabelWidth: Integer = 15): String;
 var
   tmpStr: String;
   FileDateTime: String;
+  L: TStringList;
+  W: Integer;
 begin
-  if parent.ExifSegment = nil then
-    Result := ''
-  else
-  if Parent.errstr <> '<none>' then
-    Result := 'File Name:  '   + ExtractFileName(parent.Filename) + crlf +
-              'Exif Error: '   + Parent.ErrStr
-  else
-  begin
-    DateTimeToString(FileDateTime, ISODateFormat, parent.FileDateTime);
-
-    result := 'File Name:     ' + ExtractFileName(parent.Filename) + crlf +
-              'File Size:     ' + IntToStr(parent.FileSize div 1024) + 'k' + crlf +
-              'File Date:     ' + FileDateTime + crlf +
-              'Photo Date:    ' + DateTime + crlf +
-              'Make (Model):  ' + FCameraMake + ' (' + CameraModel + ')' + crlf +
-              'Dimensions:    ' + IntToStr(Width) + ' x '+ IntToStr(Height);
-
-    if BuildList in [GenString,GenAll] then
+  W := ALabelWidth;
+  L := TStringList.Create;
+  try
+    if parent.ExifSegment = nil then
+      Result := ''
+    else
+    if Parent.ErrStr <> '<none>' then
     begin
-      tmpStr := LookupTagVal('ExposureTime');
-      if tmpStr <> '' then
-        result := result + crlf + 'Exposure Time: ' + tmpStr
-      else
+      L.Add(Format('File Name:     %s', [ExtractFileName(parent.Filename)]));
+      L.Add(Format('Exif Error:    %s', [Parent.ErrStr]));
+      Result := L.Text;
+    end else
+    begin
+      DateTimeToString(FileDateTime, ISODateFormat, Parent.FileDateTime);
+
+      L.Add(Format('%-*s %s',      [w, 'File name:', ExtractFileName(Parent.Filename)]));
+      L.Add(Format('%-*s %dk',     [w, 'File size:', Parent.FileSize div 1024]));
+      L.Add(Format('%-*s %s',      [w, 'File date:', FileDateTime]));
+      L.Add(Format('%-*s %s',      [w, 'Photo date:', DateTime]));
+      L.Add(Format('%-*s %s (%s)', [w, 'Make (model):', CameraMake, CameraModel]));
+      L.Add(Format('%-*s %d x %d', [w, 'Dimensions:', Width, Height]));
+
+      if BuildList in [GenString,GenAll] then
       begin
-        tmpStr := LookupTagVal('ShutterSpeedValue');
+        tmpStr := LookupTagVal('ExposureTime');
         if tmpStr <> '' then
-          result := result + crlf + 'Exposure Time: ' + tmpStr
+          L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]))
+        else
+        begin
+          tmpStr := LookupTagVal('ShutterSpeedValue');
+          if tmpStr <> '' then
+            L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]));
+        end;
+
+        tmpStr := LookupTagVal('FocalLength');
+        if tmpStr <> '' then
+          L.Add(Format('%-*s %s', [w, 'Focal length:', tmpStr]));
+
+        tmpStr := LookupTagVal('FocalLengthIn35mm');
+        if tmpStr <> '' then
+          L.Add(Format('%-*s %s', [w, 'Focal length (35mm):', tmpStr]));
+
+        tmpStr := LookupTagVal('FNumber');
+        if tmpStr <> '' then
+          L.Add(Format('%-*s %s', [w, 'F number', tmpStr]));
+
+        tmpStr := LookupTagVal('ISOSpeedRatings');
+        if tmpStr <> '' then
+          L.Add(Format('%-*s %s', [w, 'ISO:', tmpStr]));
       end;
-
-      tmpStr := LookupTagVal('FocalLength');
-      if tmpStr <> '' then
-        result := result + crlf + 'Focal Length:  ' + tmpStr;
-
-      tmpStr := LookupTagVal('FocalLengthin35mm');
-      if tmpStr <> '' then
-        result := result + crlf + 'Focal Length (35mm): ' + tmpStr;
-
-      tmpStr := LookupTagVal('FNumber');
-      if tmpStr <> '' then
-        result := result + crlf + 'FNumber:       ' + tmpStr;
-
-      tmpStr := LookupTagVal('ISOSpeedRatings');
-      if tmpStr <> '' then
-        result := result + crlf + 'ISO:           ' + tmpStr;
+      L.Add(Format('%-*s %s', [w, 'Flash fired:', siif(odd(FlashUsed),'Yes','No')]));
+      Result := L.Text;
     end;
-
-    result := result + crlf +
-      'Flash fired:   ' + siif(odd(FlashUsed),'Yes','No');
+  finally
+    L.Free;
   end;
 end;
 
@@ -2432,7 +2629,62 @@ begin
   end;
 end;
 
-procedure TImageInfo.removeTag(TagID:integer; parentID:word=0);
+function TImageInfo.GetTagValueAsString(ATagName: String): String;
+var
+  tag: TTagEntry;
+  name: ansistring;
+  s: ansistring;
+begin
+  Result := '';
+
+  name := AnsiString(ATagName);
+  tag := GetTagByName(name);
+  if tag.Name = 'Unknown' then
+    exit;
+
+  case tag.TType of
+    FMT_STRING:
+      begin
+       {$IFDEF FPC}
+        {$IFNDEF FPC3+}
+          Result := AnsiToUTF8(tag.Raw);
+        {$ELSE}
+          Result := tag.Raw;
+        {$ENDIF}
+       {$ELSE}
+          Result := tag.Raw;
+       {$ENDIF}
+       while Result[Length(Result)] = #0 do
+         Delete(Result, Length(Result), 1);
+      end;
+    FMT_BYTE:
+      Result := IntToStr(PByte(@tag.Raw[1])^);
+    FMT_SBYTE:
+      Result := IntToStr(ShortInt(PByte(@tag.Raw[1])));
+    FMT_USHORT:
+      Result := IntToStr(PWord(@tag.Raw[1])^);
+    FMT_SSHORT:
+      Result := IntToStr(SmallInt(PWord(@tag.Raw[1])^));
+    FMT_ULONG:
+      Result := IntToStr(PDWord(@tag.Raw[1])^);
+    FMT_SLONG:
+      Result := IntToStr(LongInt(PDWord(@tag.Raw[1])^));
+    FMT_SINGLE:
+      Result := FloatToStr(PSingle(@tag.Raw[1])^);
+    FMT_DOUBLE:
+      Result := FloatToStr(PDouble(@tag.Raw[1])^);
+    FMT_URATIONAL, FMT_SRATIONAL:
+      Result := FloatToStr(CvtRational(tag.Raw));
+    FMT_BINARY:
+      Result := '<binary>';
+  end;
+end;
+
+procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
+begin
+end;
+
+procedure TImageInfo.RemoveTag(TagID:integer; parentID:word=0);
 var i,j : integer;
 begin
  j := 0;
@@ -2480,20 +2732,8 @@ begin
 end;
 
 function TImageInfo.GetArtist: String;
-var
-  p: PTagEntry;
-  v: AnsiString;
 begin
-  Result := '';
-  p := getTag(TAG_ARTIST, false, 0, 2);
-  if (p = nil) then exit;
-  SetLength(v, Length(p^.Raw)-1);
-  Move(p^.Raw[1], v[1], Length(p^.Raw)-1);
-  {$IFDEF FPC}
-  Result := AnsiToUTF8(trim(v));
-  {$ELSE}
-  Result := trim(v);
-  {$ENDIF}
+  Result := GetTagValueAsString('Artist');
 end;
 
 procedure TImageInfo.SetArtist(v: String);
@@ -2536,24 +2776,26 @@ begin
     {$IFDEF FPC}
     Result := UTF8Encode(w);
     {$ELSE}
-    Result := w;  // ????
+    Result := w;
     {$ENDIF}
   end else
   if Pos('ASCII', p^.Raw) = 1 then begin
     SetLength(Result, Length(p^.Raw)-9);
-    Move(p^.Raw[9], Result[1], Length(Result));
+    sa := p^.Raw;
+    Delete(sa, 1, 8);
+    Result := sa;
   end else
   if Pos(#0#0#0#0#0#0#0#0, p^.Raw) = 1 then begin
     SetLength(sa, Length(p^.Raw) - 9);
     Move(p^.raw[9], sa[1], Length(sa));
     {$IFDEF FPC}
-    {$IFDEF FPC_FULLVERSION < '30000'}
+    {$IFNDEF FPC3+}
     Result := SysToUTF8(sa);
     {$ELSE}
     Result := WinCPToUTF8(sa);
     {$ENDIF}
     {$ELSE}
-    Result := sa; //  ????
+    Result := sa;
     {$ENDIF}
   end else
   if Pos('JIS', p^.Raw) = 1 then
@@ -2562,16 +2804,18 @@ end;
 
 procedure TImageInfo.SetExifComment(v: String);
 var
-  p : PTagEntry;
-  i : integer;
-  w : WideString;
-  u : Boolean;
+  p: PTagEntry;
+  i: integer;
+  w: WideString;
+  a: AnsiString;
+  u: Boolean;
 begin
-  p := getTag(TAG_EXIF_OFFSET, true, 0, 4, true);
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, 4, true);
   if (v = '') then begin
     RemoveTag(TAG_USERCOMMENT, p^.ID);
     exit;
   end;
+
   p := GetTag(TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
   u := false;
   for i:=1 to Length(v) do
@@ -2582,63 +2826,28 @@ begin
 
   if u then begin
     p^.Raw := 'UNICODE'#0;
+    // According to docs: no need to add a trailing zero byte
    {$IFDEF FPC}
     w := UTF8Decode(v);
    {$ELSE}
-    w := v;   // ?????
+    w := v;
    {$ENDIF}
     SetLength(p^.Raw, Length(w) * SizeOf(WideChar) + 8);
     Move(w[1], p^.Raw[9], Length(w) * SizeOf(WideChar));
   end else begin
     p^.Raw := 'ASCII'#0#0#0;
-    v := v + #0;
-    SetLength(p^.Raw, Length(v) + 8);
-    Move(v[1], p^.Raw[9], Length(v));
+    // According to docs: no need to add a trailing zero byte
+    a := AnsiString(v);
+    SetLength(p^.Raw, Length(a) + 8);
+    i := Length(p^.Raw);
+    Move(a[1], p^.Raw[9], Length(a));
   end;
-  (*
-
-
-
-
-  u := false;
-  w := v;
-  for i := 1 to Length(w) do if (Word(w[i]) > 126) then begin
-    u := true;
-    break;
-  end;
-  if (u) then begin
-    p^.Raw := 'UNICODE ';
-    for i := 1 to Length(w) do begin
-      p^.Raw := p^.Raw + Char(PByte(@w[i])^) + Char(PByte(@w[i]+1)^);
-    end;
-    p^.Raw := p^.Raw + #0#0;
-  end else begin
-    p^.Raw := 'ASCII   ';
-    for i := 1 to Length(w) do begin
-      p^.Raw := p^.Raw + Char(PByte(@w[i])^);
-    end;
-    p^.Raw := p^.Raw + #0;
-  end;
-  *)
   p^.Size := Length(p^.Raw);
 end;
 
 function TImageInfo.GetImageDescription: String;
-var
-  p: PTagEntry;
-  v: ansistring;
 begin
-  Result := '';
-  p := GetTag(TAG_IMAGEDESCRIPTION, false, 0, FMT_STRING);
-  if (p = nil) then
-    exit;
-  SetLength(v, Length(p^.Raw)-1);
-  Move(p^.Raw[1], v[1], Length(p^.Raw)-1);
- {$IFDEF FPC}
-  Result := AnsiToUTF8(trim(v));
- {$ELSE}
-  Result := trim(v);
- {$ENDIF}
+  Result := GetTagValueAsString('ImageDescription');
 end;
 
 procedure TImageInfo.SetImageDescription(const v: String);
@@ -2650,12 +2859,17 @@ begin
     exit;
   end;
   p := GetTag(TAG_IMAGEDESCRIPTION, true, 0, FMT_STRING);
- {$IFDEF DELPHI}
+ {$IFDEF FPC}
   p^.Raw := UTF8ToAnsi(v) + #0;
  {$ELSE}
   p^.Raw := ansistring(v) + #0;
  {$ENDIF}
   p^.Size := Length(p^.Raw);
+end;
+
+function TImageInfo.GetCameraMake: String;
+begin
+  Result := GetTagValueAsString('Make');
 end;
 
 procedure TImageInfo.SetCameraMake(const AValue: String);
@@ -2675,8 +2889,15 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 
+  {
   FCameraMake := AValue;
   WriteThruString('Make', AValue);
+  }
+end;
+
+function TImageInfo.GetCameraModel: String;
+begin
+  Result := GetTagValueAsString('Model');
 end;
 
 procedure TImageInfo.SetCameraModel(const AValue: String);
@@ -2696,8 +2917,10 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 
+  {
   FCameraModel := AValue;
   WriteThruString('Model', AValue);
+  }
 end;
 
 function TImageInfo.IterateFoundTags(TagId: integer; var retVal: TTagEntry): boolean;
@@ -2773,16 +2996,17 @@ end;
 Function TImageInfo.LookupRatio: double;
 var
   estRatio: double;
-  upMake, upModel: ansistring;
+  upMake, upModel: String;
 begin
-  upMake := copy(AnsiString(AnsiUpperCase(FCameraMake)), 1, 5);
-  upModel := copy(AnsiString(AnsiUpperCase(cameramodel)), 1, 5);
+  upMake := Uppercase(copy(CameraMake, 1, 5));
+  upModel := Uppercase(copy(Cameramodel, 1, 5));
   estRatio := 4.5;  // ballpark for *my* camera -
   result := estRatio;
 end;
 
 procedure TImageInfo.Calc35Equiv;
-const Diag35mm : double = 43.26661531; // sqrt(sqr(24)+sqr(36))
+const
+  Diag35mm : double = 43.26661531; // sqrt(sqr(24)+sqr(36))
 var
   tmp:integer;
   CCDWidth, CCDHeight, fpu, fl, fl35, ratio : double;
@@ -2832,22 +3056,24 @@ begin
   w := Round(fl35);
 
 // now load it into the tag array
-    tmp := LookupTagDefn('FocalLengthIn35mmFilm');
-    if tmp = -1 then
-      exit;
-    LookUpE := TagTable[tmp];
-    NewE := LookupE;
-    NewE.Data := ansistring(Format('%5.2f',[fl35]));
-    NewE.FormatS := '%s mm';
-    SetLength(NewE.Raw, 2);
-    Move(w, NewE.Raw[1], 2);
-    NewE.TType := 3;
-    AddTagToArray(NewE);
-    TraceStr := TraceStr+crlf+
-          siif(ExifTrace > 0,'tag[$'+AnsiString(inttohex(tmp,4))+']: ','')+
-          NewE.Desc+DexifDelim+NewE.Data+
-          siif(ExifTrace > 0,' [size: 0]','')+
-          siif(ExifTrace > 0,' [start: 0]','');
+  tmp := LookupTagDefn('FocalLengthIn35mmFilm');
+  if tmp = -1 then
+    exit;
+
+  LookUpE := TagTable[tmp];
+  NewE := LookupE;
+  NewE.Data := ansistring(Format('%0.2f',[fl35]));
+  NewE.FormatS := '%s mm';
+  SetLength(NewE.Raw, 2);
+  Move(w, NewE.Raw[1], 2);
+  NewE.TType := 3;
+  AddTagToArray(NewE);
+
+  TraceStr := TraceStr + crlf +
+    siif(ExifTrace > 0, 'tag[$' + IntToHex(tmp,4) + ']: ', '') +
+    NewE.Desc + dExifDelim + NewE.Data +
+    siif(ExifTrace > 0,' [size: 0]', '') +
+    siif(ExifTrace > 0,' [start: 0]', '');
 end;
 
 function TImageInfo.EXIFArrayToXML: tstringlist;
@@ -2867,122 +3093,6 @@ begin
     end;
   buff.add('   </EXIFdata>');
   result := buff;
-end;
-
-
-function getbyte( var f : tstream) : byte;
-var a : byte;
-begin
-  f.Read(a,1);
-  result := a;
-end;
-
-//--------------------------------------------------------------------------
-// Here we implement the Endian Independent layer.  Outside
-// of these methods we don't care about endian issues.
-//--------------------------------------------------------------------------
-function tEndInd.GetDataBuff:ansistring;
-begin
-  result := llData;
-end;
-
-procedure tEndInd.SetDataBuff(const Value:ansistring);
-begin
-  llData := Value;
-end;
-
-procedure tEndInd.WriteInt16(var buff:ansistring;int,posn:integer);
-begin
-  if MotorolaOrder then
-  begin
-    buff[posn+1] := ansichar(int mod 256);
-    buff[posn]   := ansichar(int div 256);
-  end
-  else
-  begin
-    buff[posn]   := ansichar(int mod 256);
-    buff[posn+1] := ansichar(int div 256);
-  end
-end;
-
-procedure tEndInd.WriteInt32(var buff:ansistring;int,posn:longint);
-begin
-  if MotorolaOrder then
-  begin
-    buff[posn+3] := ansichar(int mod 256);
-    buff[posn+2] := ansichar((int shr  8) mod 256);
-    buff[posn+1] := ansichar((int shr 16) mod 256);
-    buff[posn]   := ansichar((int shr 24) mod 256);
-  end
-  else
-  begin
-    buff[posn]   := ansichar(int mod 256);
-    buff[posn+1] := ansichar((int shr  8) mod 256);
-    buff[posn+2] := ansichar((int shr 16) mod 256);
-    buff[posn+3] := ansichar((int shr 24) mod 256);
-  end
-end;
-
-//--------------------------------------------------------------------------
-// Convert a 16 bit unsigned value from file's native byte order
-//--------------------------------------------------------------------------
-function tEndInd.Get16u(oset:integer):word;
-// var hibyte,lobyte:byte;
-begin
-// To help debug, uncomment the following two lines
-//  hibyte := byte(llData[oset+1]);
-//  lobyte := byte(llData[oset]);
-  if MotorolaOrder
-    then result := (byte(llData[oset]) shl 8)
-                 or byte(llData[oset+1])
-    else result := (byte(llData[oset+1]) shl 8)
-                 or byte(llData[oset]);
-end;
-
-//--------------------------------------------------------------------------
-// Convert a 32 bit signed value from file's native byte order
-//--------------------------------------------------------------------------
-function tEndInd.Get32s(oset:integer):Longint;
-begin
-  if MotorolaOrder
-    then result := (byte(llData[oset])   shl 24)
-                or (byte(llData[oset+1]) shl 16)
-                or (byte(llData[oset+2]) shl 8)
-                or  byte(llData[oset+3])
-    else result := (byte(llData[oset+3]) shl 24)
-                or (byte(llData[oset+2]) shl 16)
-                or (byte(llData[oset+1]) shl 8)
-                or  byte(llData[oset]);
-end;
-
-//--------------------------------------------------------------------------
-// Convert a 32 bit unsigned value from file's native byte order
-//--------------------------------------------------------------------------
-function tEndInd.Put32s(data:Longint):ansistring;
-var
-  data2:integer;
-  buffer:string[4] absolute data2;
-  bbuff:ansichar;
-begin
-  data2 := data;
-  if MotorolaOrder then
-  begin
-    bbuff     := buffer[1];
-    buffer[1] := buffer[4];
-    buffer[4] := bbuff;
-    bbuff     := buffer[2];
-    buffer[2] := buffer[3];
-    buffer[3] := bbuff;
-  end;
-  result := buffer;
-end;
-
-//--------------------------------------------------------------------------
-// Convert a 32 bit unsigned value from file's native byte order
-//--------------------------------------------------------------------------
-function tEndInd.Get32u(oset:integer):Longword;
-begin
-  result := Longword(Get32S(oset)) and $FFFFFFFF;
 end;
 
 //--------------------------------------------------------------------------
@@ -3976,40 +4086,6 @@ end;
 function defRealFmt(inReal:double):ansistring;
 begin
   result := AnsiString(FloatToStr(inReal));
-end;
-
-function GCD(a, b : integer):integer;
-begin
-  try
-  if (b mod a) = 0 then
-    Result := a
-  else
-    Result := GCD(b, a mod b);
-  except
-    result := 1
-  end;
-end;
-
-
-function fmtRational( num,den:integer):ansistring;
-var
-  gcdVal,intPart,fracPart,newNum,newDen: integer;
-  outStr:ansistring;
-begin
-  // first, find the values
-  gcdVal := GCD(num,den);
-  newNum := num div gcdVal;   // reduce the numerator
-  newDen := den div gcdVal;    //  reduce the denominator
-  intPart := newNum div newDen;
-  fracPart := newNum mod newDen;
-
-  // now format the string
-  outStr := '';
-  if intPart <> 0 then
-     outStr := AnsiString(inttostr(intPart))+' ';
-  if fracPart <> 0 then
-       outStr := outStr + AnsiString(inttostr(fracPart))+'/'+AnsiString(inttostr(newDen));
-  result := AnsiString(trim(string(outstr)));  // trim cleans up extra space
 end;
 
 function defFracFmt(inNum,inDen:integer):ansistring;

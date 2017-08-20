@@ -1,6 +1,9 @@
 ; IMPORTANT: This file must be stored in ANSI encoding
+; Use a TAB character between the two columns
+
 Artist	Ansel Adams
 ImageDescription	A nice image
 UserComment	Nice comment!
 Make	My camera make
 Model	My camera model
+Copyright	(c) wp

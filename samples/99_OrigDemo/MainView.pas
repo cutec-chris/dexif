@@ -419,9 +419,9 @@ end;
 
 procedure TForm1.btnTreeClick(Sender: TObject);
 begin
-  btnWrite.enabled := false;
+  btnWrite.Enabled := false;
   if cbClearOnLoad.Checked then
-    memo1.Clear;
+    Memo1.Clear;
   Flist.Clear;
   CleanupPreview;
   JpgCnt := 0;
@@ -434,18 +434,22 @@ begin
   {$ELSE}
   Lastdir := BrowseForDir(Handle,lastDir);
   {$ENDIF}
-  cursor := crHourglass;
-  StatusBar1.SimpleText := 'Scanning Directory Structure';
-  StatusBar1.Refresh;
-  ReadExifDir(lastDir,true);        //  run through it just to count jpegs
-  PBar.Max := JpgCnt;
-  etime := clock();
-  ReadExifDir(lastDir,false);
-  StatusBar1.SimpleText :=
-    format('Elapsed time (%d jpegs): %0.2f sec',
-      [JpgCnt,(clock-etime)/1000]);
-  Memo1.Lines.AddStrings(flist);
-  cursor := crDefault;
+
+  Cursor := crHourglass;
+  try
+    StatusBar1.SimpleText := 'Scanning Directory Structure';
+    StatusBar1.Refresh;
+    ReadExifDir(lastDir,true);        //  run through it just to count jpegs
+    PBar.Max := JpgCnt;
+    etime := clock();
+    ReadExifDir(lastDir,false);
+    StatusBar1.SimpleText := Format('Elapsed time (%d jpegs): %0.2f sec', [
+      JpgCnt, (clock-etime)/1000
+    ]);
+    Memo1.Lines.AddStrings(flist);
+  finally
+    Cursor := crDefault;
+  end;
 end;
 
 procedure TForm1.ReadExifDir(start:string; justcnt:boolean);
