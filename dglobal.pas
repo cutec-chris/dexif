@@ -13,9 +13,9 @@ type
 {$IFNDEF FPC}
   DWord = Cardinal;
   PDWord = ^DWord;
-
-  TBytes = array of byte;    // Needed for Delphi 7
 {$ENDIF}
+
+  TBytes = array of byte;    // Needed for Delphi 7 and old Lazarus (1.0)
 
   TTagID = word;
 

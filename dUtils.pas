@@ -42,6 +42,8 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
+procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
+
 function siif(const ACond: boolean; const s1: AnsiString;
   const s2: AnsiString=''): AnsiString;
 
@@ -59,13 +61,14 @@ function DefRealFmt(inReal: Double): String;
 function DefFracFmt(inNum, inDenom: Integer): String;
 
 //  Formatting callbacks
-Function GpsPosn(instr: AnsiString): String;
-Function GpsAltitude(instr: AnsiString): String;
-Function GenCompConfig(instr: AnsiString): String;
-Function ExposCallBack(instr: AnsiString): String;
-Function FlashCallBack(instr: AnsiString): String;
-Function SSpeedCallBack(instr: AnsiString): String;
-Function xpTranslate(instr: AnsiString): String;
+function GpsPosn(instr: AnsiString): String;
+function GpsAltitude(instr: AnsiString): String;
+function GenCompConfig(instr: AnsiString): String;
+function ExposCallBack(instr: AnsiString): String;
+function FlashCallBack(instr: AnsiString): String;
+function SSpeedCallBack(instr: AnsiString): String;
+function xpTranslate(instr: AnsiString): String;
+
 
 
 implementation
@@ -278,6 +281,59 @@ begin
   Result := c;
 end;
 
+{ Extracts the width and height of a JPEG image from its data without loading
+  it into a TJpegImage. }
+procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
+type
+  TJPGHeader = array[0..1] of Byte; //FFD8 = StartOfImage (SOI)
+  TJPGRecord = packed record
+    Marker: Byte;
+    RecType: Byte;
+    RecSize: Word;
+  end;
+var
+  n: integer;
+  hdr: TJPGHeader;
+  rec: TJPGRecord;
+  p: Int64;
+  savedPos: Int64;
+begin
+  AWidth := 0;
+  AHeight := 0;
+
+  savedPos := AStream.Position;
+  try
+    // Check for SOI (start of image) record
+    n := AStream.Read(hdr{%H-}, SizeOf(hdr));
+    if (n < SizeOf(hdr)) or (hdr[0] <> $FF) or (hdr[1] <> $D8) then
+      exit;
+
+    rec.Marker := $FF;
+    while (AStream.Position < AStream.Size) and (rec.Marker = $FF) do begin
+      if AStream.Read(rec, SizeOf(rec)) < SizeOf(rec) then
+        exit;
+      rec.RecSize := BEToN(rec.RecSize);
+      p := AStream.Position - 2;
+      case rec.RecType of
+        $C0..$C3:
+          if (rec.RecSize >= 4) then // Start of frame markers
+          begin
+            AStream.Seek(1, soFromCurrent);  // Skip "bits per sample"
+            AHeight := BEToN(GetWord(AStream));
+            AWidth := BEToN(GetWord(AStream));
+            exit;
+          end;
+        $D9:  // end of image;
+          break;
+      end;
+      AStream.Position := p + rec.RecSize;
+    end;
+  finally
+    AStream.Position := savedPos;
+  end;
+end;
+
+
 { Formatting callbacks }
 
 Function GpsPosn(InStr: AnsiString): String;
@@ -487,7 +543,6 @@ begin
     Result := Copy(ts, 1, Pos(dExifDecodeSep, ts) - 1);
   end;
 end;
-
 
 end.
 

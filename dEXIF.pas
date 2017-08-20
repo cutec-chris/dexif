@@ -31,7 +31,7 @@ interface
 uses
   sysutils, classes, math,
  {$IFDEF FPC}
-  fpimage, fpreadjpeg, LazUTF8,
+  LazUTF8,
  {$ELSE}
   {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
  {$ENDIF}
@@ -3102,52 +3102,6 @@ begin
   end;
 end;
 
-{$IFNDEF FPC3+}
-function JPGImageSize(AStream: TStream): TPoint;
-type
-  TJPGHeader = array[0..1] of Byte; //FFD8 = StartOfImage (SOI)
-  TJPGRecord = packed record
-    Marker: Byte;
-    RecType: Byte;
-    RecSize: Word;
-  end;
-var
-  n: integer;
-  hdr: TJPGHeader;
-  rec: TJPGRecord = (Marker: $FF; RecType: 0; RecSize: 0);
-  p: Int64;
-  savedPos: Int64;
-begin
-  savedPos := AStream.Position;
-
-  Result := Point(0, 0);
-  // Check for SOI (start of image) record
-  n := AStream.Read(hdr{%H-}, SizeOf(hdr));
-  if (n < SizeOf(hdr)) or (hdr[0] <> $FF) or (hdr[1] <> $D8) then
-    exit;
-
-  while (AStream.Position < AStream.Size) and (rec.Marker = $FF) do begin
-    if AStream.Read(rec, SizeOf(rec)) < SizeOf(rec) then exit;
-    rec.RecSize := BEToN(rec.RecSize);
-    p := AStream.Position - 2;
-    case rec.RecType of
-      $C0..$C3:
-        if (rec.RecSize >= 4) then // Start of frame markers
-        begin
-          AStream.Seek(1, soFromCurrent);  // Skip "bits per sample"
-          Result.Y := BEToN(AStream.ReadWord);
-          Result.X := BEToN(AStream.ReadWord);
-          exit;
-        end;
-      $D9:  // end of image;
-        break;
-    end;
-    AStream.Position := p + rec.RecSize;
-  end;
-  AStream.Position := savedPos;
-end;
-{$ENDIF}
-
 { A jpeg image has been written to a stream. The current EXIF data will be
   merged with this stream and saved to the specified file.
   NOTE: It is in the responsibility of the programmer to make sure that
@@ -3157,24 +3111,19 @@ procedure TImgData.WriteEXIFJpeg(AJpeg: TStream; AFileName: String;
 var
   jms: TMemoryStream;
   jfs: TFileStream;
-  imgSize: TPoint;
+  w, h: Integer;
   NewExifBlock: boolean;
 begin
   jfs := TFileStream.Create(AFilename, fmCreate or fmShareExclusive);
   try
-    AJpeg.Position := 0;                          // JPEG reader must be at begin of stream
+    AJpeg.Position := 0;               // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
-     {$IFDEF FPC3+}
-      imgSize := TFPReaderJpeg.ImageSize(AJpeg);  // Read image size from stream
-     {$ELSE}
-      imgSize := JPGImageSize(AJpeg);
-     {$ENDIF}
-      EXIFobj.AdjExifSize(imgSize.Y, imgSize.X);  // Adjust EXIF to image size
-      AJpeg.Position := 0;                        // Rewind stream
+      JPGImageSize(AJpeg, w, h);
+      EXIFobj.AdjExifSize(w, h);       // Adjust EXIF to image size
+      AJpeg.Position := 0;             // Rewind stream
     end;
     //  SaveExif(jfs);
-    // if no exif block is here
-    //   create a new one
+    // If no exif block is here create a new one
     NewExifBlock:= (ExifObj = nil);
     jms := TMemoryStream.Create;
     try
