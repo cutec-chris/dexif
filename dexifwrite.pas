@@ -165,9 +165,9 @@ var
   w: Word;
   dw: DWord;
   tag: TTagEntry;
-  tagArray: TTagArray; //Array of TTagEntry;
-  //tag, firstTag: PTagEntry;
+  tagArray: TTagArray;
   tagCount: Integer;
+  b: TBytes;
 begin
   if ADirectoryID = 1 then
   begin   // Thumbnail tags (IFD1)
@@ -256,6 +256,12 @@ begin
     AStream.Seek(0, soFromEnd);
   finally
     valueStream.Free;
+  end;
+
+  // Write the thumbnail
+  if ADirectoryID = 1 then begin
+    b := FImgData.ExtractThumbnailBuffer;
+    AStream.Write(b[0], Length(b));
   end;
 end;
 

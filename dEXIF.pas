@@ -334,7 +334,7 @@ type
     function ProcessFile(const AFileName: string):boolean;
 
     // Thumbnail
-    function ExtractThumbnailBuffer: ansistring;
+    function ExtractThumbnailBuffer: TBytes;
     {$IFDEF FPC}
     function ExtractThumbnailJpeg(AStream: TStream): Boolean;
     {$ELSE}
@@ -3055,29 +3055,30 @@ begin
   Result := cnt;
 end;
 
-function TImgData.ExtractThumbnailBuffer:ansistring;
+function TImgData.ExtractThumbnailBuffer: TBytes;
 var
-  STARTmarker,STOPmarker:integer;
-  tb:ansistring;
+  STARTmarker, STOPmarker: integer;
+  tb: ansistring;
 begin
-  result := '';
+  result := nil;
   if HasThumbnail then
   begin
     try
-      tb := copy(DataBuff,ExifObj.ThumbStart,ExifObj.ThumbLength);
-      STARTmarker := Pos(#$ff#$d8#$ff#$db,tb);
+      tb := copy(DataBuff, ExifObj.ThumbStart, ExifObj.ThumbLength);
+      STARTmarker := Pos(#$ff#$d8#$ff#$db, tb);
       if Startmarker = 0 then
-        STARTmarker := Pos(#$ff#$d8#$ff#$c4,tb);
+        STARTmarker := Pos(#$ff#$d8#$ff#$c4, tb);
       if STARTmarker <= 0 then
         exit;
       tb := copy(tb,STARTmarker,length(tb));  // strip off thumb data block
       // ok, this is fast and easy - BUT what we really need
       // is to read the length bytes to do the extraction...
-      STOPmarker := Pos(#$ff#$d9,tb)+2;
+      STOPmarker := Pos(#$ff#$d9, tb) + 2;
       tb := copy(tb,1,STOPmarker);
-      result := tb;
+      SetLength(Result, Length(tb));
+      Move(tb[1], Result[0], Length(Result));
     except
-      // result will be empty string...
+      // Result will nil...
     end;
   end;
 end;
@@ -3085,21 +3086,20 @@ end;
 {$IFDEF FPC}
 function TImgData.ExtractThumbnailJpeg(AStream: TStream): Boolean;
 var
-  tb: ansistring;
+  b: TBytes;
   p: Int64;
 begin
+  Result := false;
   if (AStream <> nil) and HasThumbnail and (ExifObj.ThumbType = JPEG_COMP_TYPE) then
   begin
-    tb := ExtractThumbnailBuffer();
-    if tb <> '' then begin
+    b := ExtractThumbnailBuffer();
+    if b <> nil then begin
       p := AStream.Position;
-      AStream.WriteBuffer(tb[1], Length(tb));
+      AStream.WriteBuffer(b[0], Length(b));
       AStream.Position := p;
       Result := true;
-      exit;
     end;
   end;
-  Result := false;
 end;
 
 {$IFNDEF FPC3+}
@@ -3228,24 +3228,23 @@ end;
 {$IFNDEF dExifNoJpeg}
 function TImgData.ExtractThumbnailJpeg: TJpegImage;
 var
-  ti: TJPEGImage;
-  x: TStringStream;
-  tb: ansistring;
+  ms: TMemoryStream;
+  b: TBytes;
 begin
-  result := nil;
+  Result := nil;
   if HasThumbnail and (ExifObj.ThumbType = JPEG_COMP_TYPE) then
   begin
-    tb := ExtractThumbnailBuffer();
-    if (tb = '') then
+    b := ExtractThumbnailBuffer();
+    if (b = nil) then
       exit;
-    x := TStringStream.Create(tb);
+    ms := TMemoryStream.Create;
     try
-      ti := TJPEGImage.Create;
-      x.Seek(0,soFromBeginning);
-      ti.LoadFromStream(x);
-      result := ti;
+      ms.WriteBuffer(b[0], Length(b));
+      ms.Position := 0;
+      Result := TJpegImage.create;
+      Result.LoadFromStream(ms);
     finally
-      x.Free;
+      ms.Free;
     end;
   end;
 end;

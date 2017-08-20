@@ -13,15 +13,17 @@ type
 {$IFNDEF FPC}
   DWord = Cardinal;
   PDWord = ^DWord;
+
+  TBytes = array of byte;    // Needed for Delphi 7
 {$ENDIF}
 
   TTagID = word;
 
   // These function variables can be overridden to alter the default formatting
   // for various data types
-  TFmtInt  = function(inInt: integer): String;
-  TFmtReal = function(inReal: double): String;
-  TFmtFrac = function(inNum, inDenom: integer): String;
+  TFmtInt  = function(inInt: Integer): String;
+  TFmtReal = function(inReal: Double): String;
+  TFmtFrac = function(inNum, inDenom: Integer): String;
 
   TStrFunc = function(s: AnsiString): String;
 
