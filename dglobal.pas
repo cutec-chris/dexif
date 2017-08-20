@@ -9,7 +9,6 @@ interface
 uses
   Classes, SysUtils;
 
-
 type
 {$IFNDEF FPC}
   DWord = Cardinal;
@@ -18,13 +17,13 @@ type
 
   TTagID = word;
 
-  // these function variables can be overridden to alter the default formatting
-  //  for various data types
-  TFmtInt  = function(inInt: integer): AnsiString;
-  TFmtReal = function(inReal: double): AnsiString;
-  TFmtFrac = function(inNum, inDenom: integer): AnsiString;
+  // These function variables can be overridden to alter the default formatting
+  // for various data types
+  TFmtInt  = function(inInt: integer): String;
+  TFmtReal = function(inReal: double): String;
+  TFmtFrac = function(inNum, inDenom: integer): String;
 
-  TStrFunc = function(s: AnsiString): AnsiString;
+  TStrFunc = function(s: AnsiString): String;
 
   TTagEntry = record
     TID: integer;        // TagTableID - EXIF use
@@ -34,7 +33,7 @@ type
     Name:ansistring;        // searchable
     Desc:ansistring;        // translatable
     Code:ansistring;        // decode capability
-    Data:ansistring;        // display value
+    Data:string;            // display value
     Raw:ansistring;         // unprocessed value
     PRaw: integer;       // pointer to unprocessed
     FormatS:ansistring;      // Format string

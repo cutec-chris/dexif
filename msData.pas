@@ -50,11 +50,11 @@ type
      //  More complex fields can be formatted with a
      //  callback function.  Declare them here and insert
      //  the code in the implemenetation section.
-     Function NikonLens(instr:ansistring) :ansistring;
-     Function NikonColorMode(instr:ansistring) :ansistring;
-     Function CanonExp1(instr:ansistring) :ansistring;
-     Function CanonExp2(instr:ansistring) :ansistring;
-     Function CanonCustom1(instr:ansistring) :ansistring;
+     Function NikonLens(InStr: AnsiString): String;
+     Function NikonColorMode(InStr: AnsiString): String;
+     Function CanonExp1(InStr: AnsiString): String;
+     Function CanonExp2(InStr: AnsiString): String;
+     Function CanonCustom1(InStr: AnsiString): String;
 
 const
      Nikon1Table : array [0..10] of TTagEntry =
@@ -318,49 +318,51 @@ uses
 //
 //  Ok, Ok, usually you'd have a parser do the
 //  work but hey - this is just a simple example
-Function NikonColorMode(instr:ansistring) :ansistring;
+Function NikonColorMode(InStr: AnsiString): String;
 begin
-  instr := copy(instr,2,5);
-  result := instr;
-  if instr = 'MODE1' then
-    result := 'Mode1 (sRGB)'
+  InStr := Copy(InStr, 2, 5);
+  Result := InStr;
+  if InStr = 'MODE1' then
+    Result := 'Mode1 (sRGB)'
   else
-  if instr = 'MODE2' then
-    result := 'Mode 2 (Adobe RGB)'
+  if InStr = 'MODE2' then
+    Result := 'Mode 2 (Adobe RGB)'
   else
-  if instr = 'MODE3' then
-    result := 'Mode 3 (sRGB): higher saturation'
+  if InStr = 'MODE3' then
+    Result := 'Mode 3 (sRGB): higher saturation'
 end;
 
-Function NikonLens(instr:ansistring) :ansistring;
-var i,sl:integer;
-    tb:ansistring;
-    MaxSp,MinSp,MaxFL,MinFL:double;
+function NikonLens(InStr: AnsiString): String;
+var
+  i,sl: Integer;
+  tb: Ansistring;
+  MaxSp,MinSp,MaxFL,MinFL:double;
 begin
-   sl := length(DexifDataSep);
-   result := instr;                     // if error return input string
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);          // get first irrational number
-   MinFL := CvtRational(tb);            // bottom of lens speed range
-   instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);          // get second irrational number
-   MaxFL := CvtRational(tb);            // top of lens speed range
-   instr := copy(instr,i+sl-1,64);
-   i := Pos(DexifDataSep,instr);
-   tb    := copy(instr,1,i-1);          // get third irrational number
-   MinSp := CvtRational(tb);            // minimum focal length
-   instr := copy(instr,i+sl-1,64);
-   MaxSp := CvtRational(instr);         // maximum focal length
-   result := AnsiString(format('%0.1f-%0.1f(mm)  F%0.1f-F%0.1f',
-                        [MinFl,MaxFl,MinSp,MaxSp]));
+  sl := Length(dExifDataSep);
+  Result := InStr;                     // if error return input string
+
+  i := Pos(dExifDataSep, InStr);
+  tb := Copy(InStr, 1, i-1);           // get first irrational number
+  MinFL := CvtRational(tb);            // bottom of lens speed range
+  InStr := Copy(InStr, i+sl-1, 64);
+  i := Pos(dExifDataSep, InStr);
+  tb := Copy(InStr, 1, i-1);           // get second irrational number
+  MaxFL := CvtRational(tb);            // top of lens speed range
+  InStr := Copy(InStr, i+sl-1, 64);
+  i := Pos(dExifDataSep, instr);
+  tb := copy(InStr, 1, i-1);           // get third irrational number
+  MinSp := CvtRational(tb);            // minimum focal length
+  InStr := Copy(InStr, i+sl-1, 64);
+  MaxSp := CvtRational(InStr);         // maximum focal length
+  Result := Format('%0.1f-%0.1f mm  F%0.1f-F%0.1f', [MinFl, MaxFl, MinSp, MaxSp]);
 end;
 
 type
   strArray = array of ansistring;
 
-Function CustBld(fname:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var valStr:ansistring;
+function CustBld(fname:ansistring; item:integer; decodeStr:ansistring): ansistring;
+var
+  valStr:ansistring;
 begin
   valStr := DecodeField(decodeStr, AnsiString(inttostr(item)));
   if trim(string(valStr)) <> '' then
@@ -372,8 +374,9 @@ begin
     result := '';
 end;
 
-Function CustNth(instr, fname:ansistring; item:integer):ansistring;
-var valStr:ansistring;
+Function CustNth(instr, fname:ansistring; item:integer): ansistring;
+var
+  valStr:ansistring;
 begin
   valStr := StrNth(instr,DexifDecodeSep,item);
   if trim(string(valStr)) <> '' then
@@ -385,80 +388,83 @@ begin
     result := '';
 end;
 
-Function CustAPick(instr, fname:ansistring; item:integer; decodeStr:ansistring):ansistring;
-var valStr:ansistring;
+Function CustAPick(InStr, fname: AnsiString; AItem:integer; ADecodeStr:String): String;
+var
+  valStr: String;
 begin
-  valStr := aPick(instr, item, decodeStr);
-  if trim(string(valStr)) <> '' then
+  valStr := aPick(InStr, AItem, ADecodeStr);
+  if Trim(valStr) <> '' then
   begin
-    curTagArray.AddMSTag(fname,valStr,FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    curTagArray.AddMSTag(fname, valStr, FMT_STRING);
+    Result := crlf + fname + dExifDelim + valStr;
   end
   else
     result := '';
 end;
 
 const
-  CanonGen     : ansistring = '65535:Low,0:Normal,1:High';
-  CanonMacro   : ansistring = '1:Macro,2:Normal';
-  CanonCompress: ansistring = '0:SuperFine,1:Fine,2:Normal,3:Basic,5:SuperFine';
-  CanonFlash   : ansistring = '0:Not fired,1:Auto,2:On,3:Red-eye,4:Slow sync,'+
-                              '5:Auto+red-eye,6:On+red eye,16:External flash';
-  CanonDrive   : ansistring = '0:Single,1:Continuous';
-  CanonFocus   : ansistring = '0:One-Shot,1:AI Servo,2:AI Focus,3:MF,4:Single,'+
-                              '5:Continuous,6:MF';
-  CanonSize    : ansistring = '0:Large,1:Medium,2:Small,4:5MPixel,5:2 MPixel,6:1.5 MPixel';
-  CanonEasy    : ansistring = '0:Full Auto,1:Manual,2:Landscape,3:Fast Shutter,'+
-                              '4:Slow Shutter,5:Night,6:B&W,7:Sepia,8:Portrait,9:Sports,'+
-                              '10:Macro/Close-Up,11:Pan Focus';
-  CanonISO     : ansistring = '0:Not used,15:auto,16:50,17:100,18:200,19:400';
-  CanonMeter   : ansistring = '3:Evaluative,4:Partial,5:Center-weighted';
-  CanonAF      : ansistring = '12288:None (MF),12289:Auto-selected,12290:Right,'+
-                              '12291:Center,12292:Left';
-  CanonExpose  : ansistring = '0:Easy shooting,1:Program,2:Tv-priority,'+
-                              '3:Av-priority,4:Manual,5:A-DEP';
-  CanonFocus2  : ansistring = '0:Single,1:Continuous';
+  CanonGen     : string = '65535:Low,0:Normal,1:High';
+  CanonMacro   : string = '1:Macro,2:Normal';
+  CanonCompress: string = '0:SuperFine,1:Fine,2:Normal,3:Basic,5:SuperFine';
+  CanonFlash   : string = '0:Not fired,1:Auto,2:On,3:Red-eye,4:Slow sync,'+
+                          '5:Auto+red-eye,6:On+red eye,16:External flash';
+  CanonDrive   : string = '0:Single,1:Continuous';
+  CanonFocus   : string = '0:One-Shot,1:AI Servo,2:AI Focus,3:MF,4:Single,'+
+                          '5:Continuous,6:MF';
+  CanonSize    : string = '0:Large,1:Medium,2:Small,4:5MPixel,5:2 MPixel,6:1.5 MPixel';
+  CanonEasy    : string = '0:Full Auto,1:Manual,2:Landscape,3:Fast Shutter,'+
+                          '4:Slow Shutter,5:Night,6:B&W,7:Sepia,8:Portrait,9:Sports,'+
+                          '10:Macro/Close-Up,11:Pan Focus';
+  CanonISO     : string = '0:Not used,15:auto,16:50,17:100,18:200,19:400';
+  CanonMeter   : string = '3:Evaluative,4:Partial,5:Center-weighted';
+  CanonAF      : string = '12288:None (MF),12289:Auto-selected,12290:Right,'+
+                          '12291:Center,12292:Left';
+  CanonExpose  : string = '0:Easy shooting,1:Program,2:Tv-priority,'+
+                          '3:Av-priority,4:Manual,5:A-DEP';
+  CanonFocus2  : string = '0:Single,1:Continuous';
 
-Function CanonExp1(instr:ansistring) :ansistring;
-var s:ansistring;
+function CanonExp1(instr: AnsiString): String;
+var
+  s: String;
 begin
   rawDefered := true;
 //  s := instr;
   s := '';
-  s := s+ CustAPick(instr,'Macro mode'      , 1,CanonMacro);
-  s := s+ CustNth(  instr,'Self Timer'      , 2);
-  s := s+ CustAPick(instr,'Compression Rate', 3,CanonCompress);
-  s := s+ CustAPick(instr,'Flash Mode'      , 4,CanonFlash);
-  s := s+ CustAPick(instr,'Drive Mode'      , 5,CanonDrive);
-  s := s+ CustAPick(instr,'Focus Mode'      , 7,CanonFocus);
-  s := s+ CustAPick(instr,'Image Size'      ,10,CanonSize);
-  s := s+ CustAPick(instr,'Easy Shoot'      ,11,CanonEasy);
-  s := s+ CustAPick(instr,'Contrast'        ,13,CanonGen);
-  s := s+ CustAPick(instr,'Saturation'      ,14,CanonGen);
-  s := s+ CustAPick(instr,'Sharpness'       ,15,CanonGen);
-  s := s+ CustAPick(instr,'CCD ISO'         ,16,CanonISO);
-  s := s+ CustAPick(instr,'Metering Mode'   ,17,CanonGen);
-  s := s+ CustAPick(instr,'AF Point'        ,19,CanonGen);
-  s := s+ CustAPick(instr,'Exposure Mode'   ,20,CanonGen);
-  s := s+ CustNth(  instr,'Long focal'      ,24);
-  s := s+ CustNth(  instr,'Short focal'     ,25);
-  s := s+ CustNth(  instr,'Focal Units'     ,26);
-  s := s+ CustNth(  instr,'Flash Details'   ,29);
-  s := s+ CustAPick(instr,'Focus Mode'      ,32,CanonGen);
+  s := s + CustAPick(instr, 'Macro mode'      , 1, CanonMacro);
+  s := s + CustNth(  instr, 'Self Timer'      , 2);
+  s := s + CustAPick(instr, 'Compression Rate', 3, CanonCompress);
+  s := s + CustAPick(instr, 'Flash Mode'      , 4, CanonFlash);
+  s := s + CustAPick(instr, 'Drive Mode'      , 5, CanonDrive);
+  s := s + CustAPick(instr, 'Focus Mode'      , 7, CanonFocus);
+  s := s + CustAPick(instr, 'Image Size'      ,10, CanonSize);
+  s := s + CustAPick(instr, 'Easy Shoot'      ,11, CanonEasy);
+  s := s + CustAPick(instr, 'Contrast'        ,13, CanonGen);
+  s := s + CustAPick(instr, 'Saturation'      ,14, CanonGen);
+  s := s + CustAPick(instr, 'Sharpness'       ,15, CanonGen);
+  s := s + CustAPick(instr, 'CCD ISO'         ,16, CanonISO);
+  s := s + CustAPick(instr, 'Metering Mode'   ,17, CanonGen);
+  s := s + CustAPick(instr, 'AF Point'        ,19, CanonGen);
+  s := s + CustAPick(instr, 'Exposure Mode'   ,20, CanonGen);
+  s := s + CustNth(  instr, 'Long focal'      ,24);
+  s := s + CustNth(  instr, 'Short focal'     ,25);
+  s := s + CustNth(  instr, 'Focal Units'     ,26);
+  s := s + CustNth(  instr, 'Flash Details'   ,29);
+  s := s + CustAPick(instr, 'Focus Mode'      ,32, CanonGen);
   result := s;
 end;
 
 const
-  CanonWhite: ansistring = '0:Auto,1:Sunny,2:Cloudy,3:Tungsten,4:Flourescent,'+
-                           '5:Flash,6:Custom';
-  CanonBias : ansistring = '65472:-2 EV,65484:-1.67 EV,65488:-1.50 EV,65492:-1.33 EV,'+
-                           '65504:-1 EV,65516:-0.67 EV,65520:-0.50 EV,65524:-0.33 EV,'+
-                           '0:0 EV,12:0.33 EV,16:0.50 EV,20:0.67 EV,'+
-                           '32:1 EV,44:1.33 EV,48:1.50 EV,52:1.67 EV,'+
-                           '64:2 EV';
+  CanonWhite: String = '0:Auto,1:Sunny,2:Cloudy,3:Tungsten,4:Flourescent,'+
+                       '5:Flash,6:Custom';
+  CanonBias: String  = '65472:-2 EV,65484:-1.67 EV,65488:-1.50 EV,65492:-1.33 EV,'+
+                       '65504:-1 EV,65516:-0.67 EV,65520:-0.50 EV,65524:-0.33 EV,'+
+                       '0:0 EV,12:0.33 EV,16:0.50 EV,20:0.67 EV,'+
+                       '32:1 EV,44:1.33 EV,48:1.50 EV,52:1.67 EV,'+
+                       '64:2 EV';
 
-Function CanonExp2(instr:ansistring) :ansistring;
-var s:ansistring;
+function CanonExp2(InStr: AnsiString): String;
+var
+  s: ansistring;
 begin
   rawDefered := true;
 //  s := instr;
@@ -489,18 +495,18 @@ Const
   CanonSetBtn  : ansistring = '0:Not assigned,1:Change quality,2:Change ISO speed,'+
                               '3:Select parameters';
 
-Function CanonCustom1(instr:ansistring) :ansistring;
-var fn,s,r:ansistring;
-    fnct,data,i,j:integer;
+Function CanonCustom1(InStr: AnsiString): String;
+var
+  fn, s, r: String;
+  fnct, data, i, j: Integer;
 begin
-//  s := instr;
   s := '';
   rawDefered := true;
-  for i := 1 to StrCount(instr,',') do
+  for i := 1 to StrCount(InStr, ',') do
   begin
     try
-      fn := StrNth(instr,',',i);
-      j  := StrToInt(string(fn));
+      fn := StrNth(InStr, ',', i);
+      j  := StrToInt(fn);
       fnct := j div 256;  // upper 8 bits
       data := j mod 256;  // Lower 8 bits
       case fnct of
@@ -524,7 +530,7 @@ begin
       end
     except
     end;
-    s := s+r;
+    s := s + r;
   end;
   result := s;
 end;
@@ -542,7 +548,7 @@ end;
 //                  elements - typically contains the offset of the
 //                  makernote field from the start of the file
 //
-constructor TmsInfo.Create(tiffFlag: boolean; p: tImageInfo);
+constructor TmsInfo.Create(tiffFlag: boolean; p: TImageInfo);
 begin
   inherited Create;  // Initialize inherited parts
   isTiff := tiffFlag;
@@ -551,9 +557,10 @@ begin
 end;
 
 function TmsInfo.ReadMSData(var DR:TImageInfo):boolean;
-var UCMaker,tmp,tmp2:ansistring;
-    MMode:boolean;
-    x:integer;
+var
+  UCMaker, tmp, tmp2: ansistring;
+  MMode: boolean;
+  x: integer;
 begin
   UCMaker := Copy(AnsiString(AnsiUpperCase(DR.CameraMake)),1,5);
   gblUCMaker := '';
