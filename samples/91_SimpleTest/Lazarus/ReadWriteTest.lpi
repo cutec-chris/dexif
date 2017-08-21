@@ -62,6 +62,7 @@
       <Unit7>
         <Filename Value="..\..\..\dExifWrite.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dexifwrite"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\dIPTC.pas"/>

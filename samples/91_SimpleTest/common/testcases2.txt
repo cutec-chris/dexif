@@ -4,3 +4,4 @@ ImageDescription	Hübsches Bild
 UserComment	Hübscher Kommentar!
 Make	ÄÖÜ camera make
 Model	äöü camera model
+Copyright	© wp

@@ -27,7 +27,7 @@ type
 
   protected
     function CalcOffsetFromTiffHeader(APosition: Int64): DWord;
-    function FixEndian16(AValue: word): Word;
+    function FixEndian16(AValue: Word): Word;
     function FixEndian32(AValue: DWord): DWord;
 
     procedure WriteIFD(AStream: TStream; ASubIFDList: TInt64List;

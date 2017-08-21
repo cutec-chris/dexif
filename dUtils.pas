@@ -42,6 +42,8 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
+function InsertSpaces(InStr: AnsiString): AnsiString;
+
 procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
 
 function siif(const ACond: boolean; const s1: AnsiString;
@@ -451,6 +453,33 @@ begin
        if ch <> #0 then
          Result := Result + ch;
     end;
+end;
+
+function InsertSpaces(InStr: AnsiString): AnsiString;
+var
+  i: integer;
+  ch: ansichar;
+  lastUC: boolean;
+begin
+  lastUC := true;
+  Result := InStr[1]; //Copy(InStr, 1, 1);
+  for i := 2 to Length(InStr) do
+  begin
+    ch := InStr[i];
+    if (ch >= 'A') and (ch <= 'Z') then
+    begin
+      if lastUC then
+        Result := Result + ch
+      else
+        Result := Result + ' ' + ch;
+      lastUc := true;
+    end
+    else
+    begin
+      lastUC := false;
+      Result := Result + ch;
+    end;
+  end;
 end;
 
 // Careful : this function's arguments are always evaluated which may have

@@ -43,6 +43,7 @@ type
     procedure Test_CameraMake;
     procedure Test_CameraMake_TooLong;
     procedure Test_CameraModel;
+    procedure Test_Copyright;
 
   end;
 
@@ -63,7 +64,7 @@ type
 
 const
   // !!! INCREMENT WHEN ADDING TESTS !!!
-  TestCount = 13;
+  TestCount = 14;
 
 {$WARN 3177 off : Some fields coming after "$1" were not initialized}
 
@@ -81,7 +82,8 @@ const
      (Kind:tkString; Tag:'ImageDescription';   Value:'My image'),
 {10} (Kind:tkString; Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
      (Kind:tkString; Tag:'CameraMake';         Value:'Minolta'), // longer than text in file --> fail
-     (Kind:tkString; Tag:'CameraModel';        Value:'My Super Camera')
+     (Kind:tkString; Tag:'CameraModel';        Value:'My Super Camera'),
+     (Kind:tkString; Tag:'Copyright';          Value:'(c) Team')
   );
 
 
@@ -135,7 +137,7 @@ var
     case ATestID of
       0: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeOriginal);
       1: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeDigitized);
-      2: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeModify);
+      2: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeModified);
       3: Result := DUT.Comment;
       4: Result := DUT.Comment;
       5: Result := DUT.ExifObj.Artist;
@@ -146,6 +148,7 @@ var
      10: Result := DUT.ExifObj.CameraMake;
      11: Result := DUT.ExifObj.CameraMake;
      12: Result := DUT.ExifObj.CameraModel;
+     13: Result := DUT.ExifObj.TagValueAsString['Copyright'];
     end;
   end;
 
@@ -158,7 +161,7 @@ var
     case ATestID of
       0: DUT.ExifObj.DatetimeOriginal := ScanDatetime(ISODateFormat, strValue);
       1: DUT.ExifObj.DatetimeDigitized := ScanDatetime(ISODateFormat, strValue);
-      2: DUT.ExifObj.DatetimeModify := ScanDatetime(ISODateFormat, strValue);
+      2: DUT.ExifObj.DatetimeModified := ScanDatetime(ISODateFormat, strValue);
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
@@ -169,6 +172,7 @@ var
      10: DUT.ExifObj.CameraMake := strValue;
      11: DUT.ExifObj.CameraMake := strValue;
      12: DUT.ExifObj.CameraModel := strValue;
+     13: DUT.ExifObj.TagValueAsString['Copyright'] := strValue;
     end;
   end;
 
@@ -329,6 +333,12 @@ end;
 procedure TTstWriteReadFile_dEXIF.Test_CameraModel;
 begin
   GenericTest(12);
+end;
+
+{ Copyright }
+procedure TTstWriteReadFile_dEXIF.Test_Copyright;
+begin
+  GenericTest(13);
 end;
 
 

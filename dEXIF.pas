@@ -92,9 +92,6 @@ type
     iterator:integer;
     iterThumb:integer;
 
-//    FCameraMake: String;
-//    FCameraModel: String;
-
     // Getter / setter
     function GetDateTimeOriginal: TDateTime;
     procedure SetDateTimeOriginal(const AValue: TDateTime);
@@ -102,8 +99,8 @@ type
     function GetDateTimeDigitized: TDateTime;
     procedure SetDateTimeDigitized(const AValue: TDateTime);
 
-    function GetDateTimeModify: TDateTime;
-    procedure SetDateTimeModify(const AValue: TDateTime);
+    function GetDateTimeModified: TDateTime;
+    procedure SetDateTimeModified(const AValue: TDateTime);
 
     function GetArtist: String;
     procedure SetArtist(v: String);
@@ -112,7 +109,7 @@ type
     procedure SetExifComment(v: String);
 
     function GetImageDescription: String;
-    procedure SetImageDescription(const v: String);
+    procedure SetImageDescription(const AValue: String);
 
     function GetCameraMake: String;
     procedure SetCameraMake(const AValue: String);
@@ -131,7 +128,7 @@ type
 
     // misc
     function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
-      ATagType: word=65535; AForceID: Boolean=false): PTagEntry; overload;
+      ATagType: word=65535{; AForceID: Boolean=false}): PTagEntry; overload;
     procedure RemoveTag(TagID: integer; parentID: word=0);
     procedure TagWriteThru16(te: ttagentry; NewVal16: word);
     procedure TagWriteThru32(te: ttagentry; NewVal32: longint);
@@ -225,8 +222,8 @@ type
 
     procedure Calc35Equiv;
     function EXIFArrayToXML: tstringlist;
-    function GetRawFloat(tagName: ansistring): double;
-    function GetRawInt(tagName: ansistring): integer;
+    function GetRawFloat(ATagName: ansistring): double;
+    function GetRawInt(ATagName: ansistring): integer;
     function LookupRatio: double;
     function WriteThruInt(tname: ansistring; value: Integer): boolean;
     function WriteThruString(tname, value: ansistring): boolean;
@@ -250,7 +247,7 @@ type
 
     property DateTimeOriginal: TDateTime read GetDateTimeOriginal write SetDateTimeOriginal;
     property DateTimeDigitized: TDateTime read GetDateTimeDigitized write SetDateTimeDigitized;
-    property DateTimeModify: TDateTime read GetDateTimeModify write SetDateTimeModify;
+    property DateTimeModified: TDateTime read GetDateTimeModified write SetDateTimeModified;
     property Artist: String read GetArtist write SetArtist;
     property ExifComment: String read GetExifComment write SetExifComment;
     property ImageDescription: String read GetImageDescription write SetImageDescription;
@@ -331,7 +328,7 @@ type
 
     // Processing
     procedure ProcessEXIF;
-    function ProcessFile(const AFileName: string):boolean;
+    function ProcessFile(const AFileName: String): boolean;
 
     // Thumbnail
     function ExtractThumbnailBuffer: TBytes;
@@ -374,6 +371,9 @@ type
 
   function FindExifTag(ATag: Word): PTagEntry;
   function FindGPSTag(ATag: Word): PTagEntry;
+
+  function FindExifTagByName(ATagName: ansistring): PTagEntry;
+  function FindGPSTagByName(ATagName: ansistring): PTagEntry;
 
 var
   CurTagArray: TImageInfo = nil;
@@ -550,10 +550,10 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $103;   Name:'Compression'            ;Desc:'';Code:'6:Jpeg,3:Uncompressed,1:TIFF'),
   (TID:0;TType:0;ICode: 2;Tag: $106;   Name:'PhotometricInterpretation';Desc:''; Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
   (TID:0;TType:0;ICode: 2;Tag: $10A;   Name:'FillOrder'              ),         {10}
-  (TID:0;TType:0;ICode: 2;Tag: $10D;   Name:'DocumentName'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $10E;   Name:'ImageDescription'       ),
-  (TID:0;TType:0;ICode: 2;Tag: $10F;   Name:'Make'                   ),
-  (TID:0;TType:0;ICode: 2;Tag: $110;   Name:'Model'                  ),
+  (TID:0;TType:2;ICode: 2;Tag: $10D;   Name:'DocumentName'           ),
+  (TID:0;TType:2;ICode: 2;Tag: $10E;   Name:'ImageDescription'       ),
+  (TID:0;TType:2;ICode: 2;Tag: $10F;   Name:'Make'                   ),
+  (TID:0;TType:2;ICode: 2;Tag: $110;   Name:'Model'                  ),
   (TID:0;TType:0;ICode: 2;Tag: $111;   Name:'StripOffsets'           ),
   (TID:0;TType:0;ICode: 2;Tag: $112;   Name:'Orientation'            ; Desc:''; Code:'1:Normal,3:Rotated 180°,6:CounterClockwise 90°,8:Clockwise 90°'),
   (TID:0;TType:0;ICode: 2;Tag: $115;   Name:'SamplesPerPixel'        ),
@@ -564,7 +564,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
   (TID:0;TType:0;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
   (TID:0;TType:0;ICode: 2;Tag: $11C;   Name:'PlanarConfiguration'    ),
-  (TID:0;TType:0;ICode: 2;Tag: $11D;   Name:'PageName'               ),
+  (TID:0;TType:2;ICode: 2;Tag: $11D;   Name:'PageName'               ),
   (TID:0;TType:0;ICode: 2;Tag: $11E;   Name:'XPosition'              ),
   (TID:0;TType:0;ICode: 2;Tag: $11F;   Name:'YPosition'              ),
   (TID:0;TType:0;ICode: 2;Tag: $120;   Name:'FreeOffsets'            ),
@@ -576,10 +576,10 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $128;   Name:'ResolutionUnit'         ;Desc:''; Code:'1:None Specified,2:Inch,3:Centimeter'),
   (TID:0;TType:0;ICode: 2;Tag: $129;   Name:'PageNumber'             ),
   (TID:0;TType:0;ICode: 2;Tag: $12D;   Name:'TransferFunction'       ),
-  (TID:0;TType:0;ICode: 2;Tag: $131;   Name:'Software'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $132;   Name:'DateTimeModify'         ),
-  (TID:0;TType:0;ICode: 2;Tag: $13B;   Name:'Artist'                 ),
-  (TID:0;TType:0;ICode: 2;Tag: $13C;   Name:'HostComputer'           ),         {40}
+  (TID:0;TType:2;ICode: 2;Tag: $131;   Name:'Software'               ),
+  (TID:0;TType:2;ICode: 2;Tag: $132;   Name:'DateTime'               ),
+  (TID:0;TType:2;ICode: 2;Tag: $13B;   Name:'Artist'                 ),
+  (TID:0;TType:2;ICode: 2;Tag: $13C;   Name:'HostComputer'           ),         {40}
   (TID:0;TType:0;ICode: 2;Tag: $13D;   Name:'Predictor'              ),
   (TID:0;TType:0;ICode: 2;Tag: $13E;   Name:'WhitePoint'             ),
   (TID:0;TType:0;ICode: 2;Tag: $13F;   Name:'PrimaryChromaticities'  ),
@@ -594,7 +594,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $14D;   Name:'InkNames'               ),
   (TID:0;TType:0;ICode: 2;Tag: $14E;   Name:'NumberOfInks'           ),
   (TID:0;TType:0;ICode: 2;Tag: $150;   Name:'DotRange'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $151;   Name:'TargetPrinter'          ),
+  (TID:0;TType:2;ICode: 2;Tag: $151;   Name:'TargetPrinter'          ),
   (TID:0;TType:0;ICode: 2;Tag: $152;   Name:'ExtraSample'            ),
   (TID:0;TType:0;ICode: 2;Tag: $153;   Name:'SampleFormat'           ),
   (TID:0;TType:0;ICode: 2;Tag: $154;   Name:'SMinSampleValue'        ),
@@ -660,8 +660,8 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $5023;  Name:'ThumbnailCompression'   ),
   (TID:0;TType:0;ICode: 2;Tag: $5024;  Name:'ThumbnailPhotometricInterp'),
   (TID:0;TType:0;ICode: 2;Tag: $5025;  Name:'ThumbnailImageDescription' ),      {120}
-  (TID:0;TType:0;ICode: 2;Tag: $5026;  Name:'ThumbnailEquipMake'     ),
-  (TID:0;TType:0;ICode: 2;Tag: $5027;  Name:'ThumbnailEquipModel'    ),
+  (TID:0;TType:2;ICode: 2;Tag: $5026;  Name:'ThumbnailEquipMake'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $5027;  Name:'ThumbnailEquipModel'    ),
   (TID:0;TType:0;ICode: 2;Tag: $5028;  Name:'ThumbnailStripOffsets'  ),
   (TID:0;TType:0;ICode: 2;Tag: $5029;  Name:'ThumbnailOrientation'   ),
   (TID:0;TType:0;ICode: 2;Tag: $502A;  Name:'ThumbnailSamplesPerPixel'),
@@ -672,16 +672,16 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $502F;  Name:'ThumbnailPlanarConfig'  ),         {130}
   (TID:0;TType:0;ICode: 2;Tag: $5030;  Name:'ThumbnailResolutionUnit'),
   (TID:0;TType:0;ICode: 2;Tag: $5031;  Name:'ThumbnailTransferFunction'),
-  (TID:0;TType:0;ICode: 2;Tag: $5032;  Name:'ThumbnailSoftwareUsed'  ),
-  (TID:0;TType:0;ICode: 2;Tag: $5033;  Name:'ThumbnailDateTime'      ),
-  (TID:0;TType:0;ICode: 2;Tag: $5034;  Name:'ThumbnailArtist'        ),
+  (TID:0;TType:2;ICode: 2;Tag: $5032;  Name:'ThumbnailSoftwareUsed'  ),
+  (TID:0;TType:2;ICode: 2;Tag: $5033;  Name:'ThumbnailDateTime'      ),
+  (TID:0;TType:2;ICode: 2;Tag: $5034;  Name:'ThumbnailArtist'        ),
   (TID:0;TType:0;ICode: 2;Tag: $5035;  Name:'ThumbnailWhitePoint'    ),
   (TID:0;TType:0;ICode: 2;Tag: $5036;  Name:'ThumbnailPrimaryChromaticities'),
   (TID:0;TType:0;ICode: 2;Tag: $5037;  Name:'ThumbnailYCbCrCoefficients'    ),
   (TID:0;TType:0;ICode: 2;Tag: $5038;  Name:'ThumbnailYCbCrSubsampling'     ),
   (TID:0;TType:0;ICode: 2;Tag: $5039;  Name:'ThumbnailYCbCrPositioning'     ),  {140}
   (TID:0;TType:0;ICode: 2;Tag: $503A;  Name:'ThumbnailRefBlackWhite' ),
-  (TID:0;TType:0;ICode: 2;Tag: $503B;  Name:'ThumbnailCopyRight'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $503B;  Name:'ThumbnailCopyRight'     ),
   (TID:0;TType:0;ICode: 2;Tag: $5090;  Name:'LuminanceTable'         ),
   (TID:0;TType:0;ICode: 2;Tag: $5091;  Name:'ChrominanceTable'       ),
   (TID:0;TType:0;ICode: 2;Tag: $5100;  Name:'FrameDelay'             ),
@@ -698,7 +698,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $828D;  Name:'CFARepeatPatternDim'    ),
   (TID:0;TType:0;ICode: 2;Tag: $828E;  Name:'CFAPattern'             ),
   (TID:0;TType:0;ICode: 2;Tag: $828F;  Name:'BatteryLevel'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $8298;  Name:'Copyright'              ),
+  (TID:0;TType:2;ICode: 2;Tag: $8298;  Name:'Copyright'              ),
   (TID:0;TType:0;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%s sec'),   {160}
   (TID:0;TType:0;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:0;ICode: 2;Tag: $83BB;  Name:'IPTC/NAA'                 ; Desc:'IPTC/NAA'),
@@ -711,7 +711,7 @@ var
         '0:Unidentified,1:Manual,2:Normal,3:Aperture priority,'+
         '4:Shutter priority,5:Creative(slow),'+
         '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
-  (TID:0;TType:0;ICode: 2;Tag: $8824;  Name:'SpectralSensitivity'    ),
+  (TID:0;TType:2;ICode: 2;Tag: $8824;  Name:'SpectralSensitivity'    ),
   (TID:0;TType:0;ICode: 2;Tag: $8825;  Name:'GPSInfo'                ),         {170}
   (TID:0;TType:0;ICode: 2;Tag: $8827;  Name:'ISOSpeedRatings'        ),
   (TID:0;TType:0;ICode: 2;Tag: $8828;  Name:'OECF'                   ),
@@ -719,8 +719,8 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $882A;  Name:'TimeZoneOffset'         ),
   (TID:0;TType:0;ICode: 2;Tag: $882B;  Name:'SelfTimerMode'          ),
   (TID:0;TType:0;ICode: 2;Tag: $9000;  Name:'ExifVersion'            ),
-  (TID:0;TType:0;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
-  (TID:0;TType:0;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
+  (TID:0;TType:2;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
+  (TID:0;TType:2;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
   (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:GenCompConfig),
   (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
   (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:SSpeedCallBack),
@@ -740,8 +740,8 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $920F;  Name:'FocalPlaneYResolution'   ),	    // TID:0;TType:0;ICode: 2;Tag: $920F    -  -
   (TID:0;TType:0;ICode: 2;Tag: $9210;  Name:'FocalPlaneResolutionUnit';  Desc:'';Code:'1:None Specified,2:Inch,3:Centimeter'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
   (TID:0;TType:0;ICode: 2;Tag: $9211;  Name:'ImageNumber'            ),
-  (TID:0;TType:0;ICode: 2;Tag: $9212;  Name:'SecurityClassification' ),
-  (TID:0;TType:0;ICode: 2;Tag: $9213;  Name:'ImageHistory'           ),
+  (TID:0;TType:2;ICode: 2;Tag: $9212;  Name:'SecurityClassification' ),
+  (TID:0;TType:2;ICode: 2;Tag: $9213;  Name:'ImageHistory'           ),
   (TID:0;TType:0;ICode: 2;Tag: $9214;  Name:'SubjectLocation'        ),         {200}
   (TID:0;TType:0;ICode: 2;Tag: $9215;  Name:'ExposureIndex'          ),
   (TID:0;TType:0;ICode: 2;Tag: $9216;  Name:'TIFF/EPStandardID'      ),
@@ -749,9 +749,9 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $923F;  Name:'StoNits'                ),
   (TID:0;TType:0;ICode: 2;Tag: $927C;  Name:'MakerNote'              ),
   (TID:0;TType:0;ICode: 2;Tag: $9286;  Name:'UserComment'            ),
-  (TID:0;TType:0;ICode: 2;Tag: $9290;  Name:'SubSecTime'             ),
-  (TID:0;TType:0;ICode: 2;Tag: $9291;  Name:'SubSecTimeOriginal'     ),
-  (TID:0;TType:0;ICode: 2;Tag: $9292;  Name:'SubSecTimeDigitized'    ),
+  (TID:0;TType:2;ICode: 2;Tag: $9290;  Name:'SubSecTime'             ),
+  (TID:0;TType:2;ICode: 2;Tag: $9291;  Name:'SubSecTimeOriginal'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $9292;  Name:'SubSecTimeDigitized'    ),
   (TID:0;TType:0;ICode: 2;Tag: $953C;  Name:'ImageSourceData'        ),  // "Adobe Photoshop Document Data Block": 8BIM...  {210}
 //  (TID:0;TType:0;ICode: 2;Tag: $9C9B;  Name:'Title'                  ;  Callback: xpTranslate),  // Win XP specific, Unicode
 //  (TID:0;TType:0;ICode: 2;Tag: $9C9C;  Name:'Comments'               ;  Callback: xpTranslate),  // Win XP specific, Unicode
@@ -762,7 +762,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $A001;  Name:'ColorSpace'             ; Desc:''; Code:'0:sBW,1:sRGB'),
   (TID:0;TType:0;ICode: 2;Tag: $A002;  Name:'ExifImageWidth'         ),
   (TID:0;TType:0;ICode: 2;Tag: $A003;  Name:'ExifImageLength'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $A004;  Name:'RelatedSoundFile'       ),         {220}
+  (TID:0;TType:2;ICode: 2;Tag: $A004;  Name:'RelatedSoundFile'       ),         {220}
   (TID:0;TType:0;ICode: 2;Tag: $A005;  Name:'InteroperabilityOffset' ),
   (TID:0;TType:0;ICode: 2;Tag: $A20B;  Name:'FlashEnergy'            ),    // TID:0;TType:0;ICode: 2;Tag: $920B in TIFF/EP
   (TID:0;TType:0;ICode: 2;Tag: $A20C;  Name:'SpatialFrequencyResponse'),   // TID:0;TType:0;ICode: 2;Tag: $920C    -  -
@@ -800,39 +800,51 @@ var
 
  GPSTable : array [0..GPSCnt-1] of TTagEntry =
  ((TID:0;TType:0;ICode: 2;Tag: $000;   Name:'GPSVersionID'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $001;   Name:'GPSLatitudeRef'         ),
+  (TID:0;TType:2;ICode: 2;Tag: $001;   Name:'GPSLatitudeRef'         ),
   (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0;TType:0;ICode: 2;Tag: $003;   Name:'GPSLongitudeRef'        ),
+  (TID:0;TType:2;ICode: 2;Tag: $003;   Name:'GPSLongitudeRef'        ),
   (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
   (TID:0;TType:0;ICode: 2;Tag: $005;   Name:'GPSAltitudeRef'         ;  Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
 //  (TID:0;TType:0;ICode: 2;Tag: $006;   Name:'GPSAltitude'            ;   CallBack:GpsAltitude),
 //  (TID:0;TType:0;ICode: 2;Tag: $007;   Name:'GPSTimeStamp'           ;   CallBack:CvtTime),
-  (TID:0;TType:0;ICode: 2;Tag: $008;   Name:'GPSSatellites'          ),
+  (TID:0;TType:2;ICode: 2;Tag: $008;   Name:'GPSSatellites'          ),
   (TID:0;TType:0;ICode: 2;Tag: $009;   Name:'GPSStatus'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $00A;   Name:'GPSMeasureMode'         ),
+  (TID:0;TType:2;ICode: 2;Tag: $00A;   Name:'GPSMeasureMode'         ),
   (TID:0;TType:0;ICode: 2;Tag: $00B;   Name:'GPSDOP'                 ),
-  (TID:0;TType:0;ICode: 2;Tag: $00C;   Name:'GPSSpeedRef'            ),
+  (TID:0;TType:2;ICode: 2;Tag: $00C;   Name:'GPSSpeedRef'            ),
   (TID:0;TType:0;ICode: 2;Tag: $00D;   Name:'GPSSpeed'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $00E;   Name:'GPSTrackRef'            ),
+  (TID:0;TType:2;ICode: 2;Tag: $00E;   Name:'GPSTrackRef'            ),
   (TID:0;TType:0;ICode: 2;Tag: $00F;   Name:'GPSTrack'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $010;   Name:'GPSImageDirectionRef'   ),
+  (TID:0;TType:2;ICode: 2;Tag: $010;   Name:'GPSImageDirectionRef'   ),
   (TID:0;TType:0;ICode: 2;Tag: $011;   Name:'GPSImageDirection'      ),
-  (TID:0;TType:0;ICode: 2;Tag: $012;   Name:'GPSMapDatum'            ),
-  (TID:0;TType:0;ICode: 2;Tag: $013;   Name:'GPSDestLatitudeRef'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $012;   Name:'GPSMapDatum'            ),
+  (TID:0;TType:2;ICode: 2;Tag: $013;   Name:'GPSDestLatitudeRef'     ),
 //  (TID:0;TType:0;ICode: 2;Tag: $014;   Name:'GPSDestLatitude'        ;   CallBack:GpsPosn),
-  (TID:0;TType:0;ICode: 2;Tag: $015;   Name:'GPSDestLongitudeRef'    ),
+  (TID:0;TType:2;ICode: 2;Tag: $015;   Name:'GPSDestLongitudeRef'    ),
 //  (TID:0;TType:0;ICode: 2;Tag: $016;   Name:'GPSDestLongitude'       ;   CallBack:GpsPosn),
-  (TID:0;TType:0;ICode: 2;Tag: $017;   Name:'GPSDestBearingkRef'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $017;   Name:'GPSDestBearingRef'      ),
   (TID:0;TType:0;ICode: 2;Tag: $018;   Name:'GPSDestBearing'         ),
-  (TID:0;TType:0;ICode: 2;Tag: $019;   Name:'GPSDestDistanceRef'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $019;   Name:'GPSDestDistanceRef'     ),
   (TID:0;TType:0;ICode: 2;Tag: $01A;   Name:'GPSDestDistance'        ),
   (TID:0;TType:0;ICode: 2;Tag: $01B;   Name:'GPSProcessingMode'      ),
   (TID:0;TType:0;ICode: 2;Tag: $01C;   Name:'GPSAreaInformation'     ),
-  (TID:0;TType:0;ICode: 2;Tag: $01D;   Name:'GPSDateStamp'           ),
+  (TID:0;TType:2;ICode: 2;Tag: $01D;   Name:'GPSDateStamp'           ),
   (TID:0;TType:0;ICode: 2;Tag: $01E;   Name:'GPSDifferential'        )
   );
 
   tagInit : boolean = false;
+
+function FindExifTagByName(ATagName: Ansistring): PTagEntry;
+var
+  i: Integer;
+begin
+  for i:=0 to High(TagTable) do begin
+    Result := @TagTable[i];
+    if AnsiSameText(Result^.Name, ATagName) then
+      exit;
+  end;
+  Result := nil;
+end;
 
 function FindExifTag(ATag: word): PTagEntry;
 var
@@ -841,6 +853,18 @@ begin
   for i:=0 to High(TagTable) do begin
     Result := @TagTable[i];
     if Result^.Tag = ATag then
+      exit;
+  end;
+  Result := nil;
+end;
+
+function FindGpsTagByName(ATagName: Ansistring): PTagEntry;
+var
+  i: Integer;
+begin
+  for i:=0 to High(GpsTable) do begin
+    Result := @GpsTable[i];
+    if AnsiSameText(Result^.Name, ATagName) then
       exit;
   end;
   Result := nil;
@@ -866,34 +890,6 @@ begin
     if Length(tags[i].Desc) <= 0 then
       tags[i].Desc := tags[i].Name;
   end;
-end;
-
-Function InsertSpaces(instr:ansistring):ansistring;
-var i:integer;
-  rslt:ansistring;
-  tc:ansichar;
-  lastUc:boolean;
-begin
-  LastUC := true;
-  rslt := copy(instr,1,1);
-  for i := 2 to length(instr) do
-  begin
-    tc := instr[i];
-    if (tc >= 'A') and (tc <= 'Z') then
-    begin
-      if LastUC then
-        rslt := rslt+tc
-      else
-        rslt := rslt+' '+tc;
-      LastUc := true;
-    end
-    else
-    begin
-      lastUC := false;
-      rslt := rslt+tc;
-    end;
-  end;
-  result := rslt;
 end;
 
 Procedure FixTagTableParse(var tags:array of TTagEntry);
@@ -1395,7 +1391,7 @@ procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
     RemoveTag(TAG_DATETIME_ORIGINAL, p^.ID);
     exit;
@@ -1422,7 +1418,7 @@ procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG, true);
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
     RemoveTag(TAG_DATETIME_DIGITIZED, p^.ID);
     exit;
@@ -1437,7 +1433,7 @@ begin
     raise Exception.Create('Tag DateTimeDigitized not available.');
 end;
 
-function TImageInfo.GetDateTimeModify: TDateTime;
+function TImageInfo.GetDateTimeModified: TDateTime;
 begin
   if dt_modify_oset > 0 then
     Result := ExtrDateTime(dt_modify_oset)
@@ -1445,7 +1441,7 @@ begin
     Result := 0.0;
 end;
 
-procedure TImageInfo.SetDateTimeModify(const AValue: TDateTime);
+procedure TImageInfo.SetDateTimeModified(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
@@ -2474,24 +2470,71 @@ begin
 end;
 
 procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
+var
+  tagDef: PTagEntry;
+  tagID: Word;
+  P, P1: PTagEntry;
+  parentID: Word;
 begin
+  // Find the tag's ID
+  tagDef := FindExifTagByName(ATagName);
+  if tagDef = nil then begin
+    tagDef := FindGpsTagByName(ATagName);
+    if tagDef = nil then
+      exit;
+  end;
+  tagID := tagDef.Tag;
+
+  if tagDef.TType <> FMT_STRING then
+    raise Exception.Create('Only string tags can be set by TagValueAsString');
+
+  // Remove the tag if the string is empty.
+  if AValue = '' then begin
+    RemoveTag(tagID);
+    exit;
+  end;
+
+  // Find the pointer to the tag
+  P := GetTag(tagID);
+  if P = nil then begin
+    // The tag does not yet exist --> create a new one...
+    // BUT: The TagTable does not show the ParentIDs...
+    // Until somebody updates this we put the new tag into the root directory
+    // (IFD0). Since this may not be allowed there's a risk that the EXIF in
+    // modified file cannot be read correctly...
+    parentID := 0;
+    P := GetTag(tagID, true, parentID, tagDef.TType);
+  end;
+
+  {$IFDEF FPC}
+  P^.Raw := UTF8ToAnsi(AValue) + #0;
+  {$ELSE}
+  P^.Raw := AnsiString(AValue) + #0;
+  {$ENDIF}
+  P^.Data := P^.Raw;
+  P^.Size := Length(P^.Raw);
 end;
 
 procedure TImageInfo.RemoveTag(TagID:integer; parentID:word=0);
-var i,j : integer;
+var
+  i,j : integer;
 begin
- j := 0;
- for i := 0 to Length(fiTagArray)-1 do begin
-  if (j <> 0) then fiTagArray[i-j] := fiTagArray[i];
-  if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then j := j+1;
- end;
- if (j <> 0) then SetLength(fiTagArray, Length(fiTagArray)-j);
+  j := 0;
+  for i := 0 to Length(fiTagArray)-1 do begin
+    if (j <> 0) then
+      fiTagArray[i-j] := fiTagArray[i];
+    if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then
+      inc(j);
+  end;
+  if (j <> 0) then
+    SetLength(fiTagArray, Length(fiTagArray)-j);
 end;
 
 function TImageInfo.GetTag(ATagID: word; AForceCreate: Boolean=false;
-  AParentID:word=0; ATagType: word=65535; AForceID: Boolean=false): PTagEntry;
+  AParentID:word=0; ATagType: word=65535 {; AForceID: Boolean=false}): PTagEntry;
 var
   i, j: integer;
+  tag: TTagEntry;
 begin
   Result := nil;
   for i := 0 to Length(fiTagArray)-1 do
@@ -2501,18 +2544,29 @@ begin
       exit;
     end;
   if AForceCreate then begin
-    i := Length(fiTagArray);
+//    i := fiTagCount;
+//    inc(fiTagCount);
     SetLength(fiTagArray, i+1);
     fiTagArray[i].Tag := ATagID;
     for j := 0 to Length(TagTable)-1 do
       if (TagTable[j].Tag = ATagID) then begin
-        fiTagArray[i] := TagTable[j];
+        tag := TagTable[j];
+//        fiTagArray[i] := TagTable[j];
         break;
       end;
+    {
     if (ATagType <> 65535) then
       fiTagArray[i].TType := ATagType;
     fiTagArray[i].ParentID := AParentID;
     fiTagArray[i].Id := 0;
+    }
+    if ATagType <> 65535 then
+      tag.TType := ATagType;
+    tag.parentID := AParentID;
+    tag.Id := 0;
+    i := AddTagToArray(tag);
+
+    (*
     if AForceID then begin
       j := 1;
       for i := 0 to Length(fiTagArray)-1 do
@@ -2520,6 +2574,7 @@ begin
           j := fiTagArray[i].id+1;
       fiTagArray[i].Id := j;
     end;
+    *)
     Result := @fiTagArray[i];
   end;
 end;
@@ -2603,7 +2658,7 @@ var
   a: AnsiString;
   u: Boolean;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, 4, true);
+  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (v = '') then begin
     RemoveTag(TAG_USERCOMMENT, p^.ID);
     exit;
@@ -2643,21 +2698,9 @@ begin
   Result := GetTagValueAsString('ImageDescription');
 end;
 
-procedure TImageInfo.SetImageDescription(const v: String);
-var
-  p: PTagEntry;
+procedure TImageInfo.SetImageDescription(const AValue: String);
 begin
-  if (v = '') then begin
-    RemoveTag(TAG_IMAGEDESCRIPTION, 0);
-    exit;
-  end;
-  p := GetTag(TAG_IMAGEDESCRIPTION, true, 0, FMT_STRING);
- {$IFDEF FPC}
-  p^.Raw := UTF8ToAnsi(v) + #0;
- {$ELSE}
-  p^.Raw := ansistring(v) + #0;
- {$ENDIF}
-  p^.Size := Length(p^.Raw);
+  SetTagValueAsString('ImageDescription', AValue);
 end;
 
 function TImageInfo.GetCameraMake: String;
@@ -2666,26 +2709,8 @@ begin
 end;
 
 procedure TImageInfo.SetCameraMake(const AValue: String);
-var
-  p: PTagEntry;
 begin
-  if (AValue = '') then begin
-    RemoveTag(TAG_MAKE, 0);
-    exit;
-  end;
-  p := GetTag(TAG_MAKE, true, 0, FMT_STRING);
- {$IFDEF FPC}
-  p^.Raw := UTF8ToAnsi(AValue) + #0;
- {$ELSE}
-  p^.Raw := AnsiString(AValue) + #0;
- {$ENDIF}
-  p^.Data := p^.Raw;
-  p^.Size := Length(p^.Raw);
-
-  {
-  FCameraMake := AValue;
-  WriteThruString('Make', AValue);
-  }
+  SetTagValueAsString('Make', AValue);
 end;
 
 function TImageInfo.GetCameraModel: String;
@@ -2694,42 +2719,24 @@ begin
 end;
 
 procedure TImageInfo.SetCameraModel(const AValue: String);
-var
-  p: PTagEntry;
 begin
-  if (AValue = '') then begin
-    RemoveTag(TAG_MODEL, 0);
-    exit;
-  end;
-  p := GetTag(TAG_MODEL, true, 0, FMT_STRING);
- {$IFDEF FPC}
-  p^.Raw := UTF8ToAnsi(AValue) + #0;
- {$ELSE}
-  p^.Raw := AnsiString(AValue) + #0;
- {$ENDIF}
-  p^.Data := p^.Raw;
-  p^.Size := Length(p^.Raw);
-
-  {
-  FCameraModel := AValue;
-  WriteThruString('Model', AValue);
-  }
+  SetTagValueAsString('Model', AValue);
 end;
 
-function TImageInfo.IterateFoundTags(TagId: integer; var retVal: TTagEntry): boolean;
+function TImageInfo.IterateFoundTags(TagId: integer; var RetVal: TTagEntry): boolean;
 begin
-  InitTagEntry(retval);
-  //FillChar(retVal,sizeof(retVal),0);
+  InitTagEntry(Retval);
+
   while (iterator < FITagCount) and (FITagArray[iterator].TID <> TagId) do
     inc(iterator);
   if (iterator < FITagCount) then
   begin
-    retVal := FITagArray[iterator];
+    RetVal := FITagArray[iterator];
     inc(iterator);
-    result := true;
+    Result := true;
   end
   else
-    result := false;
+    Result := false;
 end;
 
 procedure TImageInfo.ResetIterator;
@@ -2738,20 +2745,20 @@ begin
 end;
 
 function TImageInfo.IterateFoundThumbTags(TagId: integer;
-        var retVal:TTagEntry):boolean;
+  var RetVal: TTagEntry): boolean;
 begin
-  InitTagEntry(retVal);
-//  FillChar(retVal,sizeof(retVal),0);
+  InitTagEntry(RetVal);
+
   while (iterThumb < FIThumbCount) and (FITagArray[iterThumb].TID <> TagId) do
     inc(iterThumb);
   if (iterThumb < FIThumbCount) then
   begin
-    retVal := FIThumbArray[iterThumb];
+    RetVal := FIThumbArray[iterThumb];
     inc(iterThumb);
-    result := true;
+    Result := true;
   end
   else
-    result := false;
+    Result := false;
 end;
 
 procedure TImageInfo.ResetThumbIterator;
@@ -2759,24 +2766,26 @@ begin
   iterThumb := 0;
 end;
 
-function TImageInfo.GetRawFloat( tagName:ansistring ):double;
-var tiq :TTagEntry;
-begin
-  tiq := GetTagByName( tagName );
-  if tiq.Tag = 0 // EmptyEntry
-    then result := 0.0
-    else result := GetNumber(tiq.Raw, tiq.TType);
-end;
-
-function TImageInfo.GetRawInt( tagName:ansistring ):integer;
+function TImageInfo.GetRawFloat(ATagName: ansistring): Double;
 var
   tiq: TTagEntry;
 begin
-  tiq := GetTagByName(tagName);
+  tiq := GetTagByName(ATagName);
+  if tiq.Tag = 0 then     // EmptyEntry
+    Result := 0.0
+  else
+    Result := GetNumber(tiq.Raw, tiq.TType);
+end;
+
+function TImageInfo.GetRawInt(ATagName: ansistring): Integer;
+var
+  tiq: TTagEntry;
+begin
+  tiq := GetTagByName(ATagName);
   if tiq.Tag = 0 then  // EmptyEntry
     Result := -1
   else
-  if (tiq.TType = FMT_UNDEFINED) and (tiq.Size = 1) then
+  if (tiq.TType = FMT_BINARY) and (tiq.Size = 1) then
     Result := byte(tiq.Raw[1])
   else
     result := round(GetNumber(tiq.Raw, tiq.TType));
@@ -2801,9 +2810,9 @@ procedure TImageInfo.Calc35Equiv;
 const
   Diag35mm : double = 43.26661531; // sqrt(sqr(24)+sqr(36))
 var
-  tmp:integer;
-  CCDWidth, CCDHeight, fpu, fl, fl35, ratio : double;
-  NewE, LookUpE : TTagEntry;
+  tmp: integer;
+  CCDWidth, CCDHeight, fpu, fl, fl35, ratio: double;
+  NewE, LookUpE: TTagEntry;
   w: Word;
 begin
   if LookUpTag('FocalLengthin35mmFilm') >= 0 then
@@ -2813,7 +2822,7 @@ begin
   CCDHeight := 0.0;
   tmp := GetRawInt('FocalPlaneResolutionUnit');
   if (tmp <= 0) then
-     tmp := GetRawInt('ResolutionUnit');
+    tmp := GetRawInt('ResolutionUnit');
   case tmp of
     2: fpu := 25.4;   // inch
     3: fpu := 10;     // centimeter
@@ -3386,37 +3395,35 @@ end;
 
 function TImgData.ProcessFile(const AFileName: string): boolean;
 var
-  extn: string;
+  ext: string;
 begin
-  reset;
-  result := false;
+  Reset;
+  Result := false;
   if not FileExists(aFileName) then
     exit;
-  SetFileInfo(aFileName);
+
+  SetFileInfo(AFileName);
   try
-      errstr := 'Not an EXIF file';
-      extn := LowerCase(ExtractFileExt(filename));
-      if (extn = '.jpg') or (extn = '.jpeg') or (extn = '.jpe') then
-      begin
-        if not ReadJpegFile(FileName) then
-          exit;
-      end
-      else
-      if (extn = '.tif') or (extn = '.tiff') or (extn = '.nef') then
-      begin
-        if not ReadTiffFile(FileName) then
-          exit;
-      end
-      else
-      begin
+    ErrStr := 'Not an EXIF file';
+    ext := LowerCase(ExtractFileExt(filename));
+    if (ext = '.jpg') or (ext = '.jpeg') or (ext = '.jpe') then
+    begin
+      if not ReadJpegFile(FileName) then
         exit;
-      end;
-      errstr := '<none>';
-//      msAvailable := ReadMSData(Imageinfo);
-//      msName := gblUCMaker;
-      result := true;
+    end else
+    if (ext = '.tif') or (ext = '.tiff') or (ext = '.nef') then
+    begin
+      if not ReadTiffFile(FileName) then
+        exit;
+    end else
+      exit;
+
+    ErrStr := '<none>';
+//    msAvailable := ReadMSData(Imageinfo);
+//    msName := gblUCMaker;
+    Result := true;
   except
-    errstr := 'Illegal Exif construction';
+    ErrStr := 'Illegal EXIF construction';
   end;
 end;
 

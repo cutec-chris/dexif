@@ -29,7 +29,7 @@ type
 
   TTagEntry = record
     TID: integer;        // TagTableID - EXIF use
-    TType: word;         // tag type
+    TType: word;         // tag type  -- see FMT_XXXX constants
     ICode: Word;         // iptc code
     Tag: word;           // primary key
     Name:ansistring;        // searchable
@@ -41,8 +41,8 @@ type
     FormatS:ansistring;      // Format string
     Size: integer;       // used by ITPC module
     CallBack: TStrFunc;  // formatting string
-    id : word;           // msta - used for exif-parent-child-structure
-    parentID : word;     // msta - used for exif-parent-child-structure
+    id: word;            // msta - used for exif-parent-child-structure
+    parentID: word;      // msta - used for exif-parent-child-structure
   end;
   PTagEntry = ^TTagEntry; // msta
 

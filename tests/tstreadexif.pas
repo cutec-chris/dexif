@@ -1046,7 +1046,7 @@ begin
       0: currValue := DUT.EXIFObj.GetImgDateTime;       // any date/time available
       1: currValue := DUT.EXIFObj.DateTimeOriginal;     // Tag "DateTimeOriginal"
       2: currValue := DUT.EXIFObj.DateTimeDigitized;    // Tag "DateTimeDigitized"
-      3: currValue := Dut.EXIFObj.DateTimeModify;       // Tag "DateTimeModify"
+      3: currValue := Dut.EXIFObj.DateTimeModified;     // Tag "DateTimeModified"
     end;
     CheckEquals(AExpectedDateTime, currValue, 'Date/time mismatch');
   finally
