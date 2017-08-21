@@ -104,7 +104,7 @@ end;
 
 procedure RegisterSubIFDTag(ATagID: TTagID);
 var
-  i, n: Integer;
+  n: Integer;
 begin
   // Ignore if new tag is already registered;
   if TagLinksToSubIFD(ATagID) then

@@ -42,20 +42,23 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
-function InsertSpaces(InStr: AnsiString): AnsiString;
+function InsertSpaces(InStr: String): String;
 
 procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
 
-function siif(const ACond: boolean; const s1: AnsiString;
-  const s2: AnsiString=''): AnsiString;
+function MakeHex(s: String): String;
+function MakePrintable(s: String): String;
 
-function StrBefore(s, ATarget: Ansistring): AnsiString;
-function StrAfter(s, ATarget: Ansistring): AnsiString;
-function StrNth(s: Ansistring; ADelim: Ansistring; n: integer): AnsiString;
-function StrCount(s: Ansistring; ADelim: Ansistring): integer;
+function siif(const ACond: boolean; const s1: String;
+  const s2: String=''): String;
 
-function aPick(AInfo: AnsiString; AItem:integer; ADecodeStr: AnsiString): AnsiString;
-function DecodeField(DecodeStr, idx: AnsiString): AnsiString;
+function StrBefore(s, ATarget: String): String;
+function StrAfter(s, ATarget: String): String;
+function StrNth(s, ADelim: String; n: integer): String;
+function StrCount(s, ADelim: String): integer;
+
+function aPick(AInfo: String; AItem:integer; ADecodeStr: String): String;
+function DecodeField(DecodeStr, idx: String): String;
 
 // These formatting functions can be used elsewhere
 function DefIntFmt(inInt: Integer): String;
@@ -74,6 +77,9 @@ function xpTranslate(instr: AnsiString): String;
 
 
 implementation
+
+uses
+  Math;
 
 {$IFNDEF FPC}
 //------------------------------------------------------------------------------
@@ -344,7 +350,7 @@ var
   s: ansistring;
   gDegree, gMin, gSec: double;
 begin
-  sl := length(DexifDataSep);
+  sl := length(dExifDataSep);
   result := instr;                     // if error return input string
   p := Pos(dExifDataSep,instr);
   s := copy(InStr, 1, p-1);            // get first irrational number
@@ -366,11 +372,17 @@ begin
   // Minutes, Seconds or Decimal Degrees.
   case GpsFormat of
     gf_DD:
-      Result := Format('%1.4f Decimal Degrees',[gDegree + ((gMin + (gSec/60))/60)]);
+      Result := Format('%1.4f Decimal Degrees', [gDegree + (gMin + gSec/60)/60]);
+    gf_DD_Short:
+      Result := Format('%1.4f°', [gDegree + (gmin + gSec/60)/60]);
     gf_DM:
-      Result := Format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + (gsec/60)]);
+      Result := Format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + gsec/60]);
+    gf_DM_Short:
+      Result := Format('%0.0f° %1.2f''', [gDegree, gMin +  gsec/60]);
     gf_DMS:
       Result := Format('%0.0f Degrees %0.0f Minutes %0.0f Seconds', [gDegree, gMin, gSec]);
+    gf_DMS_Short:
+      Result := Format('%0.0f° %0.0f'' %0.0f"', [gDegree, gMin, gSec]);
   end;
 end;
 
@@ -455,10 +467,10 @@ begin
     end;
 end;
 
-function InsertSpaces(InStr: AnsiString): AnsiString;
+function InsertSpaces(InStr: String): String;
 var
   i: integer;
-  ch: ansichar;
+  ch: char;
   lastUC: boolean;
 begin
   lastUC := true;
@@ -482,10 +494,33 @@ begin
   end;
 end;
 
+function MakeHex(s: String): String;
+var
+  i: integer;
+begin
+  Result := '';
+  for i := 1 to Min(Length(s), 16) do
+    Result := Result + IntToHex(ord(s[i]), 2) + ' ';
+  if Length(s) > 16 then
+    Result := Result + '...';
+end;
+
+function MakePrintable(s: String): String;
+var
+  i: integer;
+begin
+  Result := '';
+  for i := 1 to Min(Length(s), 50) do
+    if not (ord(s[i]) in [32..255]) then
+      Result := Result + '.'
+    else
+      Result := Result + s[i];
+end;
+
 // Careful : this function's arguments are always evaluated which may have
 // unintended side-effects
 // (thanks to Jan Derk for pointing this out)
-function siif(const ACond: boolean; const s1: AnsiString; const s2: AnsiString=''): AnsiString;
+function siif(const ACond: boolean; const s1: String; const s2: String=''): String;
 begin
   if ACond then
     Result := s1
@@ -493,7 +528,7 @@ begin
     Result := s2;
 end;
 
-function StrBefore(s, ATarget: Ansistring): Ansistring;
+function StrBefore(s, ATarget: String): String;
 var
   p: integer;
 begin
@@ -504,7 +539,7 @@ begin
     Result := Copy(s, 1, p-1)
 end;
 
-function StrAfter(s, ATarget: Ansistring): Ansistring;
+function StrAfter(s, ATarget: String): String;
 var
   p: integer;
 begin
@@ -520,7 +555,7 @@ begin
     Result := Copy(s, p + Length(ATarget), Length(s) - Length(ATarget) - p + 1)
 end;
 
-function StrNth(s: AnsiString; ADelim: AnsiString; n: integer): AnsiString;
+function StrNth(s, ADelim: String; n: integer): String;
 var
   i: integer;
 begin
@@ -529,7 +564,7 @@ begin
   Result := strBefore(s, ADelim);
 end;
 
-function StrCount(s: AnsiString; ADelim: AnsiString): Integer;
+function StrCount(s, ADelim: String): Integer;
 var
   i: Integer;
 begin
@@ -542,33 +577,31 @@ begin
   Result := i;
 end;
 
-function aPick(AInfo: AnsiString; AItem:integer;
-  ADecodeStr: AnsiString): AnsiString;
+function aPick(AInfo: String; AItem:integer; ADecodeStr: String): String;
 var
-  s, r: AnsiString;
+  s: String;
 begin
   try
     s := StrNth(AInfo, ',', AItem+1);
-    r := DecodeField(ADecodeStr, s);
+    Result := DecodeField(ADecodeStr, s);
   except
-    r := '0';
+    Result := '0';
   end;
-  Result := r;
 end;
 
 
-function DecodeField(DecodeStr, idx: AnsiString): AnsiString;
+function DecodeField(DecodeStr, idx: String): String;
 var
   stPos: integer;
-  ts: AnsiString;
+  ts: String;
 begin
   Result := '';
-  idx := dExifDecodeSep + AnsiString(Trim(String(idx))) + ':';   // ease parsing
+  idx := dExifDecodeSep + Trim(idx) + ':';   // ease parsing
   decodeStr := dExifDecodeSep + DecodeStr + dExifDecodeSep;
   stPos := Pos(idx, DecodeStr);
   if stPos > 0 then
   begin
-    ts := copy(DecodeStr, stPos+Length(idx), Length(decodeStr));
+    ts := copy(DecodeStr, stPos + Length(idx), Length(decodeStr));
     Result := Copy(ts, 1, Pos(dExifDecodeSep, ts) - 1);
   end;
 end;

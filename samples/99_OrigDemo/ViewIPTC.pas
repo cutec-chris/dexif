@@ -36,8 +36,8 @@ uses
   ExtCtrls, StdCtrls, ExtDlgs, ComCtrls, dEXIF, dIPTC, About;
 
 const
-     ProgName = 'IPTCView';
-     SC_TransMenuItem = WM_USER + 1;
+  ProgName = 'IPTCView';
+  SC_TransMenuItem = WM_USER + 1;
 
  type
   TIPTCform = class(TForm)

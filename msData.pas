@@ -338,9 +338,8 @@ var
   tb: Ansistring;
   MaxSp,MinSp,MaxFL,MinFL:double;
 begin
-  sl := Length(dExifDataSep);
   Result := InStr;                     // if error return input string
-
+  sl := Length(dExifDataSep);
   i := Pos(dExifDataSep, InStr);
   tb := Copy(InStr, 1, i-1);           // get first irrational number
   MinFL := CvtRational(tb);            // bottom of lens speed range
@@ -368,7 +367,7 @@ begin
   if trim(string(valStr)) <> '' then
   begin
     curTagArray.AddMSTag(fname,valStr, FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    result := crlf + fname + dExifDelim + valStr;
   end
   else
     result := '';
@@ -382,7 +381,7 @@ begin
   if trim(string(valStr)) <> '' then
   begin
     curTagArray.AddMSTag(fname,valStr, FMT_STRING);
-    result := crlf+fname+DexifDelim+valStr;
+    result := crlf + fname + dExifDelim + valStr;
   end
   else
     result := '';

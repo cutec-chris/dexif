@@ -32,13 +32,13 @@ type
     TType: word;         // tag type  -- see FMT_XXXX constants
     ICode: Word;         // iptc code
     Tag: word;           // primary key
-    Name:ansistring;        // searchable
-    Desc:ansistring;        // translatable
-    Code:ansistring;        // decode capability
-    Data:string;            // display value
-    Raw:ansistring;         // unprocessed value
+    Name: String;        // searchable
+    Desc: String;        // translatable
+    Code: String;        // decode capability
+    Data: String;            // display value
+    Raw: ansistring;         // unprocessed value  -- DO NOT CHANGE TO STRING !!!
     PRaw: integer;       // pointer to unprocessed
-    FormatS:ansistring;      // Format string
+    FormatS: string;     // Format string
     Size: integer;       // used by ITPC module
     CallBack: TStrFunc;  // formatting string
     id: word;            // msta - used for exif-parent-child-structure
@@ -71,7 +71,7 @@ type
   end;
   PExifRational = ^TExifRational;
 
-  TGpsFormat = (gf_DD, gf_DM, gf_DMS);
+  TGpsFormat = (gf_DD, gf_DM, gf_DMS, gf_DD_Short, gf_DM_Short, gf_DMS_Short);
 
 
 const
@@ -102,9 +102,9 @@ const
   EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Name:''; Desc:'';
     Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0);
 
-  GpsFormat = gf_DMS;
+  GpsFormat = gf_DMS_Short;
 
-  dExifVersion: ansistring = '1.04';
+  ValidExifHeader: ansistring = 'Exif'#0;
 
   {$IFDEF FPC}
   crlf = LineEnding;
@@ -114,8 +114,8 @@ const
 
 var
   dExifDataSep   : ansistring = ', ';
-  dExifDecodeSep : ansistring = ',';
-  dExifDelim     : ansistring = ' = ';
+  dExifDecodeSep : string = ',';
+  dExifDelim     : string = ' = ';
   dExifDecode    : boolean = true;
   EstimateValues : boolean = false;
   TiffReadLimit  : longint = 256000;

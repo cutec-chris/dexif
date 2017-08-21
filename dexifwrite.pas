@@ -52,7 +52,7 @@ type
 implementation
 
 uses
-  Math, dTags;
+  dTags;
 
 //------------------------------------------------------------------------------
 //  Constructor of the Exif writer

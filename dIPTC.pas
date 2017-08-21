@@ -57,7 +57,7 @@ type
 
   TIPTCdata = class
   private
-    function getTimeZoneStr:ansistring;
+    function GetTimeZoneStr: string;
   protected
     MaxTag: integer;
     parent: tobject;
@@ -67,46 +67,46 @@ type
     procedure SetTagElement(TagID: integer; const Value: ITag);
     function GetCount: integer;
     procedure SetCount(const Value: integer);
-    procedure SetDateTimePrim(TimeIn: TDateTime; prefix:ansistring);
+    procedure SetDateTimePrim(TimeIn: TDateTime; prefix: string);
   public
-//    Filename :ansistring;
-    constructor Create(p:tobject);
+    constructor Create(p: TObject);
     procedure Reset;
-    property ITagArray[TagID:integer]: ITag
-        read GetTagElement write SetTagElement; default;
-    property Count : integer read GetCount write SetCount;
     function HasData: boolean;
-    Function Clone(source:TIPTCdata):TIPTCdata;
-    Function ParseIPTCStrings(buff:ansistring):tstringlist;
-    Procedure ParseIPTCArray; overload;
-    Procedure ParseIPTCArray(buff:ansistring);  overload;
+    function Clone(ASource: TIPTCdata): TIPTCdata;
+    function ParseIPTCStrings(buff:ansistring):tstringlist;
+    procedure ParseIPTCArray; overload;
+    procedure ParseIPTCArray(ABuffer: ansistring); overload;
     function IPTCArrayToBuffer:ansistring;
     function IPTCArrayToXML:tstringlist;
 
-    function LookupTag(SearchStr:ansistring):integer; virtual;
-    Function LookupTagDefn(item:ansistring): integer;
-    function LookupTagByDesc(SearchStr:ansistring): integer;
+    function LookupTag(SearchStr: String): integer; virtual;
+    Function LookupTagDefn(AName: String): integer;
+    function LookupTagByDesc(SearchStr: String): integer;
 
-    procedure RemoveTag( tagstr:ansistring ); virtual;
-    function AddTag(tagstr:ansistring; dataval:ansistring = ''):integer; virtual;
-    function AppendToTag(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function AddOrAppend(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function UpdateTag(tagstr, dataval:ansistring): integer;
-    procedure SetTagByIdx(idx:integer; val:ansistring);
-    function GetTag(tagstr:ansistring; defval:ansistring=''):ansistring; virtual;
-    function ReadFile(fname:ansistring):boolean; virtual;
-    function ReadFileStrings(fname:ansistring):tstringlist;
-    function AddTagToArray(nextTag: iTag): integer;
+    procedure RemoveTag(ATagName: String); virtual;
+    function AddTag(ATagName: String; ADataVal: ansistring = ''): integer; virtual;
+    function AppendToTag(ATagName: String; ADataVal: ansistring): integer; virtual;
+    function AddOrAppend(ATagName: String; ADataVal: ansistring): integer; virtual;
+    function UpdateTag(ATagName: String; ADataVal: ansistring): integer;
+    procedure SetTagByIdx(idx:integer; AValue:ansistring);
+    function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
+    function ReadFile(const AFileName: String): boolean; virtual;
+    function ReadFileStrings(const AFileName: String): TStringList;
+    function AddTagToArray(ANewTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
-    procedure SetDateTimeExt(TimeIn: TDateTime; prefix:ansistring);
-    function GetMultiPartTag(tagName:ansistring):tstringlist;
+    procedure SetDateTimeExt(TimeIn: TDateTime; APrefix:ansistring);
+    function GetMultiPartTag(ATagName: String): TStringList;
    {$IFNDEF FPC}
     {$IFNDEF dExifNoJpeg}
     procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
     procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
     {$ENDIF}
    {$ENDIF}
+
+    property ITagArray[TagID:integer]: ITag
+        read GetTagElement write SetTagElement; default;
+    property Count: integer read GetCount write SetCount;
   end;
 
 const IPTCTAGCNT = 49;
@@ -168,8 +168,8 @@ var
      ( TID:0;TType:0;ICode: 8; Tag:10;  Name:'Subfile';      Desc:'Subfile';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2 )
     );
 
-procedure IPTCWriteTransFile(fname:ansistring);
-function IPTCReadTransFile(fname:ansistring):boolean;
+procedure IPTCWriteTransFile(const AFileName: String);
+function IPTCReadTransFile(const AFileName: String): boolean;
 
 procedure InitTagEntry(out ATagEntry: TTagEntry);
 procedure InitITag(out ATag: ITag);
@@ -180,7 +180,7 @@ implementation
 uses dEXIF;
 
 var
-  buffer:ansistring;
+  Buffer: ansistring;
 
 constructor TIPTCdata.Create(p:tobject);
 begin
@@ -201,7 +201,7 @@ end;
 
 function TIPTCdata.GetTagElement(TagID: integer): ITag;
 begin
-  result := fITagArray[TagID]
+  Result := fITagArray[TagID]
 end;
 
 procedure TIPTCdata.SetTagElement(TagID: integer; const Value: ITag);
@@ -209,123 +209,122 @@ begin
   fITagArray[TagID] := Value;
 end;
 
-Function ExtractTag(var start:integer):iTag;
-var blen,x,tagId,code,i:integer;
-    tmp:iTag;
+function ExtractTag(var start: integer): iTag;
+var
+  bLen, x, tagId, code, i: integer;
+  tmp: iTag;
 begin
   InitITag(tmp);
-  code := byte(buffer[start]);
-  tagId := byte(buffer[start+1]);     // should be #$1C
-  blen := (byte(buffer[start+2]) shl 8 ) or byte(buffer[start+3]);
-  x := blen;
-  inc(start,4);                      // skip length bytes
-  if code in [2,8] then
+  code := byte(Buffer[start]);
+  tagId := byte(Buffer[start+1]);     // should be #$1C
+  bLen := (byte(Buffer[start+2]) shl 8) or byte(Buffer[start+3]);
+  x := bLen;
+  inc(start, 4);                     // skip length bytes
+  if code in [2, 8] then
   begin
     tmp.Tag := 65534;
     for i := 0 to IPTCTAGCNT-1 do
-      if (IPTCTable[i].Tag = tagid) and
-         (IPTCTable[i].ICode = code) then
+      if (IPTCTable[i].Tag = tagid) and (IPTCTable[i].ICode = code) then
       begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
-          tmp.Data := copy(buffer,start,x);
+          tmp.Data := copy(Buffer, start, x);
         end;
         break;
       end;
     if tmp.Tag = 65534 then
     begin
-      tmp.name := 'Custom_'+AnsiString(inttostr(tagid));
-      tmp.Desc := 'Custom_'+AnsiString(inttostr(tagid));
+      tmp.Name := 'Custom_' + IntToStr(tagid);
+      tmp.Desc := 'Custom_' + IntToStr(tagid);
       tmp.Tag := tagid;
       tmp.ICode := code;
-      tmp.Data := copy(buffer,start,x);
+      tmp.Data := copy(Buffer, start, x);
+      tmp.Raw := copy(Buffer, start, x);
       tmp.Size := 64; // length for unknown fields ?
     end;
   end;
-  start := start+x+1;
-  result := tmp;
+  start := start + x + 1;
+  Result := tmp;
 end;
 
-//  This function returns the index of a tag name
-//  in the tag buffer.
-Function TIPTCdata.LookupTag(SearchStr:ansistring):integer;
-var i: integer;
+//  This function returns the index of a tag name in the tag buffer.
+function TIPTCdata.LookupTag(SearchStr: String): Integer;
+var
+  i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Name)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
+  SearchStr := UpperCase(SearchStr);
+  Result := -1;
+  for i := 0 to Count-1 do
+    if UpperCase(iTagArray[i].Name) = SearchStr then
+    begin
+      Result := i;
+      break;
+    end;
 end;
 
-//  This function returns the index of a tag name
-//  in the tag buffer. It searches by the description
-//  which is most likely to be used as a label
-Function TIPTCdata.LookupTagByDesc(SearchStr:ansistring):integer;
-var i: integer;
+//  This function returns the index of a tag name in the tag buffer.
+//  It searches by the description which is most likely to be used as a label
+function TIPTCdata.LookupTagByDesc(SearchStr:string): integer;
+var
+  i: integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Desc)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
+  SearchStr := UpperCase(SearchStr);
+  Result := -1;
+  for i := 0 to Count-1 do
+    if UpperCase(iTagArray[i].Desc) = SearchStr then
+    begin
+      Result := i;
+      break;
+    end;
 end;
 
-//  This function returns the index of a tag definition
-//  for a given tag name.
-function TIPTCdata.LookupTagDefn(item:ansistring): integer;
-var i:integer;
+//  This function returns the index of a tag definition for a given tag name.
+function TIPTCdata.LookupTagDefn(AName: string): integer;
+var
+  i:integer;
 begin
-  result := -1;
+  Result := -1;
   for i := 0 to IPTCTAGCNT-1 do
   begin
-    if AnsiString(AnsiLowerCase(item)) = AnsiString(AnsiLowerCase(IPTCtable[i].Name)) then
+    if LowerCase(AName) = LowerCase(IPTCtable[i].Name) then
     begin
-      result := i;
+      Result := i;
       break;
     end;
   end;
 end;
 
-Function TIPTCdata.ParseIPTCStrings(buff:ansistring):tstringlist;
-var ts:tstringlist;
-    tmpItem:itag;
-    start,i,j:Integer;
+function TIPTCdata.ParseIPTCStrings(buff: ansistring): TStringList;
+var
+  tmpItem: itag;
+  start, i, j: Integer;
 begin
-  ts := tstringlist.Create;
-  buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
-  for j := i to length(buffer) do       // Look for first field marker
-    if ( byte(buffer[j]) = $1C) and
-       ( byte(buffer[j+1]) in [2,8]) then
+  Result := TStringList.Create;
+  Buffer := buff;
+  i := Pos('Photoshop 3.0', buff) + 13;
+  for j := i to Length(Buffer) do       // Look for first field marker
+    if (byte(Buffer[j]) = $1C) and (byte(Buffer[j+1]) in [2,8]) then
       break;
   start := j+1;
-  while (start < length(buffer)-2) do   // Work through buffer
+  while (start < Length(Buffer)-2) do   // Work through buffer
   begin
     tmpItem := ExtractTag(start);
     if tmpItem.Name <> '' then         // Empty fields are masked out
-      ts.Add(tmpItem.Desc+DexifDelim+tmpItem.Data);
+      Result.Add(tmpItem.Desc + DexifDelim + tmpItem.Data);
   end;
-  result := ts;
 end;
  
-function TIPTCdata.AddTagToArray(nextTag:iTag):integer;
+function TIPTCdata.AddTagToArray(ANewTag: iTag): Integer;
 begin
-  if nextTag.tag <> 0 then     // Empty fields are masked out
+  if ANewTag.tag <> 0 then     // Empty fields are masked out
   begin
     if fITagCount >= MaxTag-1 then
     begin
-      inc(MaxTag,TagArrayGrowth);
-      SetLength(fITagArray,MaxTag);
+      inc(MaxTag, TagArrayGrowth);
+      SetLength(fITagArray, MaxTag);
     end;
-    fITagArray[fITagCount] := nextTag;
+    fITagArray[fITagCount] := ANewTag;
     inc(fITagCount);
   end;
   result := fITagCount-1;
@@ -333,27 +332,27 @@ end;
  
 Procedure TIPTCdata.ParseIPTCArray;
 begin
-  ParseIPTCArray(timgdata(parent).IPTCsegment^.data);
+  ParseIPTCArray(TImgData(Parent).IPTCsegment^.Data);
 end;
 
-Procedure TIPTCdata.ParseIPTCArray(buff:ansistring);
-var nextTag:itag;
-    start,i,j:Integer;
+Procedure TIPTCdata.ParseIPTCArray(ABuffer: Ansistring);
+var
+  nextTag: ITag;
+  start, i, j: Integer;
 begin
-  reset;
-  buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
-  for j := i to length(buffer) do       // Look for first field marker
-    if ( byte(buffer[j]) = $1C) and
-       ( byte(buffer[j+1]) in [2,8]) then
+  Reset;
+  Buffer := ABuffer;
+  i := Pos('Photoshop 3.0', ABuffer) + 13;
+  for j := i to Length(Buffer) do       // Look for first field marker
+    if (byte(Buffer[j]) = $1C) and (byte(Buffer[j+1]) in [2,8]) then
       break;
   start := j+1;
-  while (start < length(buffer)-2) do   // Work through buffer
+  while (start < Length(Buffer)-2) do   // Work through buffer
   begin
     nextTag := ExtractTag(start);       // Start is incremented by function
     if nextTag.Tag in IPTCMultiTags then
     begin
-      AppendToTag(nextTag.Name,nextTag.Data)
+      AppendToTag(nextTag.Name, nextTag.Data)
     end
     else
       AddTagToArray(nextTag);
@@ -438,28 +437,25 @@ begin
   result := buff+'8BIM'#$04#$0B#0#0#0#0#0#0;
 end;
 
-function TIPTCdata.Clone(source: TIPTCdata): TIPTCdata;
-var
-  newie:TIPTCdata;
+function TIPTCdata.Clone(ASource: TIPTCdata): TIPTCdata;
 begin
-  newie := TIPTCdata.Create(parent);
-  newie.fITagArray := copy(source.fITagArray,0,MaxTag);
-  newie.fITagCount := source.fITagCount;
-  result := newie;
+  Result := TIPTCdata.Create(Parent);
+  Result.fITagArray := Copy(ASource.fITagArray, 0, MaxTag);
+  Result.fITagCount := ASource.fITagCount;
 end;
 
-function TIPTCdata.AddOrAppend(tagstr, dataval:ansistring): integer;
+function TIPTCdata.AddOrAppend(ATagName: String; ADataVal: ansistring): integer;
 var
   i:integer;
 begin
-  result := -1;
-  i := LookupTagDefn(tagStr);  // see if keyword is valid
+  Result := -1;
+  i := LookupTagDefn(ATagName);  // see if keyword is valid
   if i >= 0 then
   begin
     if (IPTCTable[i].Tag in IPTCMultiTags) then
-      result := AppendToTag(tagstr,dataVal)
+      Result := AppendToTag(ATagName, ADataVal)
     else
-      result := AddTag(tagstr,dataval);
+      Result := AddTag(ATagName, ADataVal);
   end;
 end;
 
@@ -485,78 +481,77 @@ begin
   result := AnsiString(lst.CommaText);
 end;
 
-function TIPTCdata.AppendToTag(tagstr, dataval:ansistring): integer;
+function TIPTCdata.AppendToTag(ATagName: String; ADataval:ansistring): integer;
 var
-  inspt:integer;   // INSertion PoinT
+  insPt: integer;   // INSertion PoinT
 begin
-  inspt := LookupTag(tagstr);
-  if (inspt >= 0) then
+  insPt := LookupTag(ATagName);
+  if (insPt >= 0) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Data :=
-          noDups(fITagArray[inspt].Data,dataval)
+    if ADataval <> '' then
+      fITagArray[insPt].Data := NoDups(fITagArray[inspt].Data, ADataVal)
   end
   else
-    inspt := AddTag(tagstr,noDups('',dataval));
-  result := inspt;
+    insPt := AddTag(ATagName, NoDups('', ADataVal));
+  result := insPt;
 end;
 
-function TIPTCdata.UpdateTag(tagstr, dataval:ansistring): integer;
-var inspt:integer;   // INSertion PoinT
+function TIPTCdata.UpdateTag(ATagName: String; ADataVal: ansistring): integer;
+var
+  insPt: integer;   // INSertion PoinT
 begin
-  inspt := LookupTag(tagstr);
-  if (inspt >= 0) then
+  insPt := LookupTag(ATagName);
+  if (insPt >= 0) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Desc := dataval
+    if ADataVal <> '' then
+      fITagArray[insPt].Desc := ADataVal
   end;
-  result := inspt;
+  result := insPt;
 end;
 
-function TIptcData.GetMultiPartTag(tagName:ansistring):tstringlist;
-var tmp:tstringlist;
+function TIptcData.GetMultiPartTag(ATagName: String): TStringList;
 begin
-  tmp := tstringlist.create;
-  tmp.CommaText := StringReplace(
-    GetTag(tagname),MultiTagSep,',',[rfReplaceAll]);
-  result := tmp;
+  Result := TStringlist.Create;
+  Result.CommaText := StringReplace(GetTag(ATagname), MultiTagSep, ',' ,[rfReplaceAll]);
 end;
  
-function TIPTCdata.AddTag(tagstr, dataval:ansistring): integer;
-var inspt,defidx:integer;
-  newTag:itag;
+function TIPTCdata.AddTag(ATagName: String; ADataVal: ansistring): integer;
+var
+  insPt, defIdx: integer;
+  newTag: itag;
 begin
-  inspt := LookupTag(tagstr);
+  insPt := LookupTag(ATagName);
   if (inspt >= 0) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Data := dataval
- end
-  else
+    if ADataval <> '' then
+      fITagArray[inspt].Data := ADataval
+  end else
   begin
-    defidx := LookupTagDefn(tagstr);
-    if defidx < 0 then
+    defIdx := LookupTagDefn(ATagname);
+    if defIdx < 0 then
     begin
-      result := -1;
+      Result := -1;
       exit;  // not a defined node, do not insert
     end;
-    newTag := IPTCTable[defidx];
-    newTag.Data := dataVal;
-    inspt := AddTagToArray(newTag);
+    newTag := IPTCTable[defIdx];
+    newTag.Raw := ADataVal;
+    newTag.Data := ADataVal;
+    insPt := AddTagToArray(newTag);
   end;
-  result := inspt;
+  Result := insPt;
 end;
 
-procedure TIPTCdata.RemoveTag(tagstr:ansistring);
-var rempt,i:integer;
+procedure TIPTCdata.RemoveTag(ATagName: String);
+var
+  remPt,i: integer;
 begin
- rempt := LookupTag(tagstr);
- if (rempt >= 0) then
- begin
-   for i := rempt to fITagCount-2 do
-     fITagArray[i] := fITagArray[i+1];
-   dec(fITagCount);
- end;
+  remPt := LookupTag(ATagName);
+  if (remPt >= 0) then
+  begin
+    for i := remPt to fITagCount - 2 do
+      fITagArray[i] := fITagArray[i+1];
+    dec(fITagCount);
+  end;
 end;
  
 procedure TIPTCdata.Reset;
@@ -569,37 +564,39 @@ begin
     InitITag(fITagArray[i]);
 end;
 
-function TIPTCdata.GetTag(tagstr:ansistring; defval:ansistring=''):ansistring;
-var i:integer;
+function TIPTCdata.GetTag(ATagName: string; ADefaultVal: String=''): String;
+var
+  i: integer;
 begin
-  result := defval;
-  i := LookupTag(tagstr);
-  if i >=0 then
-    result := ITagArray[i].Data;
+  Result := ADefaultVal;
+  i := LookupTag(ATagName);
+  if i >= 0 then
+    Result := ITagArray[i].Data;
 end;
 
-Function TIPTCdata.HasData:boolean;
+Function TIPTCdata.HasData: boolean;
 begin
   result := Count > 0;
 end;
  
-function TIPTCdata.ReadFile(fname:ansistring):boolean;
-var p:tImgData;
+function TIPTCdata.ReadFile(const AFileName: String): boolean;
+var
+  p: TImgData;
 begin
-  p := tImgData(parent);
+  p := TImgData(parent);
   Reset;
-  p.ProcessFile(FName);                      // Get data from file.
+  p.ProcessFile(AFileName);                  // Get data from file.
   if p.IPTCSegment <> nil then               // If IPTC segment detected
   begin
     ParseIPTCArray(p.IPTCSegment^.Data);
 //    filename := FName;
   end;
-  result := HasData();
+  Result := HasData();
 end;
  
-function TIPTCdata.ReadFileStrings(fname:ansistring):tstringlist;
+function TIPTCdata.ReadFileStrings(const AFileName: String): TStringList;
 begin
-  result := ParseIPTCStrings(timgdata(parent).IPTCSegment^.Data);
+  Result := ParseIPTCStrings(TImgData(Parent).IPTCSegment^.Data);
 end;
 
 {$IFNDEF FPC}
@@ -639,13 +636,14 @@ end;
 {$ENDIF}
 {$ENDIF}
 
-procedure TIPTCdata.SetTagByIdx(idx: integer; val:ansistring);
+procedure TIPTCdata.SetTagByIdx(idx: integer; AValue: ansistring);
 begin
-  fITagArray[idx].Data := val;
+  fITagArray[idx].Data := AValue;
+  fITagArray[idx].Raw := AValue;
 end;
 
-function GetTimeZoneBias:longint;
 {$IFDEF MSWINDOWS}
+function GetTimeZoneBias:longint;
 var
   TZoneInfo: TTimeZoneInformation;
 begin
@@ -653,18 +651,21 @@ begin
   result := TZoneInfo.Bias;
 end;
 {$ENDIF}
+
 {$IFDEF UNIX}
+function GetTimeZoneBias:longint;
 begin
   Result := -TZSeconds div 60;
 end;
 {$ENDIF}
 
-function TIPTCdata.getTimeZoneStr:ansistring;
-var tmp,h,m:integer;
-    sign:ansistring;
+function TIPTCdata.GetTimeZoneStr: String;
+var
+  tmp,h,m: integer;
+  sign: ansistring;
 begin
-  result := defaultTimeZone;
-  if defaultTimeZone <> '_0000' then
+  result := DefaultTimeZone;
+  if DefaultTimeZone <> '_0000' then
     exit;
   tmp := GetTimeZoneBias();
   h := abs(tmp) div 60; // hours
@@ -672,10 +673,10 @@ begin
   if tmp < 0         // local time correction: invertsign
     then sign := '+'
     else sign := '-';
-  result := AnsiString(Format('%s%.2d%.2d',[sign,h,m]));
+  result := Format('%s%.2d%.2d',[sign,h,m]);
 end;
 
-procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:ansistring);
+procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:string);
 var dateStr, timeStr, timeZone:ansistring;
 begin
   if AnsiString(AnsiLowerCase(prefix)) = 'default' then
@@ -695,67 +696,76 @@ end;
 
 procedure TIPTCdata.SetDateTime(TimeIn:TDateTime);
 begin
-  SetDateTimePrim(TimeIn,'Default');
+  SetDateTimePrim(TimeIn, 'Default');
 end;
 
-procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; prefix:ansistring);
+procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; APrefix:ansistring);
 begin
-  SetDateTimePrim(TimeIn,prefix);
+  SetDateTimePrim(TimeIn, APrefix);
 end;
 
-function TIPTCdata.GetDateTime:TDateTime;
+function TIPTCdata.GetDateTime: TDateTime;
 type
   TConvert= packed record
-     year: Array [1..4] of ansichar;
-     mon, day, hr, min, sec: Array [1..2] of ansichar;
+     year: Array[1..4] of ansichar;
+     mon, day, hr, min, sec: array[1..2] of ansichar;
   end;
   PConvert= ^TConvert;
 var
-  tsd,tst:ansistring;
+  tsd, tst:ansistring;
 begin
    try
-     tsd := GetTag('DateCreated','00000000');
-     tst := tsd+GetTag('TimeCreated','000000');
-     with PConvert( @tst[1] )^ do
-       Result := EncodeDate( StrToInt( year),
-                             StrToInt( mon ),
-                             StrToInt( day ))
-              +  EncodeTime( StrToInt( hr  ),
-                             StrToInt( min ),
-                             StrToInt( sec ), 0);
+     tsd := GetTag('DateCreated', '00000000');
+     tst := tsd + GetTag('TimeCreated', '000000');
+     with PConvert(@tst[1])^ do
+       Result := EncodeDate(StrToInt(year),
+                            StrToInt(mon ),
+                            StrToInt(day ))
+              +  EncodeTime(StrToInt(hr  ),
+                            StrToInt(min ),
+                            StrToInt(sec ), 0);
    except
-     result := 0;
+     Result := 0;
    end;
 end;
 
-procedure IPTCWriteTransFile(fname:ansistring);
-var tmp:tstringlist;
-    i: integer;
+procedure IPTCWriteTransFile(const AFileName: String);
+var
+  L: TStringList;
+  i: integer;
 begin
-  tmp := tstringlist.Create;
-  for i := 0 to IPTCTAGCNT-1 do
-    tmp.Add( IPTCTable[i].Name+'='+ IPTCTable[i].Desc);
-  tmp.SaveToFile(fname);
-  tmp.Free;
+  L := TStringList.Create;
+  try
+    for i := 0 to IPTCTAGCNT-1 do
+      L.Add(IPTCTable[i].Name + '=' + IPTCTable[i].Desc);
+    L.SaveToFile(AFileName);
+  finally
+    L.Free;
+  end;
 end;
 
-function IPTCReadTransFile(fname:ansistring):boolean;
-var tmp:tstringlist;
-    i: integer;
-    ts:ansistring;
+function IPTCReadTransFile(const AFileName: String): boolean;
+var
+  L: TStringList;
+  i: integer;
+  s: string;
 begin
-  result := false;
-  if not fileexists(fname) then
+  Result := false;
+  if not FileExists(AFilename) then
     exit;
-  tmp := tstringlist.Create;
-  tmp.LoadFromFile(fname);
-  for i := 0 to IPTCTAGCNT-1 do
-  begin
-    ts := AnsiString(tmp.Values[IPTCTable[i].Name]);
-    if ts > '' then
-      IPTCTable[i].Desc := ts;
+
+  L := TStringlist.Create;
+  try
+    L.LoadFromFile(AFileName);
+    for i := 0 to IPTCTAGCNT-1 do
+    begin
+      s := L.Values[IPTCTable[i].Name];
+      if s > '' then
+        IPTCTable[i].Desc := s;
+    end;
+  finally
+    L.Free;
   end;
-  tmp.Free;
 end;
 
 procedure InitTagEntry(out ATagEntry: TTagEntry);
