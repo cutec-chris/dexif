@@ -1,6 +1,7 @@
 ; IMPORTANT: This file must be stored in ANSI encoding
 ; Use a TAB character between the two columns
 
+Comment	This text is in the COMMENT segment.
 Artist	Ansel Adams
 ImageDescription	A nice image
 UserComment	Nice comment!

@@ -90,6 +90,47 @@ begin
   SetLength(Result, n);
 end;
 
+{ The date/time string is expected in the ISO format "yyyy-mm-dd hh:nn:ss" }
+function ExtractDateTime(AValue: String): TDateTime;
+var
+  p: Integer;
+  yr, mn, dy, h, m, s: Integer;
+begin
+  Result := 0;
+  p := pos('-', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  yr := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos('-', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  mn := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(' ', AValue);
+  if p = 0 then begin
+    dy := StrToInt(AValue);
+    Result := EncodeDate(yr, mn, dy);
+    exit;
+  end;
+  dy := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(':', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  h := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(':', AValue);
+  if p = 0 then begin
+    m := StrToInt(AValue);
+    s := 0;
+  end else begin
+    m := StrToInt(copy(AValue, 1, p-1));
+    s := StrToInt(copy(AValue, p+1, MaxInt));
+  end;
+  Result := EncodeDate(yr, mn, dy) + EncodeTime(h, m, s, 0);
+end;
+
 
 { TMainForm }
 
@@ -216,7 +257,9 @@ function TMainForm.ReadTagValue(ATagName: String): String;
 var
   dt: TDateTime;
 begin
-  if ATagName = 'Artist' then
+  if ATagName = 'Comment' then
+    Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
+  else if ATagName = 'Artist' then
     Result := ImgData.ExifObj.Artist
   else if ATagName = 'ImageDescription' then
     Result := ImgData.ExifObj.ImageDescription
@@ -242,50 +285,11 @@ begin
     Result := ImgData.ExifObj.TagValueAsString[ATagName];
 end;
 
-{ The date/time string is expected in the ISO format "yyyy-mm-dd hh:nn:ss" }
-function ExtractDateTime(AValue: String): TDateTime;
-var
-  p: Integer;
-  yr, mn, dy, h, m, s: Integer;
-begin
-  Result := 0;
-  p := pos('-', AValue);
-  if p = 0 then
-    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
-  yr := StrToInt(copy(AValue, 1, p-1));
-  Delete(AValue, 1, p);
-  p := pos('-', AValue);
-  if p = 0 then
-    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
-  mn := StrToInt(copy(AValue, 1, p-1));
-  Delete(AValue, 1, p);
-  p := pos(' ', AValue);
-  if p = 0 then begin
-    dy := StrToInt(AValue);
-    Result := EncodeDate(yr, mn, dy);
-    exit;
-  end;
-  dy := StrToInt(copy(AValue, 1, p-1));
-  Delete(AValue, 1, p);
-  p := pos(':', AValue);
-  if p = 0 then
-    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
-  h := StrToInt(copy(AValue, 1, p-1));
-  Delete(AValue, 1, p);
-  p := pos(':', AValue);
-  if p = 0 then begin
-    m := StrToInt(AValue);
-    s := 0;
-  end else begin
-    m := StrToInt(copy(AValue, 1, p-1));
-    s := StrToInt(copy(AValue, p+1, MaxInt));
-  end;
-  Result := EncodeDate(yr, mn, dy) + EncodeTime(h, m, s, 0);
-end;
-
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
 begin
-  if ATagName = 'Artist' then
+  if ATagName = 'Comment' then
+    ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
+  else if ATagName = 'Artist' then
     ImgData.ExifObj.Artist := ATagValue
   else if ATagName = 'ImageDescription' then
     ImgData.ExifObj.ImageDescription := ATagValue
