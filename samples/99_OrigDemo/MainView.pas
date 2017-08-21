@@ -26,6 +26,9 @@ uses
   dGlobal, dIPTC, mmsystem;
 
 type
+
+  { TForm1 }
+
   TForm1 = class(TForm)
     btnLoad: TButton;
     pdlg: TOpenPictureDialog;
@@ -49,6 +52,7 @@ type
     procedure cbDecodeClick(Sender: TObject);
     procedure cbVerboseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
     procedure CleanupPreview;
@@ -57,12 +61,11 @@ type
     procedure dumpMSpecific;
     procedure dumpThumb;
     procedure Memo(s: string);
-    procedure ReadExifDir(start:string;justcnt:boolean);
+    procedure ReadExifDir(start:string; justcnt:boolean);
   public
     lastDir: string;
     jpgcnt: integer;
     scrar:real;
-    flist:tstringlist;
     etime:longint;
     Verbose:boolean;
   end;
@@ -395,11 +398,15 @@ begin
   Verbose := false;
   constraints.MinHeight := height;
   constraints.MinWidth := width;
-  fList := tStringList.Create;
   lastDir := GetCurrentDir;
 //  DoubleBuffered := true;
 //  memo1.DoubleBuffered := true;
   PBar.Hide;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  ImgData.Free;
 end;
 
 procedure TForm1.btnAboutClick(Sender: TObject);
@@ -422,7 +429,6 @@ begin
   btnWrite.Enabled := false;
   if cbClearOnLoad.Checked then
     Memo1.Clear;
-  Flist.Clear;
   CleanupPreview;
   JpgCnt := 0;
   PBar.Position := 0;
@@ -446,7 +452,6 @@ begin
     StatusBar1.SimpleText := Format('Elapsed time (%d jpegs): %0.2f sec', [
       JpgCnt, (clock-etime)/1000
     ]);
-    Memo1.Lines.AddStrings(flist);
   finally
     Cursor := crDefault;
   end;

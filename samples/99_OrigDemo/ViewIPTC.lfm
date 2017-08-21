@@ -8,11 +8,10 @@ object IPTCform: TIPTCform
   ClientWidth = 388
   Color = clBtnFace
   Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   Position = poDefaultPosOnly
-  LCLVersion = '1.4.4.0'
+  LCLVersion = '1.9.0.0'
   object Splitter1: TSplitter
     Cursor = crVSplit
     Left = 0

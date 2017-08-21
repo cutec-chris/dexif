@@ -2208,7 +2208,7 @@ begin
       DateTimeToString(FileDateTime, ISODateFormat, Parent.FileDateTime);
 
       L.Add(Format('%-*s %s',      [w, 'File name:', ExtractFileName(Parent.Filename)]));
-      L.Add(Format('%-*s %dk',     [w, 'File size:', Parent.FileSize div 1024]));
+      L.Add(Format('%-*s %dkB',    [w, 'File size:', Parent.FileSize div 1024]));
       L.Add(Format('%-*s %s',      [w, 'File date:', FileDateTime]));
       L.Add(Format('%-*s %s',      [w, 'Photo date:', DateTime]));
       L.Add(Format('%-*s %s (%s)', [w, 'Make (model):', CameraMake, CameraModel]));
@@ -2259,7 +2259,7 @@ begin
     Result := ExtractFileName(parent.Filename) + ' Exif Error: '+Parent.ErrStr
   else
     Result := ExtractFileName(parent.Filename) + ' ' +
-              IntToStr(parent.FileSize div 1024) + 'k '+
+              IntToStr(parent.FileSize div 1024) + 'kB '+
               DateTime + ' ' +
               IntToStr(Width) + 'w ' + IntToStr(Height) + 'h '+
               siif(odd(FlashUsed),' Flash', '');
@@ -2862,22 +2862,20 @@ end;
 // WARNING: The calling procedure must destroy the stringlist created here.
 function TImageInfo.EXIFArrayToXML: TStringList;
 var
-  buff: TStringList;
   i: integer;
 begin
-  buff := TStringList.Create;
-  buff.Add('   <EXIFdata>');
+  Result := TStringList.Create;
+  Result.Add('   <EXIFdata>');
   for i := 0 to fiTagCount-1 do
     with fITagArray[i] do
     begin
-      buff.Add('   <' + Name + '>');
+      Result.Add('   <' + Name + '>');
       if Tag in [105, 120] // headline and image caption
-        then buff.Add('      <![CDATA[' + Data + ']]>')
-        else buff.Add('      ' + Data);
-      buff.Add('   </' + Name + '>');
+        then Result.Add('      <![CDATA[' + Data + ']]>')
+        else Result.Add('      ' + Data);
+      Result.Add('   </' + Name + '>');
     end;
-  buff.Add('   </EXIFdata>');
-  result := buff;
+  Result.Add('   </EXIFdata>');
 end;
 
 //--------------------------------------------------------------------------
@@ -3062,11 +3060,11 @@ begin
         STARTmarker := Pos(#$ff#$d8#$ff#$c4, tb);
       if STARTmarker <= 0 then
         exit;
-      tb := copy(tb,STARTmarker,length(tb));  // strip off thumb data block
+      tb := copy(tb, STARTmarker, Length(tb));  // strip off thumb data block
       // ok, this is fast and easy - BUT what we really need
       // is to read the length bytes to do the extraction...
       STOPmarker := Pos(#$ff#$d9, tb) + 2;
-      tb := copy(tb,1,STOPmarker);
+      tb := copy(tb, 1, STOPmarker);
       SetLength(Result, Length(tb));
       Move(tb[1], Result[0], Length(Result));
     except
@@ -3308,6 +3306,8 @@ begin
     CreateIPTCObj
   else
     IPTCObj.ParseIPTCArray(IPTCSegment^.Data);
+    // To do: Here's a memory leak because ParseIPTCArray returns a StringList which is not destroyed!
+
 //    filename := FName;
   result := IPTCObj.HasData();
 end;
@@ -3756,6 +3756,7 @@ begin
   result := (ThumbStart > 21) and (ThumbLength > 256);
 end;
 
+// WARNING: The calling routine must destroy the returned stringlist!
 function TImgData.ReadIPTCStrings(const AFilename: String): TStringList;
 begin
   if ProcessFile(AFilename) and HasIPTC then
@@ -3767,7 +3768,7 @@ end;
 // WARNING: The calling procedure must destroy the StringList created here!
 function TImgData.MetaDataToXML: TStringList;
 var
-  buff, buff2: TStringList;
+  buff2: TStringList;
   sr: TSearchRec;
 begin
   if FindFirst(Filename, faAnyFile, sr) <> 0 then
@@ -3777,21 +3778,21 @@ begin
     exit;
   end;
 
-  buff := TStringList.Create;
-  buff.Add('<dImageFile>');
-  buff.Add('   <OSdata>');
-  buff.Add('      <name> '+ExtractFileName(sr.Name)+' </name>');
-  buff.Add('      <path> '+ExtractFilePath(Filename)+' </path>');
-  buff.Add('      <size> '+inttostr(sr.Size)+' </size>');
-  buff.Add('      <date> '+DateToStr(FileDateToDateTime(sr.time))+' </date>');
-  buff.Add('   </OSdata>');
+  Result := TStringList.Create;
+  Result.Add('<dImageFile>');
+  Result.Add('   <OSdata>');
+  Result.Add('      <name> ' + ExtractFileName(sr.Name) + ' </name>');
+  Result.Add('      <path> ' + ExtractFilePath(Filename) + ' </path>');
+  Result.Add('      <size> ' + IntToStr(sr.Size) + ' </size>');
+  Result.Add('      <date> ' + DateToStr(FileDateToDateTime(sr.time)) + ' </date>');
+  Result.Add('   </OSdata>');
 
   if ExifObj <> nil then
   begin
     buff2 := ExifObj.EXIFArrayToXML;
     if buff2 <> nil then
     begin
-      buff.AddStrings(buff2);
+      Result.AddStrings(buff2);
       buff2.Free;
     end;
   end;
@@ -3801,13 +3802,12 @@ begin
     buff2 := IptcObj.IPTCArrayToXML;
     if buff2 <> nil then
     begin
-      buff.AddStrings(buff2);
+      Result.AddStrings(buff2);
       buff2.Free;
     end;
   end;
 
-  buff.add('</dImageFile>');
-  Result := buff;
+  Result.add('</dImageFile>');
 end;
 
 {$IFDEF dEXIFpredeclare}

@@ -73,7 +73,7 @@ type
     procedure Reset;
     function HasData: boolean;
     function Clone(ASource: TIPTCdata): TIPTCdata;
-    function ParseIPTCStrings(buff:ansistring):tstringlist;
+    function ParseIPTCStrings(buff: ansistring): TStringlist;
     procedure ParseIPTCArray; overload;
     procedure ParseIPTCArray(ABuffer: ansistring); overload;
     function IPTCArrayToBuffer:ansistring;
@@ -370,22 +370,20 @@ end;
 
 function TIPTCdata.IPTCArrayToXML: tstringlist;
 var
-  buff:tstringlist;
-  i:integer;
+  i: integer;
 begin
-  buff := TStringList.Create;
-  buff.add('   <ITPCdata>');
+  Result := TStringList.Create;
+  Result.add('   <ITPCdata>');
   for i := 0 to Count-1 do
     with ITagArray[i] do
     begin
-      buff.add('   <'+name+'>');
+      Result.add('   <'+name+'>');
       if tag in [105,120] // headline and image caption
-        then buff.add('      <![CDATA['+data+']]>')
-        else buff.add('      '+data);
-      buff.add('   </'+name+'>');
+        then Result.Add('      <![CDATA['+data+']]>')
+        else Result.Add('      '+data);
+      Result.add('   </'+name+'>');
     end;
-  buff.add('   </ITPCdata>');
-  result := buff;
+  Result.add('   </ITPCdata>');
 end;
  
 function SplitMultiTag(code, tag:integer; buff:ansistring):ansistring;
@@ -411,10 +409,10 @@ begin
   end;
 end;
  
-function TIPTCdata.IPTCArrayToBuffer:ansistring;
+function TIPTCdata.IPTCArrayToBuffer: Ansistring;
 var
-  buff,slen,h2:ansistring;
-  blen,i:integer;
+  buff, slen, h2: ansistring;
+  blen, i: integer;
 begin
   buff := '';
   // load up the particular data
@@ -459,14 +457,14 @@ begin
   end;
 end;
 
-function noDups(exst,newstr:ansistring):ansistring;
+function noDups(exst, newstr: Ansistring): Ansistring;
 var
-  lst,nlst: tstringList;
+  lst,nlst: TStringList;
   s:ansistring;
   i:integer;
 begin
-  lst := tstringlist.Create;
-  nlst := tstringlist.Create;
+  lst := TStringlist.Create;
+  nlst := TStringlist.Create;
   lst.CommaText := exst;
   lst.CaseSensitive := false;
   nlst.CommaText := newstr;
@@ -479,9 +477,11 @@ begin
     end;
   end;
   result := AnsiString(lst.CommaText);
+  nlst.Free;
+  lst.Free;
 end;
 
-function TIPTCdata.AppendToTag(ATagName: String; ADataval:ansistring): integer;
+function TIPTCdata.AppendToTag(ATagName: String; ADataVal:ansistring): integer;
 var
   insPt: integer;   // INSertion PoinT
 begin

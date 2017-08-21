@@ -1,9 +1,9 @@
 object IPTCform: TIPTCform
   Left = 122
   Top = 231
-  Width = 388
-  Height = 391
   Caption = 'IPTCform'
+  ClientHeight = 352
+  ClientWidth = 372
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,7 +11,6 @@ object IPTCform: TIPTCform
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
-  Position = poDefaultPosOnly
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13

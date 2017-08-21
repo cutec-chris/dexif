@@ -40,6 +40,9 @@ const
   SC_TransMenuItem = WM_USER + 1;
 
  type
+
+  { TIPTCform }
+
   TIPTCform = class(TForm)
     StatusBar1: TStatusBar;
     pdlg: TOpenPictureDialog;
@@ -64,6 +67,7 @@ const
     procedure btnWriteClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure btnSetDTClick(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     procedure Memo(s: string);
     procedure AddControlSet(idx:integer; vName,vValue:string;
@@ -72,15 +76,13 @@ const
     procedure LoadDisplayFromArray;
     procedure CopyDisplayToArray;
     procedure WMSysCommand(var Msg: TWMSysCommand); message wm_syscommand;
-    { Private declarations }
   public
-    { Public declarations }
     verbose:boolean;
   end;
 
 var
   IPTCform: TIPTCform;
-  ImgData:TImgData;
+  ImgData: TImgData;
 
 implementation
 
@@ -126,6 +128,11 @@ begin
    ScrollBox1.DoubleBuffered := true;
 end;
 
+procedure TIPTCform.FormDestroy(Sender: TObject);
+begin
+  ImgData.Free;
+end;
+
 procedure TIPTCform.CleanScrollBox;
 var i:integer;
     tc:tControl;
@@ -141,8 +148,9 @@ end;
 
 procedure TIPTCform.AddControlSet(idx:integer; vName,vValue:string;
   MaxChars:integer);
-var newLabel:TLabel;
-    newEdit:TEdit;
+var
+  newLabel: TLabel;
+  newEdit: TEdit;
 begin
   newLabel := TLabel.Create(ScrollBox1);  // create new label
   newEdit := TEdit.Create(ScrollBox1);    // create new edit box
@@ -152,7 +160,7 @@ begin
     AutoSize := false;
     top := 8+30*idx;
     left := 8;
-    width := 190;
+    width := 200;
     parent := ScrollBox1;
     font.Style := [fsBold];
     Caption := vName;
@@ -162,11 +170,12 @@ begin
     Anchors := [akTop,akLeft, akRight]; // expand when window resized
     parent := ScrollBox1;
     top := 7+30*idx;
-    left := 200;
+    left := 216;
     tag := idx;
     MaxLength := MaxChars;
-    width :=  IPTCform.width-226;      // hardcoded but otherwise changes when
-    Text := vValue;                     // vertical scroll bar is displayed.
+    // Width hardcoded, otherwise changes when vertical scroll bar appears.
+    Width := Scrollbox1.ClientWidth - Left - 16;
+    Text := vValue;
     DoubleBuffered := true;             // Flicker-free dynamic resizing
   end;
 end;
@@ -268,14 +277,18 @@ begin
 end;
 
 procedure TIPTCform.Button2Click(Sender: TObject);
-var xml:tstringlist;
+var
+  xml: TStringList;
 begin
   xml := ImgData.MetaDataToXML;
   if xml = nil then
     exit;
-  Memo1.Clear;
-  Memo1.Lines.AddStrings(xml);
-  xml.Free;
+  try
+    Memo1.Clear;
+    Memo1.Lines.AddStrings(xml);
+  finally
+    xml.Free;
+  end;
 end;
 
 procedure TIPTCform.WMSysCommand(var Msg:TWMSysCommand);

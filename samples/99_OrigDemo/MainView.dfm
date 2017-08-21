@@ -151,6 +151,6 @@ object Form1: TForm1
   end
   object JpegOut: TSavePictureDialog
     Left = 144
-    Top = 48
+    Top = 80
   end
 end

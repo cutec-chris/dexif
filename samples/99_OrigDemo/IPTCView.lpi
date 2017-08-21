@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
@@ -42,9 +42,6 @@
               </Win32>
             </Options>
           </Linking>
-          <Other>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
         </CompilerOptions>
       </Item2>
     </BuildModes>
@@ -75,7 +72,6 @@
         <ComponentName Value="IPTCform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="ViewIPTC"/>
       </Unit1>
       <Unit2>
         <Filename Value="About.pas"/>
@@ -85,8 +81,9 @@
       <Unit3>
         <Filename Value="TagPickU.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="TagPickDlg"/>
         <HasResources Value="True"/>
-        <UnitName Value="TagPickU"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit3>
     </Units>
   </ProjectOptions>
@@ -103,6 +100,7 @@
     <Linking>
       <Debugging>
         <DebugInfoType Value="dsDwarf2Set"/>
+        <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>
         <Win32>
@@ -112,7 +110,6 @@
     </Linking>
     <Other>
       <CustomOptions Value="-dBorland -dVer150 -dDelphi7 -dCompiler6_Up -dPUREPASCAL"/>
-      <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>
   <Debugging>
