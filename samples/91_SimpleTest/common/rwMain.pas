@@ -11,7 +11,8 @@ uses
   Windows, Messages, jpeg,
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  Grids, StdCtrls, Buttons, ComCtrls, dExif, ImgList;
+  Grids, StdCtrls, Buttons, ComCtrls, ImgList,
+  dGlobal, dExif;
 
 type
 
@@ -173,7 +174,7 @@ begin
     {$IFDEF FPC}
     stream := TMemoryStream.Create;
     try
-      stream.LoadfromFile(EdTestFile.Text);
+      stream.LoadFromFile(EdTestFile.Text);
       ImgData.WriteEXIFJpeg(stream, fn);
     finally
       stream.Free;
@@ -212,6 +213,8 @@ begin
 end;
 
 function TMainForm.ReadTagValue(ATagName: String): String;
+var
+  dt: TDateTime;
 begin
   if ATagName = 'Artist' then
     Result := ImgData.ExifObj.Artist
@@ -223,8 +226,61 @@ begin
     Result := ImgData.ExifObj.CameraMake
   else if ATagName = 'Model' then
     Result := ImgData.ExifObj.CameraModel
+  else if ATagName = 'DateTimeOriginal' then begin
+    dt := ImgData.ExifObj.DateTimeOriginal;
+    Result := FormatDateTime(ISODateFormat, dt);
+  end
+  else if ATagName = 'DateTimeDigitized' then begin
+    dt := ImgData.ExifObj.DateTimeDigitized;
+    Result := FormatDateTime(ISODateFormat, dt);
+  end
+  else if ATagName = 'DateTime' then begin
+    dt := ImgData.ExifObj.DateTimeModified;
+    Result := FormatDateTime(ISODateFormat, dt);
+  end
   else
     Result := ImgData.ExifObj.TagValueAsString[ATagName];
+end;
+
+{ The date/time string is expected in the ISO format "yyyy-mm-dd hh:nn:ss" }
+function ExtractDateTime(AValue: String): TDateTime;
+var
+  p: Integer;
+  yr, mn, dy, h, m, s: Integer;
+begin
+  Result := 0;
+  p := pos('-', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  yr := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos('-', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  mn := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(' ', AValue);
+  if p = 0 then begin
+    dy := StrToInt(AValue);
+    Result := EncodeDate(yr, mn, dy);
+    exit;
+  end;
+  dy := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(':', AValue);
+  if p = 0 then
+    raise Exception.Create('ISO date/time format expected: "yyyy-mm-dd hh:nn:ss"');
+  h := StrToInt(copy(AValue, 1, p-1));
+  Delete(AValue, 1, p);
+  p := pos(':', AValue);
+  if p = 0 then begin
+    m := StrToInt(AValue);
+    s := 0;
+  end else begin
+    m := StrToInt(copy(AValue, 1, p-1));
+    s := StrToInt(copy(AValue, p+1, MaxInt));
+  end;
+  Result := EncodeDate(yr, mn, dy) + EncodeTime(h, m, s, 0);
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
@@ -239,6 +295,12 @@ begin
     ImgData.ExifObj.CameraMake := ATagValue
   else if ATagName = 'Model' then
     ImgData.ExifObj.CameraModel := ATagValue
+  else if ATagName = 'DateTimeOriginal' then
+    ImgData.ExifObj.DateTimeOriginal := ExtractDateTime(ATagValue)
+  else if ATagName = 'DateTimeDigitized' then
+    ImgData.ExifObj.DateTimeDigitized := ExtractDateTime(ATagValue)
+  else if ATagName = 'DateTime' then
+    ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
   else
     ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue;
 end;

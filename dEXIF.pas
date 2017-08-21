@@ -140,8 +140,8 @@ type
   protected
     function AddTagToArray(ANewTag: iTag): integer;
     function AddTagToThumbArray(ANewTag: iTag): integer;
-
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): AnsiString;
+    function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
 
   public
     FITagArray: array of TTagEntry;
@@ -159,9 +159,9 @@ type
 //    CommentPosn: integer;
 //    CommentSize: integer;
 // DateTime tag locations
-    dt_modify_oset:integer;
-    dt_orig_oset:integer;
-    dt_digi_oset:integer;
+//    dt_modify_oset:integer;
+//    dt_orig_oset:integer;
+//    dt_digi_oset:integer;
 // Add support for thumbnail
     ThumbTrace:ansistring;
     ThumbStart: integer;
@@ -182,12 +182,13 @@ type
 //    procedure SetExifComment(newComment: ansistring);
 
 //  The following functions manage the date
+(*
     function  GetImgDateTime: TDateTime;
     function  ExtrDateTime(Offset: integer): TDateTime;
-    function  ExifDateToDateTime(dstr: ansistring): TDateTime;
     procedure SetDateTimeStr(Offset: integer; TimeIn: TDateTime);
+    *)
     procedure AdjDateTime(ADays, AHours, AMins, ASecs: integer);
-    procedure OverwriteDateTime(ADateTime: TDateTime);   //  Contains embedded CR/LFs
+//    procedure OverwriteDateTime(ADateTime: TDateTime);   //  Contains embedded CR/LFs
 
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
       ATagType: integer=ExifTag; APrefix: string=''; AParentID: word=0);
@@ -234,7 +235,9 @@ type
     procedure Assign(source: TImageInfo);
     destructor Destroy; override;
 
-    //  The following functions format this structure into a string
+    function  GetImgDateTime: TDateTime;
+
+    //  These functions format this structure into a string
     function ToShortString: String;   //  Summarizes in a single line
     function ToLongString(ALabelWidth: Integer = 15): String;
 
@@ -1334,7 +1337,7 @@ begin
   end;
 end;
 
-function TImageInfo.ExifDateToDateTime(dstr:ansistring): TDateTime;
+function TImageInfo.ExifDateToDateTime(ARawStr: ansistring): TDateTime;
 type
   TConvert= packed record
      year: Array [1..4] of ansichar; f1:ansichar;
@@ -1347,18 +1350,18 @@ type
   PConvert= ^TConvert;
 begin
   try
-    with PConvert( @dstr[1] )^ do
-      Result := EncodeDate( StrToInt( year),
-                            StrToInt( mon ),
-                            StrToInt( day ))
-             +  EncodeTime( StrToInt( hr  ),
-                            StrToInt( min ),
-                            StrToInt( sec ), 0);
+    with PConvert(@ARawStr[1])^ do
+      Result := EncodeDate(StrToInt( year),
+                           StrToInt( mon ),
+                           StrToInt( day ))
+             +  EncodeTime(StrToInt( hr  ),
+                           StrToInt( min ),
+                           StrToInt( sec ), 0);
   except
-    result := 0;
+    Result := 0;
   end;
 end;
-
+    (*
 function TImageInfo.ExtrDateTime(Offset:integer):TDateTime;
 var
   tmpStr: ansistring;
@@ -1377,9 +1380,17 @@ begin
   for i := 1 to Length(tmp) do
     parent.ExifSegment^.Data[Offset + i - 1] := tmp[i];
 end;
-
+        *)
 function TImageInfo.GetImgDateTime: TDateTime;
 begin
+  Result := GetDateTimeOriginal;
+  if Result = 0 then
+    Result := GetDateTimeDigitized;
+  if Result = 0 then
+    Result := GetDateTimeModified;
+  if Result = 0 then
+    Result := Parent.FileDatetime;
+  {
   if dt_orig_oset > 0 then
     Result := ExtrDateTime(dt_orig_oset)
   else if dt_digi_oset > 0 then
@@ -1388,14 +1399,17 @@ begin
     Result := ExtrDateTime(dt_modify_oset)
   else
     Result := 0.0;
+    }
 end;
 
 function TImageInfo.GetDateTimeOriginal: TDateTime;
+var
+  t: TTagEntry;
 begin
-  if dt_orig_oset > 0 then
-    Result := ExtrDateTime(dt_orig_oset)
-  else
-    Result := 0.0;
+  Result := 0.0;
+  t := Data['DateTimeOriginal'];
+  if t.Tag <> 0 then
+    Result := ExifDateToDateTime(t.Raw);
 end;
 
 procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
@@ -1411,19 +1425,22 @@ begin
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
-
+                    (*
   if dt_orig_oset > 0 then
     SetDateTimeStr(dt_orig_oset, AValue)
   else
     raise Exception.Create('Tag DateTimeOriginal not available');
+    *)
 end;
 
 function TImageInfo.GetDateTimeDigitized: TDateTime;
+var
+  t: TTagEntry;
 begin
-  if dt_digi_oset > 0 then
-    Result := ExtrDateTime(dt_digi_oset)
-  else
-    Result := 0.0;
+  Result := 0.0;
+  t := Data['DateTimeDigitized'];
+  if t.Tag <> 0 then
+    Result := ExifDateToDateTime(t.Raw);
 end;
 
 procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
@@ -1439,21 +1456,30 @@ begin
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
-
+                 (*
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, AValue)
   else
     raise Exception.Create('Tag DateTimeDigitized not available.');
+    *)
 end;
 
 function TImageInfo.GetDateTimeModified: TDateTime;
+var
+  t: TTagEntry;
 begin
+  Result := 0.0;
+  t := Data['DateTime'];
+  if t.Tag <> 0 then
+    Result := ExifDateToDateTime(t.Raw);
+end;
+{begin
   if dt_modify_oset > 0 then
     Result := ExtrDateTime(dt_modify_oset)
   else
     Result := 0.0;
 end;
-
+ }
 procedure TImageInfo.SetDateTimeModified(const AValue: TDateTime);
 var
   p: PTagEntry;
@@ -1466,20 +1492,31 @@ begin
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
-
+         (*
   if dt_modify_oset > 0 then
     SetDateTimeStr(dt_modify_oset, AValue)
   else
     raise Exception.Create('Tag DateTimeModify not available.');
+    *)
 end;
 
 Procedure TImageInfo.AdjDateTime(ADays, AHours, AMins, ASecs: Integer);
 var
   delta: double;
-  x: TDateTime;
+  dt: TDateTime;
 begin
   //                hrs/day       min/day        sec/day
   delta := ADays + (AHours/24) + (AMins/1440) + (ASecs/86400);
+
+  dt := GetDateTimeOriginal;
+  if dt > 0 then SetDateTimeOriginal(dt + delta);
+
+  dt := GetDateTimeDigitized;
+  if dt > 0 then SetDateTimeDigitized(dt + delta);
+
+  dt := GetDateTimeModified;
+  if dt > 0 then SetDateTimeModified(dt + delta);
+  (*
   if dt_modify_oset > 0 then
   begin
     x := ExtrDateTime(dt_modify_oset);
@@ -1495,8 +1532,9 @@ begin
     x := ExtrDateTime(dt_digi_oset);
     SetDateTimeStr(dt_digi_oset,x+delta);
   end;
+  *)
 end;
-
+                          (*
 Procedure TImageInfo.OverwriteDateTime(ADateTime: TDateTime);
 begin
   if dt_modify_oset > 0 then
@@ -1506,6 +1544,7 @@ begin
   if dt_digi_oset > 0 then
     SetDateTimeStr(dt_digi_oset, ADateTime);
 end;
+*)
 
 function TImageInfo.AddTagToArray(ANewTag:iTag):integer;
 begin
@@ -1937,6 +1976,7 @@ begin
         end;
       TAG_EXIFVERSION:
         ExifVersion := rawstr;
+      (*
       TAG_DATETIME_MODIFY:
         begin
           dt_modify_oset := valuePtr;
@@ -1951,6 +1991,7 @@ begin
         begin
           dt_digi_oset := valuePtr;
         end;
+        *)
       TAG_MAKERNOTE:
         begin
           MakerNote := rawStr;
