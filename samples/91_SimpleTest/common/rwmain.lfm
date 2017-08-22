@@ -1,10 +1,10 @@
 object MainForm: TMainForm
   Left = 329
-  Height = 393
+  Height = 581
   Top = 127
   Width = 1025
   Caption = 'EXIF read/write test'
-  ClientHeight = 393
+  ClientHeight = 581
   ClientWidth = 1025
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -38,17 +38,17 @@ object MainForm: TMainForm
   end
   object Panel1: TPanel
     Left = 8
-    Height = 342
+    Height = 482
     Top = 40
     Width = 1009
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 342
+    ClientHeight = 482
     ClientWidth = 1009
     TabOrder = 1
     object ListView: TListView
       Left = 0
-      Height = 342
+      Height = 482
       Top = 0
       Width = 730
       Align = alClient
@@ -79,7 +79,7 @@ object MainForm: TMainForm
     end
     object Splitter1: TSplitter
       Left = 730
-      Height = 342
+      Height = 482
       Top = 0
       Width = 5
       Align = alRight
@@ -87,7 +87,7 @@ object MainForm: TMainForm
     end
     object ExifTabControl: TTabControl
       Left = 735
-      Height = 342
+      Height = 482
       Top = 0
       Width = 274
       OnChange = ExifTabControlChange
@@ -100,7 +100,7 @@ object MainForm: TMainForm
       TabOrder = 2
       object ExifListView: TListView
         Left = 2
-        Height = 317
+        Height = 457
         Top = 23
         Width = 270
         Align = alClient
@@ -118,6 +118,28 @@ object MainForm: TMainForm
         TabOrder = 1
         ViewStyle = vsReport
       end
+    end
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 61
+    Top = 520
+    Width = 1025
+    Align = alBottom
+    AutoSize = True
+    BevelOuter = bvNone
+    BorderWidth = 8
+    ClientHeight = 61
+    ClientWidth = 1025
+    TabOrder = 2
+    object Label1: TLabel
+      Left = 8
+      Height = 45
+      Top = 8
+      Width = 1009
+      Align = alClient
+      Caption = 'Buttons "Test 1" and "Test 2" read test conditions from files "testcases1.txt" and "testcases2.txt", respectively.'#13#10'- Test values expressed as fractions (e.g. exposure times) are evaluated by the program.'#13#10'- Enumerated values can be shown by their index, or by their text followd by | and their index.'
+      ParentColor = False
     end
   end
   object ImageList1: TImageList

@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 305
-  Top = 292
-  Width = 917
-  Height = 455
+  Left = 298
+  Top = 224
+  Width = 921
+  Height = 623
   Caption = 'EXIF read/write test'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -14,12 +14,12 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    901
-    416)
+    905
+    584)
   PixelsPerInch = 96
   TextHeight = 13
   object BtnTest1: TSpeedButton
-    Left = 776
+    Left = 780
     Top = 8
     Width = 48
     Height = 22
@@ -28,7 +28,7 @@ object MainForm: TMainForm
     OnClick = BtnTest1Click
   end
   object BtnTest2: TSpeedButton
-    Left = 829
+    Left = 833
     Top = 8
     Width = 48
     Height = 22
@@ -39,7 +39,7 @@ object MainForm: TMainForm
   object EdTestfile: TEdit
     Left = 8
     Top = 8
-    Width = 764
+    Width = 768
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 0
@@ -48,22 +48,22 @@ object MainForm: TMainForm
   object Panel1: TPanel
     Left = 8
     Top = 32
-    Width = 886
-    Height = 376
+    Width = 890
+    Height = 481
     Anchors = [akLeft, akTop, akRight, akBottom]
     BevelOuter = bvNone
     TabOrder = 1
     object Splitter1: TSplitter
-      Left = 619
+      Left = 623
       Top = 0
-      Height = 376
+      Height = 481
       Align = alRight
     end
     object ExifTabControl: TTabControl
-      Left = 622
+      Left = 626
       Top = 0
       Width = 264
-      Height = 376
+      Height = 481
       Align = alRight
       TabOrder = 0
       Tabs.Strings = (
@@ -75,7 +75,7 @@ object MainForm: TMainForm
         Left = 4
         Top = 24
         Width = 256
-        Height = 348
+        Height = 453
         Align = alClient
         Columns = <
           item
@@ -94,8 +94,8 @@ object MainForm: TMainForm
     object ListView: TListView
       Left = 0
       Top = 0
-      Width = 619
-      Height = 376
+      Width = 623
+      Height = 481
       Align = alClient
       Columns = <
         item
@@ -119,11 +119,36 @@ object MainForm: TMainForm
       ViewStyle = vsReport
     end
   end
+  object Panel2: TPanel
+    Left = 0
+    Top = 515
+    Width = 905
+    Height = 69
+    Align = alBottom
+    BevelOuter = bvNone
+    BorderWidth = 8
+    TabOrder = 2
+    object Label1: TLabel
+      Left = 8
+      Top = 8
+      Width = 524
+      Height = 52
+      Caption = 
+        'Buttons "Test 1" and "Test 2" read test conditions from files "t' +
+        'estcases1.txt" and "testcases2.txt", respectively.'#13#10'- Test value' +
+        's expressed as fractions (e.g. exposure times) are evaluated by ' +
+        'the program.'#13#10'- Enumerated values can be shown by their index, o' +
+        'r by their text followd by | and their index.'#13#10'- Use a TAB chara' +
+        'cter to separate the two columns.'
+      Color = clBtnFace
+      ParentColor = False
+    end
+  end
   object ImageList1: TImageList
     Left = 400
     Top = 117
     Bitmap = {
-      494C010102001800180010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102001800200010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000001AA41C001AA41C00000000000000000000000000000000000000

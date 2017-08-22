@@ -1,6 +1,7 @@
 ; IMPORTANT: This file must be stored in ANSI encoding
 ; Use a TAB character between the two columns
 
+ExposureTime	1/120
 Comment	This text is in the COMMENT segment.
 Artist	Ansel Adams
 ImageDescription	A nice image
@@ -17,3 +18,12 @@ ExifImageWidth	2000
 ExifImageLength	1000
 Orientation	2
 FNumber	16
+ApertureValue	11
+MaxApertureValue	1,8
+ExposureBiasValue	-1
+ShutterSpeedValue	1/60
+ExposureTime	1/120
+ISOSpeedRatings	800
+ExposureProgram	1
+MeteringMode	3
+LightSource	3

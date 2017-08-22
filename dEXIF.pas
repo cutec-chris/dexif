@@ -29,7 +29,7 @@ Unit dEXIF;
 interface
 
 uses
-  sysutils, classes, math, variants,
+  SysUtils, Classes, Math, Variants,
  {$IFDEF FPC}
   LazUTF8,
  {$ELSE}
@@ -41,6 +41,7 @@ const
   ExifTag = 1;  // default tag Types
   GpsTag = 2;
   ThumbTag = 4;
+
   GenericEXIF = 0;
   CustomEXIF = 1;
   AllEXIF = -1;
@@ -89,6 +90,11 @@ type
 
   TImageInfo = class(tEndInd)
   private
+    FITagArray: array of TTagEntry;
+    FITagCount: integer;
+    FIThumbArray: array of TTagEntry;
+    FIThumbCount: integer;
+
     iterator: integer;
     iterThumb: integer;
 
@@ -120,27 +126,25 @@ type
     function GetCopyright: String;
     procedure SetCopyright(const AValue: String);
 
+    function GetTagByID(ATagID: Word): TTagEntry;
+    procedure SetTagByID(ATagID: Word; const AValue: TTagEntry);
+
     function GetTagByIndex(AIndex: Integer): TTagEntry;
+    procedure SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
 
-    function GetTagElement(TagID: integer): TTagEntry;
-    procedure SetTagElement(TagID: integer; const Value: TTagEntry);
-
-    function GetTagByName(TagName: String): TTagEntry;
-    procedure SetTagByName(TagName: String; const Value: TTagEntry);
+    function GetTagByName(ATagName: String): TTagEntry;
+    procedure SetTagByName(ATagName: String; const AValue: TTagEntry);
 
     function GetTagValue(ATagName: String): variant;
     procedure SetTagValue(ATagName: String; AValue: variant);
-              {
-    function GetTagValueAsNumber(ATagName: String): Double;
-    procedure SetTagValueAsNumber(ATagName: String; AValue: double);
 
-    function GetTagValueAsString(ATagName: String): String;
-    procedure SetTagValueAsString(ATagName: String; AValue: String);
-               }
+    function GetThumbTagByIndex(AIndex: Integer): TTagEntry;
+    procedure SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
+
     // misc
     function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
-      ATagType: word=65535{; AForceID: Boolean=false}): PTagEntry; overload;
-    procedure RemoveTag(TagID: integer; parentID: word=0);
+      ATagType: word=65535{; AForceID: Boolean=false}): PTagEntry;
+    procedure RemoveTag(TagID: Word; parentID: word=0);
 
     procedure ClearDirStack;
     procedure PushDirStack(dirStart, offsetbase: Integer);
@@ -159,8 +163,6 @@ type
       ATagType: integer=ExifTag; APrefix: string=''; AParentID: word=0);
 
   public
-    FITagArray: array of TTagEntry;
-    FITagCount: integer;
     MaxTag: integer;
     Parent: timgdata;
     ExifVersion : string[6];
@@ -174,8 +176,6 @@ type
     ThumbStart: integer;
     ThumbLength: integer;
     ThumbType: integer;
-    FIThumbArray: array of TTagEntry;
-    FIThumbCount: integer;
     MaxThumbTag: integer;
 //  Added the following elements to make the structure a little more code-friendly
     TraceLevel: integer;
@@ -232,21 +232,18 @@ type
     function LookupTagByDesc(ADesc: String): integer;
     function LookupTagInt(ATagName: String): integer;
 
-    property ITagArray[TagID: Integer]: TTagEntry
-        read GetTagElement write SetTagElement; //default;
-    property Data[TagName: String]: TTagEntry
-        read GetTagByName write SetTagByName;
-    property TagByIndex[AIndex: Integer]: TTagEntry
-        read GetTagByIndex;
-
     property TagValue[ATagName: String]: Variant
         read GetTagValue write SetTagValue; default;
-        (*
-    property TagValueAsNumber[ATagName: String]: Double
-        read GetTagValueAsNumber write SetTagValueAsNumber;
-    property TagValueAsString[ATagName: String]: String
-        read GetTagValueAsString write SetTagValueAsString;
-        *)
+
+    property TagByID[ATagID: Word]: TTagEntry
+        read GetTagByID write SetTagByID;
+    property TagByIndex[AIndex: Integer]: TTagEntry
+        read GetTagByIndex write SetTagByIndex;
+    property TagByName[ATagName: String]: TTagEntry
+        read GetTagByName write SetTagByName;
+    property TagCount: Integer
+        read fiTagCount;
+
     property Artist: String
         read GetArtist write SetArtist;
     property CameraMake: String
@@ -265,6 +262,11 @@ type
         read GetExifComment write SetExifComment;
     property ImageDescription: String
         read GetImageDescription write SetImageDescription;
+
+    property ThumbTagByIndex[AIndex: Integer]: TTagEntry
+        read GetThumbTagByIndex write SetThumbTagByIndex;
+    property ThumbTagCount: Integer
+        read fiThumbCount;
   end; // TInfoData
 
   TSection = record
@@ -747,8 +749,10 @@ var
   (TID:0;TType:10;ICode: 2;Tag: $9204; Name:'ExposureBiasValue'      ),
   (TID:0;TType:5;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
   (TID:0;TType:5;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
-  (TID:0;TType:3;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
-  (TID:0;TType:3;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
+  (TID:0;TType:3;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:
+        '0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
+  (TID:0;TType:3;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:
+        '0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
   (TID:0;TType:3;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:FlashCallBack),
   (TID:0;TType:5;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%0.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
@@ -1034,30 +1038,7 @@ begin
       break;
     end;
 end;
-                                    (*
-function IndexOfCode(ACodeStr: String; ATag: TTagEntry; ATagType:integer=ExifTag): Integer;
-var
-  i:integer;
-  L: TStringList;
-begin
-  Result := -1;
-  L := TStringList.Create;
 
-  case ATagType of
-    ThumbTag,
-    ExifTag: for i := 0 to ExifTagCnt-1 do
-               if TagTable[i].Tag = idx then begin
-                 Result := TagTable[i].Code;
-                 break;
-               end;
-    GpsTag : for i := 0 to GPSCnt-1 do
-               if GPSTable[i].Tag = idx then begin
-                 Result := GPSTable[i].Code;
-                 break;
-               end;
-  end;
-end;
-                                      *)
 
 {------------------------------------------------------------------------------}
 {                        TBasicMetaDataWriter                                  }
@@ -1227,6 +1208,18 @@ begin
   msName          := Source.msName;
 end;
 
+function TImageInfo.GetTagByDesc(SearchStr: String): TTagEntry;
+var
+  i: integer;
+begin
+  i := LookupTagByDesc(SearchStr);
+  if i >= 0 then
+    Result := fiTagArray[i]
+  else
+    Result := EmptyEntry;
+end;
+
+
 //  This function returns the index of a tag name in the tag buffer.
 function TImageInfo.LookupTag(ATagName: String): integer;
 var
@@ -1316,17 +1309,6 @@ begin
     end;
 end;
 
-Function TImageInfo.GetTagByDesc(SearchStr: String): TTagEntry;
-var
-  i: integer;
-begin
-  i := LookupTagByDesc(SearchStr);
-  if i >= 0 then
-    Result := fiTagArray[i]
-  else
-    Result := EmptyEntry;
-end;
-
 //  This function returns the index of a tag definition for a given tag name.
 function TImageInfo.LookupTagDefn(ATagName: String): integer;
 var
@@ -1385,7 +1367,7 @@ var
   t: TTagEntry;
 begin
   Result := 0.0;
-  t := Data['DateTimeOriginal'];
+  t := TagByName['DateTimeOriginal'];
   if t.Tag <> 0 then
     Result := ExifDateToDateTime(t.Raw);
 end;
@@ -1410,7 +1392,7 @@ var
   t: TTagEntry;
 begin
   Result := 0.0;
-  t := Data['DateTimeDigitized'];
+  t := TagByName['DateTimeDigitized'];
   if t.Tag <> 0 then
     Result := ExifDateToDateTime(t.Raw);
 end;
@@ -1435,7 +1417,7 @@ var
   t: TTagEntry;
 begin
   Result := 0.0;
-  t := Data['DateTime'];
+  t := TagByName['DateTime'];
   if t.Tag <> 0 then
     Result := ExifDateToDateTime(t.Raw);
 end;
@@ -2239,45 +2221,65 @@ begin
   inherited;
 end;
 
+function TImageInfo.GetTagByID(ATagID: Word): TTagEntry;
+var
+  i: Integer;
+begin
+  for i:= 0 to fiTagCount - 1 do
+    if fiTagArray[i].Tag = ATagID then begin
+      Result := fiTagArray[i];
+      exit;
+    end;
+  Result := EmptyEntry;
+end;
+
+procedure TImageInfo.SetTagByID(ATagID: Word; const AValue: TTagEntry);
+var
+  i: Integer;
+begin
+  for i:=0 to fiTagCount-1 do
+    if fITagArray[i].Tag = ATagID then begin
+      fITagArray[i] := AValue;
+      exit;
+    end;
+end;
+
+
 function TImageInfo.GetTagByIndex(AIndex: Integer): TTagEntry;
 begin
   Result := fiTagArray[AIndex];
 end;
 
-function TImageInfo.GetTagElement(TagID: integer): TTagEntry;
+procedure TImageInfo.SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
 begin
-  Result := fITagArray[TagID]
+  FITagArray[AIndex] := AValue;
 end;
 
-procedure TImageInfo.SetTagElement(TagID: integer;
-  const Value: TTagEntry);
-begin
-  fITagArray[TagID] := Value;
-end;
 
-function TImageInfo.GetTagByName(TagName: String): TTagEntry;
+function TImageInfo.GetTagByName(ATagName: String): TTagEntry;
 var
-  i:integer;
+  i: integer;
 begin
-  i := LookupTag(TagName);
+  i := LookupTag(ATagName);
   if i >= 0 then
-    result := fITagArray[i]
+    Result := fITagArray[i]
   else
-    result := EmptyEntry;
+    Result := EmptyEntry;
 end;
 
-procedure TImageInfo.SetTagByName(TagName: String; const Value: TTagEntry);
+procedure TImageInfo.SetTagByName(ATagName: String; const AValue: TTagEntry);
 var
-  i:integer;
+  i: integer;
 begin
-  i := LookupTag(TagName);
+  i := LookupTag(ATagName);
   if i >= 0 then
-    fITagArray[i] := Value
+    fITagArray[i] := AValue
   else
   begin
-    AddTagToArray(value);
+    AddTagToArray(AValue);
   end;
 end;
+
 
 function TImageInfo.GetTagValue(ATagName: String): Variant;
 var
@@ -2322,11 +2324,15 @@ begin
       begin
         r := PExifRational(@tag.Raw[1])^;
         if MotorolaOrder then begin
-          r.Numerator := BEToN(r.Numerator);
-          r.Denominator := BEToN(r.Denominator);
+          r.Numerator := BEToN(DWord(r.Numerator));       // Type cast needed for D7
+          r.Denominator := BEToN(DWord(r.Denominator));
         end else begin
-          r.Numerator := LEToN(r.Numerator);
-          r.Denominator := LEtoN(r.Denominator);
+          r.Numerator := LEToN(DWord(r.Numerator));
+          r.Denominator := LEtoN(DWord(r.Denominator));
+        end;
+        if tag.TType = FMT_SRATIONAL then begin
+          r.Numerator := Int32(r.Numerator);
+          r.Denominator := Int32(r.Denominator);
         end;
         Result := r.Numerator / r.Denominator;
       end;
@@ -2336,102 +2342,15 @@ begin
       else
         Result := '<binary>';
   end;
-end;
 
-                            (*
-function TImageInfo.GetTagValueAsString(ATagName: String): String;
-var
-  tag: TTagEntry;
-begin
-  Result := '';
-
-  tag := GetTagByName(ATagName);
-  if tag.Name = 'Unknown' then
-    exit;
-
-  case tag.TType of
-    FMT_STRING:
-      begin
-       {$IFDEF FPC}
-        {$IFNDEF FPC3+}
-          Result := AnsiToUTF8(tag.Raw);
-        {$ELSE}
-          Result := tag.Raw;
-        {$ENDIF}
-       {$ELSE}
-          Result := tag.Raw;
-       {$ENDIF}
-       while Result[Length(Result)] = #0 do
-         Delete(Result, Length(Result), 1);
-      end;
-    else
-      Result := tag.Data;
-    {
-    FMT_BYTE:
-      Result := IntToStr(PByte(@tag.Raw[1])^);
-    FMT_SBYTE:
-      Result := IntToStr(ShortInt(PByte(@tag.Raw[1])));
-    FMT_USHORT:
-      Result := IntToStr(PWord(@tag.Raw[1])^);
-    FMT_SSHORT:
-      Result := IntToStr(SmallInt(PWord(@tag.Raw[1])^));
-    FMT_ULONG:
-      Result := IntToStr(PDWord(@tag.Raw[1])^);
-    FMT_SLONG:
-      Result := IntToStr(LongInt(PDWord(@tag.Raw[1])^));
-    FMT_SINGLE:
-      Result := FloatToStr(PSingle(@tag.Raw[1])^);
-    FMT_DOUBLE:
-      Result := FloatToStr(PDouble(@tag.Raw[1])^);
-    FMT_URATIONAL, FMT_SRATIONAL:
-      Result := FloatToStr(CvtRational(tag.Raw));
-    FMT_BINARY:
-      Result := '<binary>';
-    }
+  // Correction for some special cases
+  case tag.Tag of
+    TAG_SHUTTERSPEED:
+      // Is stored as -log2 of exposure time
+      Result := power(2.0, -Result);
   end;
 end;
 
-function TImageInfo.GetTagValueAsNumber(ATagName: string): Double;
-var
-  tag: TTagEntry;
-  r: TExifRational;
-begin
-  Result := -1;
-
-  tag := GetTagByName(ATagName);
-  if tag.Tag = 0 then
-    exit;
-
-  // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
-  // is still in the endianness of the source!
-  case tag.TType of
-    FMT_BYTE:
-      Result := PByte(@tag.Raw[1])^;
-    FMT_USHORT:
-      if MotorolaOrder then
-        Result := 1.0 * BEToN(PWord(@tag.Raw[1])^) else
-        Result := 1.0 * LEToN(PWord(@tag.Raw[1])^);
-    FMT_ULONG:
-      if MotorolaOrder then
-        Result := 1.0 * BEToN(PWord(@tag.Raw[1])^) else
-        Result := 1.0 * LEToN(PDWord(@tag.Raw[1])^);
-    FMT_URATIONAL, FMT_SRATIONAL:
-      begin
-        r := PExifRational(@tag.Raw[1])^;
-        if MotorolaOrder then begin
-          r.Numerator := BEToN(r.Numerator);
-          r.Denominator := BEToN(r.Denominator);
-        end else begin
-          r.Numerator := LEToN(r.Numerator);
-          r.Denominator := LEtoN(r.Denominator);
-        end;
-        Result := r.Numerator / r.Denominator;
-      end;
-    else
-      raise Exception.Create('Data of tag "' + ATagName + '" cannot be accessed as Integer.');
-  end;
-end;
-                 *)
 function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
 var
   i: Integer;
@@ -2465,7 +2384,7 @@ begin
   if tagDef = nil then begin
     tagDef := FindGpsTagByName(ATagName);
     if tagDef = nil then
-      raise Exception.CreateFmt('dExif is not prepared to write to tag "%s"', [ATagName]);
+      raise Exception.CreateFmt('Tag "%s" not found.', [ATagName]);
   end;
   tagID := tagDef.Tag;
 
@@ -2498,6 +2417,24 @@ begin
   end;
   if P = nil then
     raise Exception.CreateFmt('Failure to create tag "%s"', [ATagName]);
+
+  // Handle some special cases
+  case tagID of
+    TAG_SHUTTERSPEED:
+      begin
+        strValue := VarToStr(AValue);
+        if pos('/', strValue) > 0 then
+          AValue := CvtRational(ansistring(strValue));
+        // The shutter speed value is stored as -log2 of exposure time
+        AValue := -log2(AValue);
+      end;
+    TAG_EXPOSURETIME:
+      begin
+        strValue := VarToStr(AValue);
+        if pos('/', strValue) > 0 then
+          AValue := CvtRational(ansistring(strValue));
+      end;
+  end;
 
   // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
   // is still in the endianness of the source!
@@ -2550,11 +2487,11 @@ begin
         SetLength(p^.Raw, 8);
         fracvalue := DoubleToRational(AValue);
         if MotorolaOrder then begin
-          fracvalue.Numerator := NToBE(fracValue.Numerator);
-          fracValue.Denominator := NToBE(fracValue.Denominator);
+          fracvalue.Numerator := NToBE(DWord(fracValue.Numerator));       // Type-cast needed for D7
+          fracValue.Denominator := NToBE(DWord(fracValue.Denominator));
         end else begin
-          fracValue.Numerator := NtoLE(fracValue.Numerator);
-          fracValue.Denominator := NtoLE(fracValue.Denominator);
+          fracValue.Numerator := NtoLE(DWord(fracValue.Numerator));
+          fracValue.Denominator := NtoLE(DWord(fracValue.Denominator));
         end;
         Move(fracValue, p^.Raw[1], 8);
         p^.Size := Length(p^.Raw);
@@ -2564,150 +2501,18 @@ begin
 end;
 
 
-
-
-                    (*
-
-// WARNING: There are tags which consist of multiple values of the same type.
-// At the moment, there is no way to detect this case here. Writing them here
-// will cause malfunction of the EXIF segment and/or file.
-procedure TImageInfo.SetTagValueAsNumber(ATagName: String; AValue: Double);
-const
-  IGNORE_PARENT = $FFFF;
-var
-  P: PTagEntry;
-  tagDef: PTagEntry;
-  tagID: Word;
-  parentID: Word;
-  intValue: Integer;
-  fracValue: TExifRational;
+function TImageInfo.GetThumbTagByIndex(AIndex: Integer): TTagEntry;
 begin
-  // Find the tag's ID
-  tagDef := FindExifTagByName(ATagName);
-  if tagDef = nil then begin
-    tagDef := FindGpsTagByName(ATagName);
-    if tagDef = nil then
-      raise Exception.Create('dExif is not prepared to write the tag "' + ATagName + '"');
-  end;
-  tagID := tagDef.Tag;
-
-  // Only unsigned integers in EXIF! -1 means: Delete this tag
-  if AValue = -1 then begin
-    RemoveTag(tagID);
-    exit;
-  end;
-
-  // Change for out-of-range condition
-  if ((tagDef.TType = FMT_BYTE) and ((AValue < 0) or (AValue > 255))) or
-     ((tagDef.TType = FMT_USHORT) and ((AValue < 0) or (AValue > 65535))) or
-     ((tagDef.TType = FMT_ULONG) and ((AValue < 0) or (AValue > 4294967295)))
-  then
-    raise Exception.Create('The value is out-of-range for tag "' + ATagName +'"');
-
-  // Find the pointer to the tag
-  P := GetTag(tagID, false, IGNORE_PARENT);
-  if P = nil then begin
-    // The tag does not yet exist --> create a new one...
-    // BUT: The TagTable does not show the ParentIDs...
-    // Until somebody updates this we put the new tag into the root directory
-    // (IFD0). Since this may not be allowed there's a risk that the EXIF in
-    // modified file cannot be read correctly...
-    parentID := 0;
-    P := GetTag(tagID, true, parentID, tagDef.TType);
-  end;
-
-  if P = nil then
-    raise Exception.Create('Failure to create tag "' + ATagName + '"');
-
-  // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
-  // is still in the endianness of the source!
-  case P^.TType of
-    FMT_BYTE:
-      begin
-        SetLength(p^.Raw, 1);
-        intValue := round(AValue);
-        Move(PByte(@intValue)^, p^.Raw[1], 1);
-      end;
-    FMT_USHORT:
-      begin
-        SetLength(p^.Raw, 2);
-        intValue := round(AValue);
-        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
-        Move(PWord(@intValue)^, p^.Raw[1], 2);
-      end;
-    FMT_ULONG:
-      begin
-        SetLength(p^.Raw, 4);
-        intValue := round(AValue);
-        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
-        Move(PDWord(@intValue)^ , p^.Raw[1], 4);
-      end;
-    FMT_URATIONAL, FMT_SRATIONAL:
-      begin
-        SetLength(p^.Raw, 8);
-        fracvalue := DoubleToRational(AValue);
-        if MotorolaOrder then begin
-          fracvalue.Numerator := NToBE(fracValue.Numerator);
-          fracValue.Denominator := NToBE(fracValue.Denominator);
-        end else begin
-          fracValue.Numerator := NtoLE(fracValue.Numerator);
-          fracValue.Denominator := NtoLE(fracValue.Denominator);
-        end;
-        Move(fracValue, p^.Raw[1], 8);
-      end;
-  end;
-  P^.Size := Length(p^.Raw);
-  P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+  Result := fiThumbArray[AIndex];
 end;
 
-procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
-var
-  P: PTagEntry;
-  tagDef: PTagEntry;
-  tagID: Word;
-  parentID: Word;
+procedure TImageInfo.SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
 begin
-  // Find the tag's ID
-  tagDef := FindExifTagByName(ATagName);
-  if tagDef = nil then begin
-    tagDef := FindGpsTagByName(ATagName);
-    if tagDef = nil then
-      raise Exception.Create('dExif is not prepared to write the tag "' + ATagName + '"');
-  end;
-  tagID := tagDef.Tag;
-
-  if tagDef.TType <> FMT_STRING then
-    raise Exception.Create('Only string tags can be set by TagValueAsString');
-
-  // Remove the tag if the string is empty.
-  if AValue = '' then begin
-    RemoveTag(tagID);
-    exit;
-  end;
-
-  // Find the pointer to the tag
-  P := GetTag(tagID);
-  if P = nil then begin
-    // The tag does not yet exist --> create a new one...
-    // BUT: The TagTable does not show the ParentIDs...
-    // Until somebody updates this we put the new tag into the root directory
-    // (IFD0). Since this may not be allowed there's a risk that the EXIF in
-    // modified file cannot be read correctly...
-    parentID := 0;
-    P := GetTag(tagID, true, parentID, tagDef.TType);
-  end;
-
-  {$IFDEF FPC}
-  P^.Raw := UTF8ToAnsi(AValue) + #0;
-  {$ELSE}
-  P^.Raw := AnsiString(AValue) + #0;
-  {$ENDIF}
-  P^.Data := P^.Raw;
-  P^.Size := Length(P^.Raw);
+  fiThumbArray[AIndex] := AValue;
 end;
-                            *)
 
-procedure TImageInfo.RemoveTag(TagID:integer; parentID:word=0);
+
+procedure TImageInfo.RemoveTag(TagID: Word; ParentID: Word=0);
 var
   i,j : integer;
 begin
@@ -3096,6 +2901,7 @@ begin
     end;
   Result.Add('   </EXIFdata>');
 end;
+
 
 //--------------------------------------------------------------------------
 // The following methods implement the outer parser which

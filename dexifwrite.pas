@@ -62,7 +62,7 @@ begin
   inherited;
   FExifSegmentStartPos := -1;
   FHasThumbnail := FImgData.HasExif and FImgData.HasThumbnail and
-    (FImgData.ExifObj.FIThumbCount > 0);
+    (FImgData.ExifObj.ThumbTagCount > 0);
 end;
 
 //------------------------------------------------------------------------------
@@ -170,6 +170,12 @@ var
   b: TBytes;
 begin
   if ADirectoryID = 1 then
+    tagCount := FImgData.ExifObj.ThumbTagCount
+  else
+    tagCount := FImgData.ExifObj.TagCount;
+
+  {
+  if ADirectoryID = 1 then
   begin   // Thumbnail tags (IFD1)
     tagArray := TTagArray(FImgdata.ExifObj.FIThumbArray);
     //tag := @FImgData.ExifObj.FIThumbArray[0];
@@ -180,21 +186,22 @@ begin
     //tag := @FImgData.ExifObj.FITagArray[0];
     tagCount := FImgData.ExifObj.FITagCount;
   end;
-  //firstTag := tag;
+  }
 
   valueStream := TMemoryStream.Create;
   try
-    // Count IDF records in this directory
+    // Count IFD records in this directory
     count := 0;
     for i:=0 to tagCount - 1 do begin
-      tag := tagArray[i];
+      if ADirectoryID = 1 then
+        tag := FImgData.ExifObj.ThumbTagByIndex[i] else
+        tag := FImgData.ExifObj.TagByIndex[i];
       if (tag.ParentID = ADirectoryID) then begin
         if AHardwareSpecific and (tag.TID = 1) or
            ((not AHardwareSpecific) and (tag.TID = 0))
         then
           inc(count);
       end;
-      //inc(tag);
     end;
 
     // No records in this directory? Nothing to do...
@@ -218,7 +225,9 @@ begin
     // Now write all the records in this directory
    // tag := firstTag;
     for i:=0 to tagCount-1 do begin
-      tag := tagArray[i];
+      if ADirectoryID = 1then
+        tag := FImgData.ExifObj.ThumbTagByIndex[i] else
+        tag := FImgData.ExifObj.TagByIndex[i];
       if AHardwareSpecific and (tag.TID <> 1) then continue;
       if (not AHardwareSpecific) and (tag.TID = 1) then continue;
 

@@ -11,8 +11,8 @@ uses
   Windows, Messages, jpeg,
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  Grids, StdCtrls, Buttons, ComCtrls, ImgList, ExtCtrls, Variants,
-  dGlobal, dExif;
+  StdCtrls, Buttons, ComCtrls, ExtCtrls, Variants,
+  dGlobal, dExif, ImgList;
 
 type
 
@@ -23,12 +23,10 @@ type
     BtnTest1: TSpeedButton;
     BtnTest2: TSpeedButton;
     ImageList1: TImageList;
+    Label1: TLabel;
     ListView: TListView;
-    //ExifListView: TListView;
-    //Panel1: TPanel;
-    //Splitter1: TSplitter;
-    //ExifTabControl: TTabControl;
     Panel1: TPanel;
+    Panel2: TPanel;
     ExifListView: TListView;
     ExifTabControl: TTabControl;
     Splitter1: TSplitter;
@@ -42,6 +40,7 @@ type
     procedure ExifToListview(AImgData: TImgData; AListView: TListView);
     function GetTagType(ATagName: String): Integer;
     function ReadTagValue(ATagName: String): String;
+    function Success(ACurrValue, AExpectedValue: String): Boolean;
     procedure WriteTagValue(ATagName, ATagValue: String);
 
   public
@@ -159,7 +158,7 @@ end;
 procedure TMainForm.BtnTest1Click(Sender: TObject);
 var
   testCases: TStringList;
-  i, j, p: Integer;
+  i, j: Integer;
   fn: String;
   s: String;
   testdata: TStringArray;
@@ -201,27 +200,35 @@ begin
 
     OutFile := 'test-image.jpg';   // File name of the modified test image
 
-    j := 0;
-    for i:=0 to testCases.Count-1 do begin
-      if (TestCases[i] = '') or (TestCases[i][1] = ';') then
-        Continue;
+    ListView.Items.BeginUpdate;
+    try
+      j := 0;
+      for i:=0 to testCases.Count-1 do begin
+        if (TestCases[i] = ':quit') then
+          break;
 
-      // Extract test parameters
-      testdata := Split(TestCases[i]);
-      tagName := testdata[0];
-      newTagValue := testdata[1];
+        if (testCases[i] = '') or (testCases[i][1] = ';') then
+          Continue;
 
-      // Add test to listview
-      listitem := ListView.Items.Add;
-      listItem.Caption := testdata[0];
+        // Extract test parameters
+        testdata := Split(TestCases[i]);
+        tagName := testdata[0];
+        newTagValue := testdata[1];
 
-      // Read current tag value
-      currTagValue := ReadTagValue(tagName);
-      listItem.SubItems.Add(currTagValue);
+        // Add test to listview
+        listitem := ListView.Items.Add;
+        listItem.Caption := testdata[0];
 
-      // Write new tag value into ExifObj
-      WriteTagValue(tagName, newTagValue);
-      listItem.SubItems.Add(newTagValue);
+        // Read current tag value
+        currTagValue := ReadTagValue(tagName);
+        listItem.SubItems.Add(currTagValue);
+
+        // Write new tag value into ExifObj
+        WriteTagValue(tagName, newTagValue);
+        listItem.SubItems.Add(newTagValue);
+      end;
+    finally
+      ListView.Items.EndUpdate;
     end;
 
     // Write new tags to file
@@ -247,23 +254,18 @@ begin
     ImgData.ProcessFile(OutFile);
     j := 0;
     for i:=0 to testCases.Count-1 do begin
+      if (testcases[i] = ':quit') then
+        break;
       if (testcases[i] = '') or (testcases[i][1] = ';') then
         Continue;
       testdata := Split(testCases[i]);
       tagname := testdata[0];
       newTagValue := testdata[1];
-      p := pos('|', newTagValue);
-      if p > 0 then begin
-        altTagValue := copy(newTagValue, p+1, MaxInt);
-        newTagValue := copy(newTagValue, 1, p-1);
-      end else
-        altTagValue := '';
       currTagValue := ReadTagValue(tagname);
       listItem := ListView.Items[j];
       listItem.SubItems.Add(currTagValue);
-      if (currTagValue = newTagValue) or (currTagValue = altTagValue) then
-        listItem.ImageIndex := IMGINDEX_SUCCESS
-      else
+      if Success(currTagValue, newTagValue) then
+        listItem.ImageIndex := IMGINDEX_SUCCESS else
         listItem.ImageIndex := IMGINDEX_FAIL;
       inc(j);
     end;
@@ -272,6 +274,44 @@ begin
   end;
 
   ExifTabControlChange(nil);
+end;
+
+function TMainForm.Success(ACurrValue, AExpectedValue: String): Boolean;
+const
+  relEPS = 1E-3;
+var
+  p: Integer;
+  expected1, expected2: String;
+  valexp, valcurr: Double;
+begin
+  Result := ACurrValue = AExpectedValue;
+  if Result then
+    exit;
+
+  { Check for alternative expected value }
+  p := pos('|', AExpectedValue);
+  if p > 0 then begin
+    expected2 := Copy(AExpectedValue, p+1, MaxInt);;
+    expected1 := Copy(AExpectedValue, 1, p-1);
+    Result := (ACurrValue = expected1);
+    if Result then
+      exit;
+    Result := (ACurrValue = expected2);
+    if Result then
+      exit;
+  end;
+
+  { Check for fractional result, e.g. exposure time }
+  p := pos('/', AExpectedvalue);
+  if p > 0 then begin
+    valcurr := StrToFloat(ACurrValue);
+    expected1 := Copy(AExpectedValue, 1, p-1);
+    expected2 := Copy(AExpectedValue, p+1, MaxInt);
+    valexp := StrToInt(expected1) / StrToInt(expected2);
+    Result := SameValue(valexp, valcurr, relEPS * valexp);
+    if Result then
+      exit;
+  end;
 end;
 
 procedure TMainForm.ExifToListview(AImgData: TImgData; AListView: TListView);
@@ -284,8 +324,17 @@ begin
     AListview.Items.Clear;
     if not AImgData.HasExif then
       exit;
-    for i:=0 to AImgData.ExifObj.FITagCount do begin
+    for i:=0 to AImgData.ExifObj.TagCount-1 do begin
       tag := AImgData.ExifObj.TagByIndex[i];
+      if Tag.Tag = 0 then
+        Continue;
+      with AListView.Items.Add do begin
+        Caption := tag.Desc;
+        SubItems.Add(tag.Data);
+      end;
+    end;
+    for i:=0 to AImgData.ExifObj.ThumbTagCount-1 do begin
+      tag := AImgData.ExifObj.ThumbTagByIndex[i];
       if Tag.Tag = 0 then
         Continue;
       with AListView.Items.Add do begin
@@ -373,6 +422,7 @@ begin
   p := pos('|', ATagValue);
   if p > 0 then
     ATagValue := Copy(ATagValue, 1, p-1);
+
   if ATagName = 'Comment' then
     ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
   else if ATagName = 'Artist' then
@@ -391,10 +441,6 @@ begin
     ImgData.ExifObj.DateTimeDigitized := ExtractDateTime(ATagValue)
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
-  else if ATagName = 'ExifImageWidth' then
-    ImgData.ExifObj.TagValue[ATagname] := ATagValue
-  else if ATagName = 'ExifImageLength' then
-    ImgData.ExifObj.TagValue[ATagname] := ATagValue
   else
     ImgData.ExifObj.TagValue[ATagName] := ATagValue;
 end;

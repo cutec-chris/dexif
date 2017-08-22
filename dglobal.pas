@@ -13,6 +13,8 @@ type
 {$IFNDEF FPC}
   DWord = Cardinal;
   PDWord = ^DWord;
+
+  Int32 = LongInt;
 {$ENDIF}
 
   TBytes = array of byte;    // Needed for Delphi 7 and old Lazarus (1.0)
@@ -67,7 +69,7 @@ type
     the count is '1' even though it is 2 Bytes." }
 
   TExifRational = record
-    Numerator, Denominator: LongInt;
+    Numerator, Denominator: Int32;
   end;
   PExifRational = ^TExifRational;
 

@@ -292,7 +292,7 @@ begin
  // representations internally
 end;
 
-function GCD(a, b: int64): int64;
+function GCD(a, b: integer): integer;
 begin
   try
     if (b mod a) = 0 then
@@ -325,7 +325,7 @@ begin
   result := trim(outstr);      // trim cleans up extra space
 end;
 
-procedure DoubleToRationalHelper(AValue: Double; out ANum, ADenom: Int64; Eps: Double);
+procedure DoubleToRationalHelper(AValue: Double; out ANum, ADenom: Integer; Eps: Double);
 var
   i: Integer;
   f: Double;
@@ -344,7 +344,7 @@ begin
     ANum := i;
     ADenom := 1;
   end else begin
-    ANum := round(i / EPS);
+    ANum := round(AValue / EPS);
     ADenom := round(1.0 / EPS);
   end;
 end;
@@ -353,8 +353,8 @@ function DoubleToRational(AValue: Double): TExifRational;
 const
   EPS = 1E-6;
 var
-  num, denom: Int64;
-  gcdval: Int64;
+  num, denom: Integer;
+  gcdval: Integer;
 begin
   if (abs(AValue) > 1) then
     DoubleToRationalHelper(abs(AValue), num, denom, EPS)
