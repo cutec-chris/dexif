@@ -138,6 +138,8 @@ type
     function GetTagValue(ATagName: String): variant;
     procedure SetTagValue(ATagName: String; AValue: variant);
 
+    function GetTagValueAsString(ATagName: String): String;
+
     function GetThumbTagByIndex(AIndex: Integer): TTagEntry;
     procedure SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
 
@@ -234,6 +236,8 @@ type
 
     property TagValue[ATagName: String]: Variant
         read GetTagValue write SetTagValue; default;
+    property TagValueAsString[ATagName: String]: String
+        read GetTagValueAsString;
 
     property TagByID[ATagID: Word]: TTagEntry
         read GetTagByID write SetTagByID;
@@ -725,15 +729,15 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $84E3;  Name:'IT8RasterPadding'         ),
   (TID:0;TType:0;ICode: 2;Tag: $84E5;  Name:'IT8ColorTable'            ),
   (TID:0;TType:0;ICode: 2;Tag: $8649;  Name:'ImageResourceInformation' ),
-  (TID:0;TType:0;ICode: 2;Tag: $8769;  Name:'ExifOffset'               ),
+  (TID:0;TType:0;ICode: 2;Tag: $8769;  Name:'ExifOffset'               ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),
   (TID:0;TType:0;ICode: 2;Tag: $8773;  Name:'InterColorProfile'        ),
   (TID:0;TType:3;ICode: 2;Tag: $8822;  Name:'ExposureProgram'          ; Desc:'';Code:
         '0:Unidentified,1:Manual,2:Normal,3:Aperture priority,'+
         '4:Shutter priority,5:Creative(slow),'+
         '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
   (TID:0;TType:2;ICode: 2;Tag: $8824;  Name:'SpectralSensitivity'    ),
-  (TID:0;TType:0;ICode: 2;Tag: $8825;  Name:'GPSInfo'                ),         {170}
-  (TID:0;TType:0;ICode: 2;Tag: $8827;  Name:'ISOSpeedRatings'        ),
+  (TID:0;TType:0;ICode: 2;Tag: $8825;  Name:'GPSInfo';               Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),         {170}
+  (TID:0;TType:0;ICode: 2;Tag: $8827;  Name:'ISOSpeedRatings'        ), { 171 }
   (TID:0;TType:0;ICode: 2;Tag: $8828;  Name:'OECF'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $8829;  Name:'Interlace'              ),
   (TID:0;TType:0;ICode: 2;Tag: $882A;  Name:'TimeZoneOffset'         ),
@@ -2120,9 +2124,11 @@ begin
   W := ALabelWidth;
   L := TStringList.Create;
   try
+    (*
     if parent.ExifSegment = nil then
       Result := ''
     else
+    *)
     if Parent.ErrStr <> '<none>' then
     begin
       L.Add(Format('File Name:     %s', [ExtractFileName(parent.Filename)]));
@@ -2351,6 +2357,17 @@ begin
   end;
 end;
 
+function TImageInfo.GetTagValueAsString(ATagName: String): String;
+var
+  v: Variant;
+begin
+  v := GetTagValue(ATagName);
+  if VarIsNull(v) then
+    Result := ''
+  else
+    Result := VarToStr(v);
+end;
+
 function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
 var
   i: Integer;
@@ -2550,15 +2567,20 @@ begin
     end;
 
   if AForceCreate then begin
+    tag := FindExifTag(ATagID)^;
+    {
     for j := 0 to Length(TagTable)-1 do
       if (TagTable[j].Tag = ATagID) then begin
         tag := TagTable[j];
         break;
       end;
+      }
     if ATagType <> 65535 then
       tag.TType := ATagType;
     tag.parentID := AParentID;
     tag.Id := 0;
+    if tag.Size > 0 then
+      tag.Raw := StringOfChar(#0, tag.Size);
     i := AddTagToArray(tag);
 
     (*
@@ -2576,7 +2598,7 @@ end;
 
 function TImageInfo.GetArtist: String;
 begin
-  Result := GetTagValue('Artist');
+  Result := GetTagValueAsString('Artist');
 end;
 
 procedure TImageInfo.SetArtist(v: String);
@@ -2690,7 +2712,7 @@ end;
 
 function TImageInfo.GetImageDescription: String;
 begin
-  Result := GetTagValue('ImageDescription');
+  Result := GetTagValueAsString('ImageDescription');
 end;
 
 procedure TImageInfo.SetImageDescription(const AValue: String);
@@ -2700,7 +2722,7 @@ end;
 
 function TImageInfo.GetCameraMake: String;
 begin
-  Result := GetTagValue('Make');
+  Result := GetTagValueAsString('Make');
 end;
 
 procedure TImageInfo.SetCameraMake(const AValue: String);
@@ -2710,7 +2732,7 @@ end;
 
 function TImageInfo.GetCameraModel: String;
 begin
-  Result := GetTagValue('Model');
+  Result := GetTagValueAsString('Model');
 end;
 
 procedure TImageInfo.SetCameraModel(const AValue: String);
@@ -2720,7 +2742,7 @@ end;
 
 function TImageInfo.GetCopyright: String;
 begin
-  Result := GetTagValue('Copyright');
+  Result := GetTagValueAsString('Copyright');
 end;
 
 procedure TImageInfo.SetCopyright(const AValue: String);
@@ -3182,7 +3204,7 @@ var
 begin
   imgStream := TMemoryStream.Create;
   try
-    imgStream.LoadFromFile(FileName);
+    imgStream.LoadFromFile(AFileName);
     WriteEXIFJpeg(imgstream, AFileName, false);
   finally
     imgStream.Free;
@@ -3758,7 +3780,7 @@ end;
 
 function TImgData.HasEXIF: boolean;
 begin
-  result := (EXIFsegment <> nil);
+  result := Assigned(ExifObj); //ExifObj <> nl; //(EXIFsegment <> nil);
 end;
 
 function TImgData.HasThumbnail: boolean;
