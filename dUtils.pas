@@ -27,16 +27,24 @@ type
     property Items[AIndex: Integer]: Int64 read GetItem write SetItem; default;
   end;
 
-  function NtoBE(const AValue: Word): Word; overload;
-  function NtoBE(const AValue: DWord): DWord; overload;
+function NtoBE(const AValue: Word): Word; overload;
+function NtoBE(const AValue: DWord): DWord; overload;
 
-  function BEtoN(const AValue: Word): Word; overload;
-  function BEtoN(const AValue: DWord): DWord; overload;
+function BEtoN(const AValue: Word): Word; overload;
+function BEtoN(const AValue: DWord): DWord; overload;
+
+function NtoLE(const AValue: Word): Word; overload;
+function NtoLE(const AValue: DWord): DWord; overload;
+
+function LEtoN(const AValue: Word): Word; overload;
+function LEtoN(const AValue: DWord): DWord; overload;
+
 {$ENDIF}
 
 function CvtRational(InStr: AnsiString): double;
 function CvtTime(InStr: AnsiString): String;
 function FmtRational(ANum, ADenom: Integer): String;
+function DoubleToRational(AValue: Double): TExifRational;
 
 function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
@@ -135,29 +143,82 @@ begin
 end;
 
 function SwapEndian(const AValue: DWord): DWord; overload;
-  begin
-    Result := ((AValue shl 8) and $FF00FF00) or ((AValue shr 8) and $00FF00FF);
-    Result := (Result shl 16) or (Result shr 16);
-  end;
+begin
+  Result := ((AValue shl 8) and $FF00FF00) or ((AValue shr 8) and $00FF00FF);
+  Result := (Result shl 16) or (Result shr 16);
+end;
 
 function BEtoN(const AValue: Word): Word;
 begin
+  {$IFDEF ENDIAN_BIG}
+  Result := AValue;
+  {$ELSE}
   Result := SwapEndian(AValue);
+  {$ENDIF}
 end;
 
 function BEtoN(const AValue: DWord): DWord;
 begin
+  {$IFDEF ENDIAN_BIG}
+  Result := AValue;
+  {$ELSE}
   Result := SwapEndian(AValue);
+  {$ENDIF}
 end;
 
 function NtoBE(const AValue: Word): Word;
 begin
+  {$IFDEF ENDIAN_BIG}
+  Result := AValue;
+  {$ELSE}
   Result := SwapEndian(AValue);
+  {$ENDIF}
 end;
 
 function NtoBE(const AValue: DWord): DWord;
 begin
+  {$IFDEF ENDIAN_BIG}
+  Result := AValue;
+  {$ELSE}
   Result := SwapEndian(AValue);
+  {$ENDIF}
+end;
+
+
+function LEtoN(const AValue: Word): Word;
+begin
+  {$IFDEF ENDIAN_BIG}
+  Result := SwapEndian(AValue);
+  {$ELSE}
+  Result := AValue;
+  {$ENDIF}
+end;
+
+function LEtoN(const AValue: DWord): DWord;
+begin
+  {$IFDEF ENDIAN_BIG}
+  Result := SwapEndian(AValue);
+  {$ELSE}
+  Result := AValue;
+  {$ENDIF}
+end;
+
+function NtoLE(const AValue: Word): Word;
+begin
+  {$IFDEF ENDIAN_BIG}
+  Result := SwapEndian(AValue);
+  {$ELSE}
+  Result := AValue;
+  {$ENDIF}
+end;
+
+function NtoLE(const AValue: DWord): DWord;
+begin
+  {$IFDEF ENDIAN_BIG}
+  Result := SwapEndian(AValue);
+  {$ELSE}
+  Result := AValue;
+  {$ENDIF}
 end;
 
 {$ENDIF}
@@ -229,7 +290,7 @@ begin
  // representations internally
 end;
 
-function GCD(a, b: integer): integer;
+function GCD(a, b: int64): int64;
 begin
   try
     if (b mod a) = 0 then
@@ -260,6 +321,48 @@ begin
   if fracPart <> 0 then
     outStr := outStr + IntToStr(fracPart) + '/' + IntToStr(newDenom);
   result := trim(outstr);      // trim cleans up extra space
+end;
+
+procedure DoubleToRationalHelper(AValue: Double; out ANum, ADenom: Int64; Eps: Double);
+var
+  i: Integer;
+  f: Double;
+begin
+  i := trunc(AValue);
+  f := frac(AValue);
+  if (1.0 - f) < EPS then begin  //  e.g. 2.999999999999 should be 3
+    inc(i);
+    f := 0.0;
+  end else
+  if f < EPS then                // e.g. 3.00000000001 should be 3
+    f := 0.0;
+
+  // AValue effectively is an integer
+  if f = 0.0 then begin
+    ANum := i;
+    ADenom := 1;
+  end else begin
+    ANum := round(i / EPS);
+    ADenom := round(1.0 / EPS);
+  end;
+end;
+
+function DoubleToRational(AValue: Double): TExifRational;
+const
+  EPS = 1E-6;
+var
+  num, denom: Int64;
+  gcdval: Int64;
+begin
+  if (abs(AValue) > 1) then
+    DoubleToRationalHelper(abs(AValue), num, denom, EPS)
+  else
+    DoubleToRationalHelper(abs(1.0/AValue), denom, num, EPS);
+  gcdVal := GCD(num, denom);
+  Result.Numerator := num div gcdVal;
+  Result.Denominator := denom div gcdVal;
+  if AValue < 0 then
+    Result.Numerator := -Result.Numerator;
 end;
 
 { A simple Delphi-7 compatible way of reading a byte from a stream }

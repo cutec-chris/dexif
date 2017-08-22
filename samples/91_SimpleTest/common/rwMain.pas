@@ -49,7 +49,7 @@ implementation
 {$ENDIF}
 
 uses
-  StrUtils;
+  StrUtils, Math, dUtils;
 
 const
   IMGINDEX_SUCCESS = 0;
@@ -269,6 +269,7 @@ function TMainForm.ReadTagValue(ATagName: String): String;
 var
   dt: TDateTime;
   tt: Integer;
+  v: Double;
 begin
   if ATagName = 'Comment' then
     Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
@@ -297,10 +298,20 @@ begin
   else begin
     tt := GetTagType(ATagName);
     if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then begin
-      Result := IntToStr(ImgData.ExifObj.TagValueAsInteger[ATagName]);
-      if Result = '-1' then
-        Result := '';
-    end else if tt = FMT_STRING then
+      v := ImgData.ExifObj.TagValueAsNumber[ATagName];
+      if v = -1 then
+        Result := ''
+      else
+        Result := IntToStr(round(v));
+    end else
+    if tt in [FMT_URATIONAL, FMT_SRATIONAL] then begin
+      v := ImgData.ExifObj.TagValueAsNumber[ATagName];
+      if IsNaN(v) then
+        Result := ''
+      else
+        Result := FloatToStr(v);
+    end else
+    if tt = FMT_STRING then
       Result := ImgData.ExifObj.TagValueAsString[ATagName]
     else
       raise Exception.Create('Tag type not supported.');
@@ -330,15 +341,17 @@ begin
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
   else if ATagName = 'ExifImageWidth' then
-    ImgData.ExifObj.TagValueAsInteger[ATagname] := StrToInt(ATagValue)
+    ImgData.ExifObj.TagValueAsNumber[ATagname] := StrToInt(ATagValue)
   else if ATagName = 'ExifImageLength' then
-    ImgData.ExifObj.TagValueAsInteger[ATagname] := StrToInt(ATagValue)
+    ImgData.ExifObj.TagValueAsNumber[ATagname] := StrToInt(ATagValue)
   else begin
     tt := GetTagType(ATagName);
     if tt = FMT_STRING then
       ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue
     else if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then
-      ImgData.ExifObj.TagValueAsInteger[ATagName] := StrToInt(ATagValue)
+      ImgData.ExifObj.TagValueAsNumber[ATagName] := StrToInt(ATagValue)
+    else if tt in [FMT_URATIONAL, FMT_SRATIONAL] then
+      ImgData.ExifObj.tagValueAsNumber[ATagName] := StrToFloat(ATagValue)
     else
       raise Exception.Create('Tag type not supported');
   end;

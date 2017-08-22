@@ -15,3 +15,5 @@ ImageWidth	2000
 ImageLength	1000
 ExifImageWidth	2000
 ExifImageLength	1000
+Orientation	2
+FNumber	16

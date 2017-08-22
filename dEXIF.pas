@@ -126,8 +126,8 @@ type
     function GetTagByName(TagName: ansistring): TTagEntry;
     procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
 
-    function GetTagValueAsInteger(ATagName: String): Integer;
-    procedure SetTagValueAsInteger(ATagName: String; AValue: Integer);
+    function GetTagValueAsNumber(ATagName: String): Double;
+    procedure SetTagValueAsNumber(ATagName: String; AValue: double);
 
     function GetTagValueAsString(ATagName: String): String;
     procedure SetTagValueAsString(ATagName: String; AValue: String);
@@ -224,15 +224,15 @@ type
     function LookupTag(ATagName: String): integer; virtual;
     function LookupTagVal(ATagName: String): String; virtual;
     function LookupTagDefn(ATagName: String): integer;
-    function LookupTagByDesc(SearchStr: ansistring): integer;
+    function LookupTagByDesc(ADesc: String): integer;
     function LookupTagInt(ATagName: String): integer;
 
     property ITagArray[TagID: Integer]: TTagEntry
         read GetTagElement write SetTagElement; default;
     property Data[TagName: AnsiString]: TTagEntry
         read GetTagByName write SetTagByName;
-    property TagValueAsInteger[ATagName: String]: Integer
-        read GetTagValueAsInteger write SetTagValueAsInteger;
+    property TagValueAsNumber[ATagName: String]: Double
+        read GetTagValueAsNumber write SetTagValueAsNumber;
     property TagValueAsString[ATagName: String]: String
         read GetTagValueAsString write SetTagValueAsString;
     property Artist: String
@@ -563,12 +563,12 @@ var
   (TID:0;TType:4;ICode: 2;Tag: $117;   Name:'StripByteCounts'        ),
   (TID:0;TType:3;ICode: 2;Tag: $118;   Name:'MinSampleValue'         ),         {20}
   (TID:0;TType:3;ICode: 2;Tag: $119;   Name:'MaxSampleValue'         ),
-  (TID:0;TType:0;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
-  (TID:0;TType:0;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
+  (TID:0;TType:5;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
+  (TID:0;TType:5;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
   (TID:0;TType:3;ICode: 2;Tag: $11C;   Name:'PlanarConfiguration'    ),
   (TID:0;TType:2;ICode: 2;Tag: $11D;   Name:'PageName'               ),
-  (TID:0;TType:0;ICode: 2;Tag: $11E;   Name:'XPosition'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $11F;   Name:'YPosition'              ),
+  (TID:0;TType:5;ICode: 2;Tag: $11E;   Name:'XPosition'              ),
+  (TID:0;TType:5;ICode: 2;Tag: $11F;   Name:'YPosition'              ),
   (TID:0;TType:0;ICode: 2;Tag: $120;   Name:'FreeOffsets'            ),
   (TID:0;TType:0;ICode: 2;Tag: $121;   Name:'FreeByteCounts'         ),
   (TID:0;TType:3;ICode: 2;Tag: $122;   Name:'GrayReponseUnit'        ),         {30}
@@ -617,7 +617,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $207;   Name:'JPEGQTables'            ),
   (TID:0;TType:0;ICode: 2;Tag: $208;   Name:'JPEGDCTables'           ),
   (TID:0;TType:0;ICode: 2;Tag: $209;   Name:'JPEGACTables'           ),
-  (TID:0;TType:0;ICode: 2;Tag: $211;   Name:'YCbCrCoefficients'      ),
+  (TID:0;TType:5;ICode: 2;Tag: $211;   Name:'YCbCrCoefficients'      ),
   (TID:0;TType:0;ICode: 2;Tag: $212;   Name:'YCbCrSubSampling'       ),
   (TID:0;TType:3;ICode: 2;Tag: $213;   Name:'YCbCrPositioning'       ; Desc:'';Code:'1:Centered,2:Co-sited'),
   (TID:0;TType:0;ICode: 2;Tag: $214;   Name:'ReferenceBlackWhite'    ),
@@ -626,9 +626,9 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $302;   Name:'ICCProfileDescriptor'      ),
   (TID:0;TType:0;ICode: 2;Tag: $303;   Name:'SRGBRenderingIntent'       ),
   (TID:0;TType:0;ICode: 2;Tag: $304;   Name:'ImageTitle'                ),
-  (TID:0;TType:0;ICode: 2;Tag: $1000;  Name:'RelatedImageFileFormat' ),
-  (TID:0;TType:0;ICode: 2;Tag: $1001;  Name:'RelatedImageWidth'      ),
-  (TID:0;TType:0;ICode: 2;Tag: $1002;  Name:'RelatedImageHeight'     ),
+  (TID:0;TType:2;ICode: 2;Tag: $1000;  Name:'RelatedImageFileFormat' ),
+  (TID:0;TType:3;ICode: 2;Tag: $1001;  Name:'RelatedImageWidth'      ),
+  (TID:0;TType:3;ICode: 2;Tag: $1002;  Name:'RelatedImageHeight'     ),
   (TID:0;TType:0;ICode: 2;Tag: $5001;  Name:'ResolutionXUnit'        ),
   (TID:0;TType:0;ICode: 2;Tag: $5002;  Name:'ResolutionYUnit'        ),
   (TID:0;TType:0;ICode: 2;Tag: $5003;  Name:'ResolutionXLengthUnit'  ),         {90}
@@ -701,15 +701,15 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $828E;  Name:'CFAPattern'             ),
   (TID:0;TType:0;ICode: 2;Tag: $828F;  Name:'BatteryLevel'           ),
   (TID:0;TType:2;ICode: 2;Tag: $8298;  Name:'Copyright'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%s sec'),   {160}
-  (TID:0;TType:0;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
-  (TID:0;TType:0;ICode: 2;Tag: $83BB;  Name:'IPTC/NAA'                 ; Desc:'IPTC/NAA'),
+  (TID:0;TType:5;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%s sec'),   {160}
+  (TID:0;TType:5;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:4;ICode: 2;Tag: $83BB;  Name:'IPTC/NAA'                 ; Desc:'IPTC/NAA'),
   (TID:0;TType:0;ICode: 2;Tag: $84E3;  Name:'IT8RasterPadding'         ),
   (TID:0;TType:0;ICode: 2;Tag: $84E5;  Name:'IT8ColorTable'            ),
   (TID:0;TType:0;ICode: 2;Tag: $8649;  Name:'ImageResourceInformation' ),
   (TID:0;TType:0;ICode: 2;Tag: $8769;  Name:'ExifOffset'               ),
   (TID:0;TType:0;ICode: 2;Tag: $8773;  Name:'InterColorProfile'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $8822;  Name:'ExposureProgram'          ; Desc:'';Code:
+  (TID:0;TType:3;ICode: 2;Tag: $8822;  Name:'ExposureProgram'          ; Desc:'';Code:
         '0:Unidentified,1:Manual,2:Normal,3:Aperture priority,'+
         '4:Shutter priority,5:Creative(slow),'+
         '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
@@ -719,29 +719,29 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $8828;  Name:'OECF'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $8829;  Name:'Interlace'              ),
   (TID:0;TType:0;ICode: 2;Tag: $882A;  Name:'TimeZoneOffset'         ),
-  (TID:0;TType:0;ICode: 2;Tag: $882B;  Name:'SelfTimerMode'          ),
+  (TID:0;TType:3;ICode: 2;Tag: $882B;  Name:'SelfTimerMode'          ),
   (TID:0;TType:0;ICode: 2;Tag: $9000;  Name:'ExifVersion'            ),
   (TID:0;TType:2;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
   (TID:0;TType:2;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
   (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:GenCompConfig),
-  (TID:0;TType:0;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
-  (TID:0;TType:0;ICode: 2;Tag: $9201;  Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:SSpeedCallBack),
-  (TID:0;TType:0;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
-  (TID:0;TType:0;ICode: 2;Tag: $9203;  Name:'BrightnessValue'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $9204;  Name:'ExposureBiasValue'      ),
-  (TID:0;TType:0;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
-  (TID:0;TType:0;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
-  (TID:0;TType:0;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
-  (TID:0;TType:0;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:FlashCallBack),
-  (TID:0;TType:0;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%0.2f mm'), {190}
+  (TID:0;TType:5;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
+  (TID:0;TType:10;ICode: 2;Tag: $9201; Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:SSpeedCallBack),
+  (TID:0;TType:5;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:10;ICode: 2;Tag: $9203; Name:'BrightnessValue'        ),
+  (TID:0;TType:10;ICode: 2;Tag: $9204; Name:'ExposureBiasValue'      ),
+  (TID:0;TType:5;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:5;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
+  (TID:0;TType:3;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
+  (TID:0;TType:3;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
+  (TID:0;TType:3;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:FlashCallBack),
+  (TID:0;TType:5;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%0.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
   (TID:0;TType:0;ICode: 2;Tag: $920D;  Name:'Noise'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $920E;  Name:'FocalPlaneXResolution'   ),      // TID:0;TType:0;ICode: 2;Tag: $920E    -  -
   (TID:0;TType:0;ICode: 2;Tag: $920F;  Name:'FocalPlaneYResolution'   ),	    // TID:0;TType:0;ICode: 2;Tag: $920F    -  -
   (TID:0;TType:0;ICode: 2;Tag: $9210;  Name:'FocalPlaneResolutionUnit';  Desc:'';Code:'1:None Specified,2:Inch,3:Centimeter'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $9211;  Name:'ImageNumber'            ),
+  (TID:0;TType:4;ICode: 2;Tag: $9211;  Name:'ImageNumber'            ),
   (TID:0;TType:2;ICode: 2;Tag: $9212;  Name:'SecurityClassification' ),
   (TID:0;TType:2;ICode: 2;Tag: $9213;  Name:'ImageHistory'           ),
   (TID:0;TType:0;ICode: 2;Tag: $9214;  Name:'SubjectLocation'        ),         {200}
@@ -761,42 +761,42 @@ var
 //  (TID:0;TType:0;ICode: 2;Tag: $9C9E;  Name:'Keywords'               ;  Callback: xpTranslate),  // Win XP specific, Unicode
 //  (TID:0;TType:0;ICode: 2;Tag: $9C9F;  Name:'Subject'                ;  Callback: xpTranslate),  // Win XP specific, Unicode
   (TID:0;TType:0;ICode: 2;Tag: $A000;  Name:'FlashPixVersion'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $A001;  Name:'ColorSpace'             ; Desc:''; Code:'0:sBW,1:sRGB'),
+  (TID:0;TType:3;ICode: 2;Tag: $A001;  Name:'ColorSpace'             ; Desc:''; Code:'0:sBW,1:sRGB'),
   (TID:0;TType:3;ICode: 2;Tag: $A002;  Name:'ExifImageWidth'         ),
   (TID:0;TType:3;ICode: 2;Tag: $A003;  Name:'ExifImageLength'        ),
   (TID:0;TType:2;ICode: 2;Tag: $A004;  Name:'RelatedSoundFile'       ),         {220}
   (TID:0;TType:0;ICode: 2;Tag: $A005;  Name:'InteroperabilityOffset' ),
-  (TID:0;TType:0;ICode: 2;Tag: $A20B;  Name:'FlashEnergy'            ),    // TID:0;TType:0;ICode: 2;Tag: $920B in TIFF/EP
+  (TID:0;TType:5;ICode: 2;Tag: $A20B;  Name:'FlashEnergy'            ),    // TID:0;TType:0;ICode: 2;Tag: $920B in TIFF/EP
   (TID:0;TType:0;ICode: 2;Tag: $A20C;  Name:'SpatialFrequencyResponse'),   // TID:0;TType:0;ICode: 2;Tag: $920C    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $A20E;  Name:'FocalPlaneXResolution'   ),      // TID:0;TType:0;ICode: 2;Tag: $920E    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $A20F;  Name:'FocalPlaneYResolution'   ),	    // TID:0;TType:0;ICode: 2;Tag: $920F    -  -
-  (TID:0;TType:0;ICode: 2;Tag: $A210;  Name:'FocalPlaneResolutionUnit'; Desc:'';Code:'1:None Specified,2:Inch,3:Centimeter'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
+  (TID:0;TType:5;ICode: 2;Tag: $A20E;  Name:'FocalPlaneXResolution'   ),      // TID:0;TType:0;ICode: 2;Tag: $920E    -  -
+  (TID:0;TType:5;ICode: 2;Tag: $A20F;  Name:'FocalPlaneYResolution'   ),	    // TID:0;TType:0;ICode: 2;Tag: $920F    -  -
+  (TID:0;TType:3;ICode: 2;Tag: $A210;  Name:'FocalPlaneResolutionUnit'; Desc:'';Code:'1:None Specified,2:Inch,3:Centimeter'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
   (TID:0;TType:0;ICode: 2;Tag: $A211;  Name:'ImageNumber'             ),
   (TID:0;TType:0;ICode: 2;Tag: $A212;  Name:'SecurityClassification'  ),
   (TID:0;TType:0;ICode: 2;Tag: $A213;  Name:'ImageHistory'            ),
   (TID:0;TType:0;ICode: 2;Tag: $A214;  Name:'SubjectLocation'         ),        {230}
-  (TID:0;TType:0;ICode: 2;Tag: $A215;  Name:'ExposureIndex'           ),
+  (TID:0;TType:5;ICode: 2;Tag: $A215;  Name:'ExposureIndex'           ),
   (TID:0;TType:0;ICode: 2;Tag: $A216;  Name:'TIFF/EPStandardID'       ;   Desc:'TIFF/EPStandardID' ),
-  (TID:0;TType:0;ICode: 2;Tag: $A217;  Name:'SensingMethod'           ;   Desc:'';Code:'0:Unknown,1:MonochromeArea,'+
-    '2:OneChipColorArea,3:TwoChipColorArea,4:ThreeChipColorArea,'+
+  (TID:0;TType:3;ICode: 2;Tag: $A217;  Name:'SensingMethod'           ;   Desc:'';Code:'0:Unknown,1:MonochromeArea,'+
+    '1:Not defined,2:OneChipColorArea,3:TwoChipColorArea,4:ThreeChipColorArea,'+
     '5:ColorSequentialArea,6:MonochromeLinear,7:TriLinear,'+
     '8:ColorSequentialLinear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
   (TID:0;TType:0;ICode: 2;Tag: $A300;  Name:'FileSource'              ;  Desc:'';Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
   (TID:0;TType:0;ICode: 2;Tag: $A301;  Name:'SceneType'               ;  Desc:'';Code:'0:Unknown,1:Directly Photographed'),
   (TID:0;TType:0;ICode: 2;Tag: $A302;  Name:'CFAPattern'              ),
-  (TID:0;TType:0;ICode: 2;Tag: $A401;  Name:'CustomRendered'          ;  Desc:'';Code:'0:Normal process,1:Custom process'),
-  (TID:0;TType:0;ICode: 2;Tag: $A402;  Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
-  (TID:0;TType:0;ICode: 2;Tag: $A403;  Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
-  (TID:0;TType:0;ICode: 2;Tag: $A404;  Name:'DigitalZoomRatio'        ),        {240}
-  (TID:0;TType:0;ICode: 2;Tag: $A405;  Name:'FocalLengthIn35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
-  (TID:0;TType:0;ICode: 2;Tag: $A406;  Name:'SceneCaptureType'        ;  Desc:'';Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
-  (TID:0;TType:0;ICode: 2;Tag: $A407;  Name:'GainControl'             ; Desc:''; Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
-  (TID:0;TType:0;ICode: 2;Tag: $A408;  Name:'Contrast'                ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
-  (TID:0;TType:0;ICode: 2;Tag: $A409;  Name:'Saturation'              ; Desc:''; Code:'0:Normal,1:Low,2:High'),
-  (TID:0;TType:0;ICode: 2;Tag: $A40A;  Name:'Sharpness'               ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
+  (TID:0;TType:3;ICode: 2;Tag: $A401;  Name:'CustomRendered'          ;  Desc:'';Code:'0:Normal process,1:Custom process'),
+  (TID:0;TType:3;ICode: 2;Tag: $A402;  Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
+  (TID:0;TType:3;ICode: 2;Tag: $A403;  Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
+  (TID:0;TType:5;ICode: 2;Tag: $A404;  Name:'DigitalZoomRatio'        ),        {240}
+  (TID:0;TType:3;ICode: 2;Tag: $A405;  Name:'FocalLengthIn35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
+  (TID:0;TType:3;ICode: 2;Tag: $A406;  Name:'SceneCaptureType'        ;  Desc:'';Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
+  (TID:0;TType:3;ICode: 2;Tag: $A407;  Name:'GainControl'             ; Desc:''; Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
+  (TID:0;TType:3;ICode: 2;Tag: $A408;  Name:'Contrast'                ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
+  (TID:0;TType:3;ICode: 2;Tag: $A409;  Name:'Saturation'              ; Desc:''; Code:'0:Normal,1:Low,2:High'),
+  (TID:0;TType:3;ICode: 2;Tag: $A40A;  Name:'Sharpness'               ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
   (TID:0;TType:0;ICode: 2;Tag: $A40B;  Name:'DeviceSettingDescription'),
-  (TID:0;TType:0;ICode: 2;Tag: $A40C;  Name:'SubjectDistanceRange'    ; Desc:''; Code:'0:Unknown,1:Macro,2:Close view,3:Distant view'),  {250}
-  (TID:0;TType:0;ICode: 2;Tag: $A420;  Name:'ImageUniqueID'           ; Desc:''; Code:'0:Close view,1:Distant view'),  {250}
+  (TID:0;TType:3;ICode: 2;Tag: $A40C;  Name:'SubjectDistanceRange'    ; Desc:''; Code:'0:Unknown,1:Macro,2:Close view,3:Distant view'),  {250}
+  (TID:0;TType:2;ICode: 2;Tag: $A420;  Name:'ImageUniqueID'           ; Desc:''; Code:'0:Close view,1:Distant view'),  {250}
   (TID:0;TType:0;ICode: 2;Tag: 0;      Name:'Unknown'));                        {250}
 
 
@@ -1263,14 +1263,14 @@ end;
 
 //  This function returns the index of a tag in the tag buffer.
 //  It searches by the description which is most likely to be used as a label
-Function TImageInfo.LookupTagByDesc(SearchStr: String):integer;
+Function TImageInfo.LookupTagByDesc(ADesc: String):integer;
 var
   i: integer;
 begin
-  SearchStr := UpperCase(SearchStr);
+  ADesc := UpperCase(ADesc);
   Result := -1;
   for i := 0 to FITagCount-1 do
-    if UpperCase(fiTagArray[i].Desc) = SearchStr then
+    if UpperCase(fiTagArray[i].Desc) = ADesc then
     begin
       Result := i;
       break;
@@ -2285,9 +2285,10 @@ begin
   end;
 end;
 
-function TImageInfo.GetTagValueAsInteger(ATagName: string): Integer;
+function TImageInfo.GetTagValueAsNumber(ATagName: string): Double;
 var
   tag: TTagEntry;
+  r: TExifRational;
 begin
   Result := -1;
 
@@ -2298,13 +2299,28 @@ begin
   // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
   // is still in the endianness of the source!
   case tag.TType of
-    FMT_BYTE  : Result := PByte(@tag.Raw[1])^;
-    FMT_USHORT: if MotorolaOrder then
-                  Result := BEToN(PWord(@tag.Raw[1])^) else
-                  Result := LEToN(PWord(@tag.Raw[1])^);
-    FMT_ULONG : if MotorolaOrder then
-                  Result := BEToN(PWord(@tag.Raw[1])^) else
-                  Result := LEToN(PDWord(@tag.Raw[1])^);
+    FMT_BYTE:
+      Result := PByte(@tag.Raw[1])^;
+    FMT_USHORT:
+      if MotorolaOrder then
+        Result := 1.0 * BEToN(PWord(@tag.Raw[1])^) else
+        Result := 1.0 * LEToN(PWord(@tag.Raw[1])^);
+    FMT_ULONG:
+      if MotorolaOrder then
+        Result := 1.0 * BEToN(PWord(@tag.Raw[1])^) else
+        Result := 1.0 * LEToN(PDWord(@tag.Raw[1])^);
+    FMT_URATIONAL, FMT_SRATIONAL:
+      begin
+        r := PExifRational(@tag.Raw[1])^;
+        if MotorolaOrder then begin
+          r.Numerator := BEToN(r.Numerator);
+          r.Denominator := BEToN(r.Denominator);
+        end else begin
+          r.Numerator := LEToN(r.Numerator);
+          r.Denominator := LEtoN(r.Denominator);
+        end;
+        Result := r.Numerator / r.Denominator;
+      end;
     else
       raise Exception.Create('Data of tag "' + ATagName + '" cannot be accessed as Integer.');
   end;
@@ -2313,7 +2329,7 @@ end;
 // WARNING: There are tags which consist of multiple values of the same type.
 // At the moment, there is no way to detect this case here. Writing them here
 // will cause malfunction of the EXIF segment and/or file.
-procedure TImageInfo.SetTagValueAsInteger(ATagName: String; AValue: Integer);
+procedure TImageInfo.SetTagValueAsNumber(ATagName: String; AValue: Double);
 const
   IGNORE_PARENT = $FFFF;
 var
@@ -2321,6 +2337,8 @@ var
   tagDef: PTagEntry;
   tagID: Word;
   parentID: Word;
+  intValue: Integer;
+  fracValue: TExifRational;
 begin
   // Find the tag's ID
   tagDef := FindExifTagByName(ATagName);
@@ -2357,7 +2375,7 @@ begin
   end;
 
   if P = nil then
-    raise Exception.Create('Failure to create tag "' + ATagName + '"';
+    raise Exception.Create('Failure to create tag "' + ATagName + '"');
 
   // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
   // is still in the endianness of the source!
@@ -2365,19 +2383,35 @@ begin
     FMT_BYTE:
       begin
         SetLength(p^.Raw, 1);
-        Move(PByte(@AValue)^, p^.Raw[1], 1);
+        intValue := round(AValue);
+        Move(PByte(@intValue)^, p^.Raw[1], 1);
       end;
     FMT_USHORT:
       begin
         SetLength(p^.Raw, 2);
-        if MotorolaOrder then AValue := NToBE(AValue) else AValue := NToLE(AValue);
-        Move(PWord(@AValue)^, p^.Raw[1], 2);
+        intValue := round(AValue);
+        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
+        Move(PWord(@intValue)^, p^.Raw[1], 2);
       end;
     FMT_ULONG:
       begin
         SetLength(p^.Raw, 4);
-        if MotorolaOrder then AValue := NToBE(AValue) else AValue := NToLE(AValue);
-        Move(PDWord(@AValue)^ , p^.Raw[1], 4);
+        intValue := round(AValue);
+        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
+        Move(PDWord(@intValue)^ , p^.Raw[1], 4);
+      end;
+    FMT_URATIONAL, FMT_SRATIONAL:
+      begin
+        SetLength(p^.Raw, 8);
+        fracvalue := DoubleToRational(AValue);
+        if MotorolaOrder then begin
+          fracvalue.Numerator := NToBE(fracValue.Numerator);
+          fracValue.Denominator := NToBE(fracValue.Denominator);
+        end else begin
+          fracValue.Numerator := NtoLE(fracValue.Numerator);
+          fracValue.Denominator := NtoLE(fracValue.Denominator);
+        end;
+        Move(fracValue, p^.Raw[1], 8);
       end;
   end;
   P^.Size := Length(p^.Raw);
