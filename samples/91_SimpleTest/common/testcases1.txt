@@ -11,3 +11,7 @@ Copyright	(c) wp
 DateTimeOriginal	2017-01-01 09:00:00
 DateTimeDigitized	2017-01-01 12:00:00
 DateTime	2017-01-01 18:00:00
+ImageWidth	2000
+ImageLength	1000
+ExifImageWidth	2000
+ExifImageLength	1000

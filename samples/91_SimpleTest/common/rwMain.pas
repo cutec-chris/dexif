@@ -29,6 +29,7 @@ type
     procedure BtnTest1Click(Sender: TObject);
   private
     ImgData: TImgData;
+    function GetTagType(ATagName: String): Integer;
     function ReadTagValue(ATagName: String): String;
     procedure WriteTagValue(ATagName, ATagValue: String);
 
@@ -253,9 +254,21 @@ begin
   end;
 end;
 
+function TMainForm.GetTagType(ATagName: String): Integer;
+var
+  i: Integer;
+  P: PTagEntry;
+begin
+  P := FindExifTagByName(ATagName);
+  if P = nil then
+    raise Exception.Create('Tag "' + ATagName + '" not found.');
+  Result := P^.TType;
+end;
+
 function TMainForm.ReadTagValue(ATagName: String): String;
 var
   dt: TDateTime;
+  tt: Integer;
 begin
   if ATagName = 'Comment' then
     Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
@@ -281,11 +294,22 @@ begin
     dt := ImgData.ExifObj.DateTimeModified;
     Result := FormatDateTime(ISODateFormat, dt);
   end
-  else
-    Result := ImgData.ExifObj.TagValueAsString[ATagName];
+  else begin
+    tt := GetTagType(ATagName);
+    if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then begin
+      Result := IntToStr(ImgData.ExifObj.TagValueAsInteger[ATagName]);
+      if Result = '-1' then
+        Result := '';
+    end else if tt = FMT_STRING then
+      Result := ImgData.ExifObj.TagValueAsString[ATagName]
+    else
+      raise Exception.Create('Tag type not supported.');
+  end;
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
+var
+  tt: Integer;
 begin
   if ATagName = 'Comment' then
     ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
@@ -305,8 +329,19 @@ begin
     ImgData.ExifObj.DateTimeDigitized := ExtractDateTime(ATagValue)
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
-  else
-    ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue;
+  else if ATagName = 'ExifImageWidth' then
+    ImgData.ExifObj.TagValueAsInteger[ATagname] := StrToInt(ATagValue)
+  else if ATagName = 'ExifImageLength' then
+    ImgData.ExifObj.TagValueAsInteger[ATagname] := StrToInt(ATagValue)
+  else begin
+    tt := GetTagType(ATagName);
+    if tt = FMT_STRING then
+      ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue
+    else if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then
+      ImgData.ExifObj.TagValueAsInteger[ATagName] := StrToInt(ATagValue)
+    else
+      raise Exception.Create('Tag type not supported');
+  end;
 end;
 
 end.

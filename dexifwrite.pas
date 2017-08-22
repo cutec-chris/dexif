@@ -85,7 +85,7 @@ begin
   if FBigEndian then
     Result := NtoBE(AValue)
   else
-    Result := AValue;
+    Result := NtoLE(AValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ begin
   if FBigEndian then
     Result := NtoBE(AValue)
   else
-    Result := AValue;
+    Result := NtoLE(AValue);
 end;
 
 //------------------------------------------------------------------------------
