@@ -1,7 +1,9 @@
 dEXIF is Copyright © 2001 - 2006 Gerry McGuire. All rights reserved.
 See the copyright details specified in Copyright.txt
 
-Written and tested in Delphi 7.0 now adapted for Lazarus/Freepascal
+Written and tested in Delphi 7.0, XE2 and Berlin 10.1
+Now adapted to Lazarus/Freepascal
+Tested with Lazarus 1.0/fpc 2.6.0 up to Lazarus 1.8/fpc 3.0.2
 
 Version History:
 
