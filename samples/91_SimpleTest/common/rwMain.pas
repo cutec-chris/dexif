@@ -24,10 +24,14 @@ type
     BtnTest2: TSpeedButton;
     ImageList1: TImageList;
     ListView: TListView;
-    ExifListView: TListView;
+    //ExifListView: TListView;
+    //Panel1: TPanel;
+    //Splitter1: TSplitter;
+    //ExifTabControl: TTabControl;
     Panel1: TPanel;
-    Splitter1: TSplitter;
+    ExifListView: TListView;
     ExifTabControl: TTabControl;
+    Splitter1: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BtnTest1Click(Sender: TObject);
@@ -282,6 +286,8 @@ begin
       exit;
     for i:=0 to AImgData.ExifObj.FITagCount do begin
       tag := AImgData.ExifObj.TagByIndex[i];
+      if Tag.Tag = 0 then
+        Continue;
       with AListView.Items.Add do begin
         Caption := tag.Desc;
         SubItems.Add(tag.Data);

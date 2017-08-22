@@ -114,6 +114,7 @@ object MainForm: TMainForm
             Caption = 'Value'
             Width = 146
           end>
+        RowSelect = True
         TabOrder = 1
         ViewStyle = vsReport
       end

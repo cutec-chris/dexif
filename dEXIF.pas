@@ -234,7 +234,7 @@ type
 
     property ITagArray[TagID: Integer]: TTagEntry
         read GetTagElement write SetTagElement; //default;
-    property Data[TagName: AnsiString]: TTagEntry
+    property Data[TagName: String]: TTagEntry
         read GetTagByName write SetTagByName;
     property TagByIndex[AIndex: Integer]: TTagEntry
         read GetTagByIndex;

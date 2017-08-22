@@ -1,11 +1,11 @@
 ;IMPORTANT: This file must be stored in ANSI encoding
 ; Use a TAB character between the two columns
 
-Comment	ÄÖÜ in the comment segment.
-Artist	Hansi Müller
-ImageDescription	Hübsches Bild
-UserComment	Hübscher Kommentar!
-Make	ÄÖÜ camera make
-Model	äöü camera model
-Copyright	© wp
+Comment	Ã„Ã–Ãœ in the comment segment.
+Artist	Hansi MÃ¼ller
+ImageDescription	HÃ¼bsches Bild
+UserComment	HÃ¼bscher Kommentar!
+Make	Ã„Ã–Ãœ camera make
+Model	Ã¤Ã¶Ã¼ camera model
+Copyright	Â© wp
 Orientation	Mirror horizontal|2

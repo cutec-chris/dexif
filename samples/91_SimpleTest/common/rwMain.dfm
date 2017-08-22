@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 329
-  Top = 127
-  Width = 888
-  Height = 432
+  Left = 305
+  Top = 292
+  Width = 917
+  Height = 455
   Caption = 'EXIF read/write test'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -14,12 +14,12 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    872
-    393)
+    901
+    416)
   PixelsPerInch = 96
   TextHeight = 13
   object BtnTest1: TSpeedButton
-    Left = 747
+    Left = 776
     Top = 8
     Width = 48
     Height = 22
@@ -28,7 +28,7 @@ object MainForm: TMainForm
     OnClick = BtnTest1Click
   end
   object BtnTest2: TSpeedButton
-    Left = 800
+    Left = 829
     Top = 8
     Width = 48
     Height = 22
@@ -39,44 +39,91 @@ object MainForm: TMainForm
   object EdTestfile: TEdit
     Left = 8
     Top = 8
-    Width = 735
+    Width = 764
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 0
     Text = '..\..\..\tests\testpictures\DUTPic03.jpeg'
   end
-  object ListView: TListView
+  object Panel1: TPanel
     Left = 8
-    Top = 40
-    Width = 840
-    Height = 305
+    Top = 32
+    Width = 886
+    Height = 376
     Anchors = [akLeft, akTop, akRight, akBottom]
-    Columns = <
-      item
-        Caption = 'Tag/property'
-        Width = 200
-      end
-      item
-        Caption = 'Current value'
-        Width = 200
-      end
-      item
-        Caption = 'Value to be written'
-        Width = 200
-      end
-      item
-        Caption = 'Value read-back'
-        Width = 200
-      end>
-    SmallImages = ImageList1
+    BevelOuter = bvNone
     TabOrder = 1
-    ViewStyle = vsReport
+    object Splitter1: TSplitter
+      Left = 619
+      Top = 0
+      Height = 376
+      Align = alRight
+    end
+    object ExifTabControl: TTabControl
+      Left = 622
+      Top = 0
+      Width = 264
+      Height = 376
+      Align = alRight
+      TabOrder = 0
+      Tabs.Strings = (
+        'Original file'
+        'Modified')
+      TabIndex = 0
+      OnChange = ExifTabControlChange
+      object ExifListView: TListView
+        Left = 4
+        Top = 24
+        Width = 256
+        Height = 348
+        Align = alClient
+        Columns = <
+          item
+            Caption = 'Tag name'
+            Width = 120
+          end
+          item
+            Caption = 'Value'
+            Width = 150
+          end>
+        RowSelect = True
+        TabOrder = 0
+        ViewStyle = vsReport
+      end
+    end
+    object ListView: TListView
+      Left = 0
+      Top = 0
+      Width = 619
+      Height = 376
+      Align = alClient
+      Columns = <
+        item
+          Caption = 'Tag/property'
+          Width = 120
+        end
+        item
+          Caption = 'Current value'
+          Width = 160
+        end
+        item
+          Caption = 'Value to be written'
+          Width = 160
+        end
+        item
+          Caption = 'Value read-back'
+          Width = 160
+        end>
+      SmallImages = ImageList1
+      TabOrder = 1
+      ViewStyle = vsReport
+    end
   end
   object ImageList1: TImageList
     Left = 400
     Top = 117
     Bitmap = {
-      494C010102001800140010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102001800180010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000001AA41C001AA41C00000000000000000000000000000000000000

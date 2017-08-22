@@ -450,6 +450,12 @@ end;
 { Formatting callbacks }
 
 Function GpsPosn(InStr: AnsiString): String;
+const
+  {$IFDEF FPC}
+  DEGREES: string = '°';
+  {$ELSE}
+  DEGREES: ansistring = #176;
+  {$ENDIF}
 var
   p, sl: integer;
   s: ansistring;
@@ -479,15 +485,15 @@ begin
     gf_DD:
       Result := Format('%1.4f Decimal Degrees', [gDegree + (gMin + gSec/60)/60]);
     gf_DD_Short:
-      Result := Format('%1.4f°', [gDegree + (gmin + gSec/60)/60]);
+      Result := Format('%1.4f%s', [gDegree + (gmin + gSec/60)/60, DEGREES]);
     gf_DM:
       Result := Format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + gsec/60]);
     gf_DM_Short:
-      Result := Format('%0.0f° %1.2f''', [gDegree, gMin +  gsec/60]);
+      Result := Format('%0.0f%s %1.2f''', [gDegree, DEGREES, gMin +  gsec/60]);
     gf_DMS:
       Result := Format('%0.0f Degrees %0.0f Minutes %0.0f Seconds', [gDegree, gMin, gSec]);
     gf_DMS_Short:
-      Result := Format('%0.0f° %0.0f'' %0.0f"', [gDegree, gMin, gSec]);
+      Result := Format('%0.0f%s %0.0f'' %0.0f"', [gDegree, DEGREES, gMin, gSec]);
   end;
 end;
 
