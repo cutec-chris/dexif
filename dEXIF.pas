@@ -29,7 +29,7 @@ Unit dEXIF;
 interface
 
 uses
-  sysutils, classes, math,
+  sysutils, classes, math, variants,
  {$IFDEF FPC}
   LazUTF8,
  {$ELSE}
@@ -120,18 +120,23 @@ type
     function GetCopyright: String;
     procedure SetCopyright(const AValue: String);
 
+    function GetTagByIndex(AIndex: Integer): TTagEntry;
+
     function GetTagElement(TagID: integer): TTagEntry;
     procedure SetTagElement(TagID: integer; const Value: TTagEntry);
 
-    function GetTagByName(TagName: ansistring): TTagEntry;
-    procedure SetTagByName(TagName: ansistring; const Value: TTagEntry);
+    function GetTagByName(TagName: String): TTagEntry;
+    procedure SetTagByName(TagName: String; const Value: TTagEntry);
 
+    function GetTagValue(ATagName: String): variant;
+    procedure SetTagValue(ATagName: String; AValue: variant);
+              {
     function GetTagValueAsNumber(ATagName: String): Double;
     procedure SetTagValueAsNumber(ATagName: String; AValue: double);
 
     function GetTagValueAsString(ATagName: String): String;
     procedure SetTagValueAsString(ATagName: String; AValue: String);
-
+               }
     // misc
     function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
       ATagType: word=65535{; AForceID: Boolean=false}): PTagEntry; overload;
@@ -228,13 +233,20 @@ type
     function LookupTagInt(ATagName: String): integer;
 
     property ITagArray[TagID: Integer]: TTagEntry
-        read GetTagElement write SetTagElement; default;
+        read GetTagElement write SetTagElement; //default;
     property Data[TagName: AnsiString]: TTagEntry
         read GetTagByName write SetTagByName;
+    property TagByIndex[AIndex: Integer]: TTagEntry
+        read GetTagByIndex;
+
+    property TagValue[ATagName: String]: Variant
+        read GetTagValue write SetTagValue; default;
+        (*
     property TagValueAsNumber[ATagName: String]: Double
         read GetTagValueAsNumber write SetTagValueAsNumber;
     property TagValueAsString[ATagName: String]: String
         read GetTagValueAsString write SetTagValueAsString;
+        *)
     property Artist: String
         read GetArtist write SetArtist;
     property CameraMake: String
@@ -557,7 +569,11 @@ var
   (TID:0;TType:2;ICode: 2;Tag: $10F;   Name:'Make'                   ),
   (TID:0;TType:2;ICode: 2;Tag: $110;   Name:'Model'                  ),
   (TID:0;TType:4;ICode: 2;Tag: $111;   Name:'StripOffsets'           ),
-  (TID:0;TType:3;ICode: 2;Tag: $112;   Name:'Orientation'            ; Desc:''; Code:'1:Normal,3:Rotated 180°,6:CounterClockwise 90°,8:Clockwise 90°'),
+  (TID:0;TType:3;ICode: 2;Tag: $112;   Name:'Orientation'            ; Desc:'';Code:
+         '1:Normal,2:Mirror horizontal,3:Rotated 180°,'+
+         '4:Mirror vertical,5:Mirror horizontal and rotate 90° CCW,'+
+         '6:Rotate 90° CCW,7:Mirror horizontal and rotate 90° CW,'+
+         '8:Clockwise 90°'),
   (TID:0;TType:3;ICode: 2;Tag: $115;   Name:'SamplesPerPixel'        ),
   (TID:0;TType:4;ICode: 2;Tag: $116;   Name:'RowsPerStrip'           ),
   (TID:0;TType:4;ICode: 2;Tag: $117;   Name:'StripByteCounts'        ),
@@ -806,7 +822,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
   (TID:0;TType:2;ICode: 2;Tag: $003;   Name:'GPSLongitudeRef'        ),
   (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0;TType:0;ICode: 2;Tag: $005;   Name:'GPSAltitudeRef'         ;  Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
+  (TID:0;TType:0;ICode: 2;Tag: $005;   Name:'GPSAltitudeRef'         ; Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
 //  (TID:0;TType:0;ICode: 2;Tag: $006;   Name:'GPSAltitude'            ;   CallBack:GpsAltitude),
 //  (TID:0;TType:0;ICode: 2;Tag: $007;   Name:'GPSTimeStamp'           ;   CallBack:CvtTime),
   (TID:0;TType:2;ICode: 2;Tag: $008;   Name:'GPSSatellites'          ),
@@ -1018,7 +1034,30 @@ begin
       break;
     end;
 end;
+                                    (*
+function IndexOfCode(ACodeStr: String; ATag: TTagEntry; ATagType:integer=ExifTag): Integer;
+var
+  i:integer;
+  L: TStringList;
+begin
+  Result := -1;
+  L := TStringList.Create;
 
+  case ATagType of
+    ThumbTag,
+    ExifTag: for i := 0 to ExifTagCnt-1 do
+               if TagTable[i].Tag = idx then begin
+                 Result := TagTable[i].Code;
+                 break;
+               end;
+    GpsTag : for i := 0 to GPSCnt-1 do
+               if GPSTable[i].Tag = idx then begin
+                 Result := GPSTable[i].Code;
+                 break;
+               end;
+  end;
+end;
+                                      *)
 
 {------------------------------------------------------------------------------}
 {                        TBasicMetaDataWriter                                  }
@@ -2200,6 +2239,11 @@ begin
   inherited;
 end;
 
+function TImageInfo.GetTagByIndex(AIndex: Integer): TTagEntry;
+begin
+  Result := fiTagArray[AIndex];
+end;
+
 function TImageInfo.GetTagElement(TagID: integer): TTagEntry;
 begin
   Result := fITagArray[TagID]
@@ -2211,8 +2255,9 @@ begin
   fITagArray[TagID] := Value;
 end;
 
-function TImageInfo.GetTagByName(TagName:ansistring): TTagEntry;
-var i:integer;
+function TImageInfo.GetTagByName(TagName: String): TTagEntry;
+var
+  i:integer;
 begin
   i := LookupTag(TagName);
   if i >= 0 then
@@ -2221,8 +2266,9 @@ begin
     result := EmptyEntry;
 end;
 
-procedure TImageInfo.SetTagByName(TagName:ansistring; const Value: TTagEntry);
-var i:integer;
+procedure TImageInfo.SetTagByName(TagName: String; const Value: TTagEntry);
+var
+  i:integer;
 begin
   i := LookupTag(TagName);
   if i >= 0 then
@@ -2233,6 +2279,66 @@ begin
   end;
 end;
 
+function TImageInfo.GetTagValue(ATagName: String): Variant;
+var
+  tag: TTagEntry;
+  s: String;
+  r: TExifRational;
+begin
+  Result := Null;
+
+  tag := GetTagByName(ATagName);
+  if tag.Tag = 0 then
+    exit;
+
+  case tag.TType of
+    FMT_STRING:
+      begin
+       {$IFDEF FPC}
+        {$IFNDEF FPC3+}
+         s := AnsiToUTF8(tag.Raw);
+        {$ELSE}
+         s := tag.Raw;
+        {$ENDIF}
+       {$ELSE}
+         s := tag.Raw;
+       {$ENDIF}
+         while s[Length(s)] = #0 do
+           Delete(s, Length(s), 1);
+         Result := s;
+      end;
+    FMT_BYTE:
+      Result := PByte(@tag.Raw[1])^;
+    FMT_USHORT:
+      if MotorolaOrder then
+        Result := BEToN(PWord(@tag.Raw[1])^) else
+        Result := LEToN(PWord(@tag.Raw[1])^);
+    FMT_ULONG:
+      if MotorolaOrder then
+        Result := BEToN(PWord(@tag.Raw[1])^) else
+        Result := LEToN(PDWord(@tag.Raw[1])^);
+    FMT_URATIONAL,
+    FMT_SRATIONAL:
+      begin
+        r := PExifRational(@tag.Raw[1])^;
+        if MotorolaOrder then begin
+          r.Numerator := BEToN(r.Numerator);
+          r.Denominator := BEToN(r.Denominator);
+        end else begin
+          r.Numerator := LEToN(r.Numerator);
+          r.Denominator := LEtoN(r.Denominator);
+        end;
+        Result := r.Numerator / r.Denominator;
+      end;
+    FMT_BINARY:
+      if tag.Size = 1 then
+        Result := PByte(@tag.Raw[1])^
+      else
+        Result := '<binary>';
+  end;
+end;
+
+                            (*
 function TImageInfo.GetTagValueAsString(ATagName: String): String;
 var
   tag: TTagEntry;
@@ -2325,6 +2431,142 @@ begin
       raise Exception.Create('Data of tag "' + ATagName + '" cannot be accessed as Integer.');
   end;
 end;
+                 *)
+function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
+var
+  i: Integer;
+begin
+  if ATag.Code <> '' then
+    Result := FindTextIndexInCode(AValue, ATag.Code)
+  else
+  if TryStrToInt(AValue, i) then
+    Result := i
+  else
+    Result := -1;
+end;
+
+// WARNING: There are tags which consist of multiple values of the same type.
+// At the moment, there is no way to detect this case here. Writing them here
+// will cause malfunction of the EXIF segment and/or file.
+procedure TImageInfo.SetTagValue(ATagName: String; AValue: Variant);
+const
+  IGNORE_PARENT = $FFFF;
+var
+  P: PTagEntry;
+  tagDef: PTagEntry;
+  tagID: Word;
+  parentID: Word;
+  strValue: String;
+  intValue: Integer;
+  fracValue: TExifRational;
+begin
+  // Find the tag's ID
+  tagDef := FindExifTagByName(ATagName);
+  if tagDef = nil then begin
+    tagDef := FindGpsTagByName(ATagName);
+    if tagDef = nil then
+      raise Exception.CreateFmt('dExif is not prepared to write to tag "%s"', [ATagName]);
+  end;
+  tagID := tagDef.Tag;
+
+  // Delete this tag if the provided value is varNull or varEmpty
+  if VarIsNull(AValue) or VarIsEmpty(AValue) then begin
+    RemoveTag(tagID);
+    exit;
+  end;
+
+  // Check for out-of-range conditions
+  if not VarIsStr(AValue) then begin
+    intValue := VarAsType(AValue, vtInteger);
+    if ((tagDef.TType = FMT_BYTE)   and ((AValue < 0) or (AValue > 255))) or
+       ((tagDef.TType = FMT_USHORT) and ((AValue < 0) or (AValue > 65535))) or
+       ((tagDef.TType = FMT_ULONG)  and ((AValue < 0) or (AValue > 4294967295)))
+    then
+      raise Exception.CreateFmt('Out-of-range privided for tag "%s"', [ATagName]);
+  end;
+
+  // Find the pointer to the tag
+  P := GetTag(tagID, false, IGNORE_PARENT);
+  if P = nil then begin
+    // The tag does not yet exist --> create a new one.
+    // BUT: The TagTable does not show the ParentIDs...
+    // Until somebody updates this we put the new tag into the root directory
+    // (IFD0). Since this may not be allowed there's a risk that the EXIF in the
+    // modified file cannot be read correctly...
+    parentID := 0;
+    P := GetTag(tagID, true, parentID, tagDef.TType);
+  end;
+  if P = nil then
+    raise Exception.CreateFmt('Failure to create tag "%s"', [ATagName]);
+
+  // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
+  // is still in the endianness of the source!
+  case P^.TType of
+    FMT_STRING:
+      begin
+        strValue := VarToStr(AValue);
+        {$IFDEF FPC}
+        P^.Raw := UTF8ToAnsi(strValue) + #0;
+        {$ELSE}
+        P^.Raw := AnsiString(strValue) + #0;
+        {$ENDIF}
+        p^.Size := Length(p^.Raw);
+        P^.Data := P^.Raw;
+      end;
+    FMT_BYTE:
+      begin
+        intValue := EncodeTagValue(p^, VarToStr(AValue));
+        if (intValue = -1) and not (not TryStrToInt(VarToStr(AValue), intValue)) then
+          raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
+        Move(PByte(@intValue)^, p^.Raw[1], 1);
+        p^.Size := Length(p^.Raw);
+        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+      end;
+    FMT_USHORT:
+      begin
+        intValue := EncodeTagValue(p^, VarToStr(AValue));
+        if (intValue = -1) then
+          if (not TryStrToInt(VarToStr(AValue), intValue)) then
+            raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
+        SetLength(p^.Raw, 2);
+        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
+        Move(PWord(@intValue)^, p^.Raw[1], 2);
+        p^.Size := Length(p^.Raw);
+        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+      end;
+    FMT_ULONG:
+      begin
+        intValue := EncodeTagValue(p^, VarToStr(AValue));
+        if (intValue = -1) and not (not TryStrToInt(VarToStr(AValue), intValue)) then
+          raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
+        SetLength(p^.Raw, 4);
+        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
+        Move(PDWord(@intValue)^ , p^.Raw[1], 4);
+        p^.Size := Length(p^.Raw);
+        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+      end;
+    FMT_URATIONAL, FMT_SRATIONAL:
+      begin
+        SetLength(p^.Raw, 8);
+        fracvalue := DoubleToRational(AValue);
+        if MotorolaOrder then begin
+          fracvalue.Numerator := NToBE(fracValue.Numerator);
+          fracValue.Denominator := NToBE(fracValue.Denominator);
+        end else begin
+          fracValue.Numerator := NtoLE(fracValue.Numerator);
+          fracValue.Denominator := NtoLE(fracValue.Denominator);
+        end;
+        Move(fracValue, p^.Raw[1], 8);
+        p^.Size := Length(p^.Raw);
+        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+      end;
+  end;
+end;
+
+
+
+
+                    (*
 
 // WARNING: There are tags which consist of multiple values of the same type.
 // At the moment, there is no way to detect this case here. Writing them here
@@ -2463,6 +2705,7 @@ begin
   P^.Data := P^.Raw;
   P^.Size := Length(P^.Raw);
 end;
+                            *)
 
 procedure TImageInfo.RemoveTag(TagID:integer; parentID:word=0);
 var
@@ -2528,7 +2771,7 @@ end;
 
 function TImageInfo.GetArtist: String;
 begin
-  Result := GetTagValueAsString('Artist');
+  Result := GetTagValue('Artist');
 end;
 
 procedure TImageInfo.SetArtist(v: String);
@@ -2642,42 +2885,42 @@ end;
 
 function TImageInfo.GetImageDescription: String;
 begin
-  Result := GetTagValueAsString('ImageDescription');
+  Result := GetTagValue('ImageDescription');
 end;
 
 procedure TImageInfo.SetImageDescription(const AValue: String);
 begin
-  SetTagValueAsString('ImageDescription', AValue);
+  SetTagValue('ImageDescription', AValue);
 end;
 
 function TImageInfo.GetCameraMake: String;
 begin
-  Result := GetTagValueAsString('Make');
+  Result := GetTagValue('Make');
 end;
 
 procedure TImageInfo.SetCameraMake(const AValue: String);
 begin
-  SetTagValueAsString('Make', AValue);
+  SetTagValue('Make', AValue);
 end;
 
 function TImageInfo.GetCameraModel: String;
 begin
-  Result := GetTagValueAsString('Model');
+  Result := GetTagValue('Model');
 end;
 
 procedure TImageInfo.SetCameraModel(const AValue: String);
 begin
-  SetTagValueAsString('Model', AValue);
+  SetTagValue('Model', AValue);
 end;
 
 function TImageInfo.GetCopyright: String;
 begin
-  Result := GetTagValueAsString('Copyright');
+  Result := GetTagValue('Copyright');
 end;
 
 procedure TImageInfo.SetCopyright(const AValue: String);
 begin
-  SetTagValueAsString('Copyright', AValue);
+  SetTagValue('Copyright', AValue);
 end;
 
 function TImageInfo.IterateFoundTags(TagId: integer; var RetVal: TTagEntry): boolean;

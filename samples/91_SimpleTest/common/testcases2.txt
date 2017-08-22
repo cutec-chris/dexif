@@ -8,3 +8,4 @@ UserComment	Hübscher Kommentar!
 Make	ÄÖÜ camera make
 Model	äöü camera model
 Copyright	© wp
+Orientation	Mirror horizontal|2

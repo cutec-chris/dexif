@@ -11,7 +11,7 @@ uses
   Windows, Messages, jpeg,
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  Grids, StdCtrls, Buttons, ComCtrls, ImgList,
+  Grids, StdCtrls, Buttons, ComCtrls, ImgList, ExtCtrls, Variants,
   dGlobal, dExif;
 
 type
@@ -24,11 +24,18 @@ type
     BtnTest2: TSpeedButton;
     ImageList1: TImageList;
     ListView: TListView;
+    ExifListView: TListView;
+    Panel1: TPanel;
+    Splitter1: TSplitter;
+    ExifTabControl: TTabControl;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BtnTest1Click(Sender: TObject);
+    procedure ExifTabControlChange(Sender: TObject);
   private
     ImgData: TImgData;
+    OutFile: String;
+    procedure ExifToListview(AImgData: TImgData; AListView: TListView);
     function GetTagType(ATagName: String): Integer;
     function ReadTagValue(ATagName: String): String;
     procedure WriteTagValue(ATagName, ATagValue: String);
@@ -148,7 +155,7 @@ end;
 procedure TMainForm.BtnTest1Click(Sender: TObject);
 var
   testCases: TStringList;
-  i, j: Integer;
+  i, j, p: Integer;
   fn: String;
   s: String;
   testdata: TStringArray;
@@ -156,6 +163,7 @@ var
   tagName: String;
   currTagValue: String;
   newTagValue: String;
+  altTagValue: String;
   {$IFDEF FPC}
   stream: TMemorystream;
   {$ELSE}
@@ -187,7 +195,7 @@ begin
     // Read EXIF tags from image file
     ImgData.ProcessFile(EdTestFile.Text);
 
-    fn := 'test-image.jpg';   // File name of the modified test image
+    OutFile := 'test-image.jpg';   // File name of the modified test image
 
     j := 0;
     for i:=0 to testCases.Count-1 do begin
@@ -217,7 +225,7 @@ begin
     stream := TMemoryStream.Create;
     try
       stream.LoadFromFile(EdTestFile.Text);
-      ImgData.WriteEXIFJpeg(stream, fn);
+      ImgData.WriteEXIFJpeg(stream, OutFile);
     finally
       stream.Free;
     end;
@@ -225,14 +233,14 @@ begin
     jpeg := TJpegImage.Create;
     try
       jpeg.LoadFromFile(EdTestFile.Text);
-      ImgData.WriteEXIFJpeg(jpeg, fn);
+      ImgData.WriteEXIFJpeg(jpeg, OutFile);
     finally
       jpeg.Free;
     end;
     {$ENDIF}
 
     // read back
-    ImgData.ProcessFile(fn);
+    ImgData.ProcessFile(OutFile);
     j := 0;
     for i:=0 to testCases.Count-1 do begin
       if (testcases[i] = '') or (testcases[i][1] = ';') then
@@ -240,10 +248,16 @@ begin
       testdata := Split(testCases[i]);
       tagname := testdata[0];
       newTagValue := testdata[1];
+      p := pos('|', newTagValue);
+      if p > 0 then begin
+        altTagValue := copy(newTagValue, p+1, MaxInt);
+        newTagValue := copy(newTagValue, 1, p-1);
+      end else
+        altTagValue := '';
       currTagValue := ReadTagValue(tagname);
       listItem := ListView.Items[j];
       listItem.SubItems.Add(currTagValue);
-      if currTagValue = newTagValue then
+      if (currTagValue = newTagValue) or (currTagValue = altTagValue) then
         listItem.ImageIndex := IMGINDEX_SUCCESS
       else
         listItem.ImageIndex := IMGINDEX_FAIL;
@@ -251,6 +265,31 @@ begin
     end;
   finally
     testCases.Free;
+  end;
+
+  ExifTabControlChange(nil);
+end;
+
+procedure TMainForm.ExifToListview(AImgData: TImgData; AListView: TListView);
+var
+  i: Integer;
+  tag: TTagEntry;
+begin
+  AListview.Items.BeginUpdate;
+  try
+    AListview.Items.Clear;
+    if not AImgData.HasExif then
+      exit;
+    for i:=0 to AImgData.ExifObj.FITagCount do begin
+      tag := AImgData.ExifObj.TagByIndex[i];
+      with AListView.Items.Add do begin
+        Caption := tag.Desc;
+        SubItems.Add(tag.Data);
+      end;
+    end;
+    AListView.AlphaSort;
+  finally
+    AListview.Items.EndUpdate;
   end;
 end;
 
@@ -269,7 +308,7 @@ function TMainForm.ReadTagValue(ATagName: String): String;
 var
   dt: TDateTime;
   tt: Integer;
-  v: Double;
+  v: variant;
 begin
   if ATagName = 'Comment' then
     Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
@@ -296,32 +335,38 @@ begin
     Result := FormatDateTime(ISODateFormat, dt);
   end
   else begin
-    tt := GetTagType(ATagName);
-    if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then begin
-      v := ImgData.ExifObj.TagValueAsNumber[ATagName];
-      if v = -1 then
-        Result := ''
-      else
-        Result := IntToStr(round(v));
-    end else
-    if tt in [FMT_URATIONAL, FMT_SRATIONAL] then begin
-      v := ImgData.ExifObj.TagValueAsNumber[ATagName];
-      if IsNaN(v) then
-        Result := ''
-      else
-        Result := FloatToStr(v);
-    end else
-    if tt = FMT_STRING then
-      Result := ImgData.ExifObj.TagValueAsString[ATagName]
+    v := ImgData.ExifObj.TagValue[ATagName];
+    if VarIsNull(v) then
+      Result := ''
     else
-      raise Exception.Create('Tag type not supported.');
+      Result := VarToStr(v);
+  end;
+end;
+
+procedure TMainForm.ExifTabControlChange(Sender: TObject);
+var
+  imgData: TImgData;
+begin
+  imgData := TImgData.Create;
+  try
+    case ExifTabControl.TabIndex of
+      0: imgData.ProcessFile(EdTestFile.Text);
+      1: imgData.ProcessFile(OutFile);
+    end;
+    ExifToListView(imgData, ExifListView);
+  finally
+    imgData.Free;
   end;
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
 var
   tt: Integer;
+  p: Integer;
 begin
+  p := pos('|', ATagValue);
+  if p > 0 then
+    ATagValue := Copy(ATagValue, 1, p-1);
   if ATagName = 'Comment' then
     ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
   else if ATagName = 'Artist' then
@@ -341,20 +386,11 @@ begin
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
   else if ATagName = 'ExifImageWidth' then
-    ImgData.ExifObj.TagValueAsNumber[ATagname] := StrToInt(ATagValue)
+    ImgData.ExifObj.TagValue[ATagname] := ATagValue
   else if ATagName = 'ExifImageLength' then
-    ImgData.ExifObj.TagValueAsNumber[ATagname] := StrToInt(ATagValue)
-  else begin
-    tt := GetTagType(ATagName);
-    if tt = FMT_STRING then
-      ImgData.ExifObj.TagValueAsString[ATagName] := ATagValue
-    else if tt in [FMT_BYTE, FMT_USHORT, FMT_ULONG] then
-      ImgData.ExifObj.TagValueAsNumber[ATagName] := StrToInt(ATagValue)
-    else if tt in [FMT_URATIONAL, FMT_SRATIONAL] then
-      ImgData.ExifObj.tagValueAsNumber[ATagName] := StrToFloat(ATagValue)
-    else
-      raise Exception.Create('Tag type not supported');
-  end;
+    ImgData.ExifObj.TagValue[ATagname] := ATagValue
+  else
+    ImgData.ExifObj.TagValue[ATagName] := ATagValue;
 end;
 
 end.

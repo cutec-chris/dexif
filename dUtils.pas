@@ -46,6 +46,8 @@ function CvtTime(InStr: AnsiString): String;
 function FmtRational(ANum, ADenom: Integer): String;
 function DoubleToRational(AValue: Double): TExifRational;
 
+function FindTextIndexInCode(AText, ACode: String): Integer;
+
 function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
@@ -542,6 +544,49 @@ begin
   if expoTime <= 0.5 then
     Result := Result + Format(' (1/%d)',[round(1/expoTime)]);
 // corrected by M. Schwaiger - adding ".5" is senseless when using "round"!
+end;
+
+{ ACode combines, separated by a comme, a number and a texts (both separated by
+  a colon). Searches the specified text and returns the number before the colon}
+function FindTextIndexInCode(AText, ACode: String): Integer;
+var
+  i: Integer;
+  indexStr: String;
+  codeStr: String;
+  inIndex: Boolean;
+begin
+  Result := -1;
+  i := 1;
+  codeStr := '';
+  indexStr := '';
+  inIndex := true;
+  while (i <= Length(ACode)) do begin
+    if inIndex then begin
+      while (ACode[i] <> ':') do begin
+        indexStr := indexStr + ACode[i];
+        inc(i);
+      end;
+      if indexStr = codeStr then begin
+        Result := StrToInt(indexStr);
+        exit;
+      end;
+      inIndex := false;
+      codeStr := '';
+    end else begin
+      while (ACode[i] <> ',') or (i = Length(ACode)) do begin
+        codeStr := codeStr + ACode[i];
+        inc(i);
+      end;
+      if SameText(AText, codeStr) then begin
+        Result := StrToInt(indexStr);
+        exit;
+      end;
+      inIndex := true;
+      indexStr := '';
+      codeStr := '';
+    end;
+    inc(i);
+  end;
 end;
 
 function SSpeedCallBack(InStr: Ansistring): String;
