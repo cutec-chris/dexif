@@ -73,11 +73,15 @@ type
     procedure Reset;
     function HasData: boolean;
     function Clone(ASource: TIPTCdata): TIPTCdata;
-    function ParseIPTCStrings(buff: ansistring): TStringlist;
+    procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
+    function ParseIPTCStrings(buff: ansistring): TStringlist; overload;
+      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     procedure ParseIPTCArray; overload;
     procedure ParseIPTCArray(ABuffer: ansistring); overload;
     function IPTCArrayToBuffer:ansistring;
-    function IPTCArrayToXML:tstringlist;
+    procedure IPTCArrayToXML(AList: TStrings); overload;
+    function IPTCArrayToXML: TStringList; overload;
+      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
 
     function LookupTag(SearchStr: String): integer; virtual;
     Function LookupTagDefn(AName: String): integer;
@@ -91,7 +95,9 @@ type
     procedure SetTagByIdx(idx:integer; AValue:ansistring);
     function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
     function ReadFile(const AFileName: String): boolean; virtual;
-    function ReadFileStrings(const AFileName: String): TStringList;
+    procedure ReadFileStrings(const AFilename: String; AList: TStrings); overload;
+    function ReadFileStrings(const AFileName: String): TStringList; overload;
+      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     function AddTagToArray(ANewTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
@@ -296,11 +302,17 @@ begin
 end;
 
 function TIPTCdata.ParseIPTCStrings(buff: ansistring): TStringList;
+begin
+  Result := TStringList.Create;
+  ParseIPTCStrings(buff, Result);
+end;
+
+procedure TIPTCData.ParseIPTCStrings(buff: ansistring; AList: TStrings);
 var
   tmpItem: itag;
   start, i, j: Integer;
 begin
-  Result := TStringList.Create;
+  Assert(AList <> nil, 'TIPTCData.ParseIPTCStrings called with AList=nil');
   Buffer := buff;
   i := Pos('Photoshop 3.0', buff) + 13;
   for j := i to Length(Buffer) do       // Look for first field marker
@@ -311,7 +323,7 @@ begin
   begin
     tmpItem := ExtractTag(start);
     if tmpItem.Name <> '' then         // Empty fields are masked out
-      Result.Add(tmpItem.Desc + DexifDelim + tmpItem.Data);
+      AList.Add(tmpItem.Desc + DexifDelim + tmpItem.Data);
   end;
 end;
  
@@ -368,22 +380,28 @@ begin
   result := buff+ansichar($1C)+ansichar(code)+ansichar(tag)+sLen+Data;
 end;
 
-function TIPTCdata.IPTCArrayToXML: tstringlist;
+function TIPTCdata.IPTCArrayToXML: TStringList;
+begin
+  Result := TStringList.Create;
+  IPTCArrayToXML(Result);
+end;
+
+procedure TIPTCData.IPTCArrayToXML(AList: TStrings);
 var
   i: integer;
 begin
-  Result := TStringList.Create;
-  Result.add('   <ITPCdata>');
+  Assert(AList <> nil, 'TIPTCData.IPTCArrayToXML called with AList=nil.');
+  AList.Add('   <ITPCdata>');
   for i := 0 to Count-1 do
     with ITagArray[i] do
     begin
-      Result.add('   <'+name+'>');
-      if tag in [105,120] // headline and image caption
-        then Result.Add('      <![CDATA['+data+']]>')
-        else Result.Add('      '+data);
-      Result.add('   </'+name+'>');
+      AList.Add('   <' + name + '>');
+      if Tag in [105, 120] // headline and image caption
+        then AList.Add('      <![CDATA[' + Data + ']]>')
+        else AList.Add('      ' + Data);
+      AList.Add('   </' + Name + '>');
     end;
-  Result.add('   </ITPCdata>');
+  AList.Add('   </ITPCdata>');
 end;
  
 function SplitMultiTag(code, tag:integer; buff:ansistring):ansistring;
@@ -587,17 +605,23 @@ begin
   Reset;
   p.ProcessFile(AFileName);                  // Get data from file.
   if p.IPTCSegment <> nil then               // If IPTC segment detected
-  begin
     ParseIPTCArray(p.IPTCSegment^.Data);
 //    filename := FName;
-  end;
   Result := HasData();
 end;
  
 function TIPTCdata.ReadFileStrings(const AFileName: String): TStringList;
 begin
-  Result := ParseIPTCStrings(TImgData(Parent).IPTCSegment^.Data);
+  Result := TStringList.Create;
+  ReadFileStrings(AFilename, Result);
 end;
+
+procedure TIPTCData.ReadFileStrings(const AFileName: String; AList: TStrings);
+begin
+  Assert(AList <> nil, 'TIPTCData.ReadFileStrings called with AList=nil.');
+  ParseIPTCStrings(TImgData(Parent).IPTCSegment^.Data, AList);
+end;
+
 
 {$IFNDEF FPC}
 {$IFNDEF dExifNoJpeg}

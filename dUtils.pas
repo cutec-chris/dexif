@@ -560,15 +560,17 @@ var
   indexStr: String;
   codeStr: String;
   inIndex: Boolean;
+  len: INteger;
 begin
   Result := -1;
   i := 1;
   codeStr := '';
   indexStr := '';
   inIndex := true;
-  while (i <= Length(ACode)) do begin
+  len := Length(ACode);
+  while (i <= len) do begin
     if inIndex then begin
-      while (ACode[i] <> ':') do begin
+      while (i <= len) and (ACode[i] <> ':') do begin
         indexStr := indexStr + ACode[i];
         inc(i);
       end;
@@ -579,7 +581,7 @@ begin
       inIndex := false;
       codeStr := '';
     end else begin
-      while (ACode[i] <> ',') or (i = Length(ACode)) do begin
+      while (i <= len) and ((ACode[i] <> ',') or (i = Length(ACode))) do begin
         codeStr := codeStr + ACode[i];
         inc(i);
       end;

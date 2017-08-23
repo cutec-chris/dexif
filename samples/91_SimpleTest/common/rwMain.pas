@@ -37,6 +37,7 @@ type
   private
     ImgData: TImgData;
     OutFile: String;
+    procedure ExecTest(const AParamsFile: String);
     procedure ExifToListview(AImgData: TImgData; AListView: TListView);
     function GetTagType(ATagName: String): Integer;
     function ReadTagValue(ATagName: String): String;
@@ -156,10 +157,19 @@ begin
 end;
 
 procedure TMainForm.BtnTest1Click(Sender: TObject);
+begin
+  if Sender = BtnTest1 then
+    ExecTest(TESTCASES_DIR + 'testcases1.txt')
+  else if Sender = BtnTest2 then
+    ExecTest(TESTCASES_DIR + 'testcases2.txt')
+  else
+    raise Exception.Create('BtnTextClick: Unexpected Sender');
+end;
+
+procedure TMainForm.ExecTest(const AParamsFile: String);
 var
   testCases: TStringList;
   i, j: Integer;
-  fn: String;
   s: String;
   testdata: TStringArray;
   listitem: TListItem;
@@ -178,11 +188,7 @@ begin
   // Read test parameters
   testCases := TStringList.Create;
   try
-    if Sender = BtnTest1 then
-      fn := TESTCASES_DIR + 'testcases1.txt'
-    else
-      fn := TESTCASES_DIR + 'testcases2.txt';
-    testCases.LoadFromFile(fn);
+    testCases.LoadFromFile(AParamsFile);
 
     {$IFDEF FPC}
     // The testcases text files are encoded in ANSI for Delphi7 compatibility
@@ -232,14 +238,10 @@ begin
     end;
 
     // Write new tags to file
-    {$IFDEF FPC}
-    stream := TMemoryStream.Create;
-    try
-      stream.LoadFromFile(EdTestFile.Text);
-      ImgData.WriteEXIFJpeg(stream, OutFile);
-    finally
-      stream.Free;
-    end;
+//    {$IFDEF FPC}
+    ImgData.WriteEXIFJpeg(OutFile, false);
+    // Parameter false needed to avoid overwriting Exif's image size with the file values.
+    (*
     {$ELSE}
     jpeg := TJpegImage.Create;
     try
@@ -249,6 +251,7 @@ begin
       jpeg.Free;
     end;
     {$ENDIF}
+    *)
 
     // read back
     ImgData.ProcessFile(OutFile);

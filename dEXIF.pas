@@ -1,4 +1,4 @@
-Unit dEXIF;
+unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -139,9 +139,16 @@ type
     procedure SetTagValue(ATagName: String; AValue: variant);
 
     function GetTagValueAsString(ATagName: String): String;
+    procedure SetTagValueAsString(ATagName: String; AValue: String);
 
     function GetThumbTagByIndex(AIndex: Integer): TTagEntry;
     procedure SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
+
+    function GetHeight: Integer;
+    procedure Setheight(AValue: Integer);
+
+    function GetWidth: Integer;
+    procedure SetWidth(AValue: Integer);
 
     // misc
     function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
@@ -168,7 +175,7 @@ type
     MaxTag: integer;
     Parent: timgdata;
     ExifVersion : string[6];
-    Height, Width, HPosn, WPosn: integer;
+//    Height, Width, HPosn, WPosn: integer;
     FlashUsed: integer;
     BuildList: integer;
     MakerNote: ansistring;
@@ -194,7 +201,7 @@ type
                   spOffset:integer = 0);
 
     procedure AddMSTag(fname: String; ARawStr: ansistring; fType: word);
-    procedure AdjExifSize(nh,nw: longint);
+    procedure AdjExifSize(AHeight, AWidth: Integer);
 
     procedure ResetIterator;
     function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
@@ -220,7 +227,9 @@ type
     procedure RemoveThumbnail;
 
     // Collective output
-    function EXIFArrayToXML: TStringList;
+    procedure EXIFArrayToXML(AList: TStrings); overload;
+    function EXIFArrayToXML: TStringList; overload;
+      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     function ToShortString: String;   //  Summarizes in a single line
     function ToLongString(ALabelWidth: Integer = 15): String;
 
@@ -237,7 +246,7 @@ type
     property TagValue[ATagName: String]: Variant
         read GetTagValue write SetTagValue; default;
     property TagValueAsString[ATagName: String]: String
-        read GetTagValueAsString;
+        read GetTagValueAsString write SetTagValueAsString;
 
     property TagByID[ATagID: Word]: TTagEntry
         read GetTagByID write SetTagByID;
@@ -266,6 +275,10 @@ type
         read GetExifComment write SetExifComment;
     property ImageDescription: String
         read GetImageDescription write SetImageDescription;
+    property Height: Integer
+        read GetHeight write SetHeight;
+    property Width: Integer
+        read GetWidth write SetWidth;
 
     property ThumbTagByIndex[AIndex: Integer]: TTagEntry
         read GetThumbTagByIndex write SetThumbTagByIndex;
@@ -290,6 +303,7 @@ type
     FFileSize: Int64;
     FHeight: Integer;
     FWidth: Integer;
+    FErrStr: String;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetResolutionUnit: String;
@@ -298,8 +312,13 @@ type
     function GetComment: String;
     procedure SetComment(v: String);
     procedure SetFileInfo(const AFilename: string);
+    procedure SetHeight(AValue: Integer);
+    procedure SetWidth(AValue: Integer);
 
   protected
+    ExifSegment: pSection;
+    procedure MergeToStream(AInputStream, AOutputStream: TStream;
+      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
     function ReadJpegSections(AStream: TStream):boolean;
     function ReadTiffSections(AStream: TStream):boolean;
     function SaveExif(jfs2: TStream; EnabledMeta: Byte=$FF;
@@ -310,11 +329,9 @@ type
     TiffFmt: boolean;
     BuildList: integer;
     SectionCnt : integer;
-    ExifSegment: pSection;
     IPTCSegment: pSection;
     CommentSegment: pSection;
     HeaderSegment : pSection;
-    ErrStr: ansistring;
     ExifObj: TImageInfo;
     IptcObj: TIPTCData;
     TraceLevel: integer;
@@ -323,12 +340,11 @@ type
     procedure MakeIPTCSegment(buff:ansistring);
     procedure MakeCommentSegment(buff:ansistring);
     function GetCommentStr:ansistring;
-    Function GetCommentSegment:ansistring;
+    function GetCommentSegment:ansistring;
     procedure ClearSections;
     procedure ClearEXIF;
     procedure ClearIPTC;
     procedure ClearComments;
-    procedure CreateIPTCObj;
 
     function ReadIPTCStrings(const AFilename: String): TStringList;
     function ReadJpegFile(const AFileName: string): boolean;
@@ -340,6 +356,10 @@ type
     constructor Create(buildCode: integer = GenAll);
     destructor Destroy; override;
 
+    // Manually create empty EXIF and IPTC structures
+    function CreateExifObj: TImageInfo;
+    procedure CreateIPTCObj;
+
     // Reading
     function ReadExifInfo(AFilename: String): boolean;
 
@@ -349,10 +369,11 @@ type
 
     // Thumbnail
     function ExtractThumbnailBuffer: TBytes;
-    {$IFDEF FPC}
-    function ExtractThumbnailJpeg(AStream: TStream): Boolean;
-    {$ELSE}
-    function ExtractThumbnailJpeg: TJpegImage;
+//    {$IFDEF FPC}
+    function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
+//    {$ELSE}
+    {$IFNDEF dExifNoJpeg}
+    function ExtractThumbnailJpeg: TJpegImage; overload;
     {$ENDIF}
 
     // Status
@@ -361,31 +382,30 @@ type
     function HasIPTC: boolean;
     function HasComment: boolean;
     function HasThumbnail: boolean;
+    property ErrStr: String read FErrStr;
 
     // Collective output
-    function MetaDataToXML: TStringList;
+    procedure MetaDataToXML(AList: TStrings); overload;
+    function MetaDataToXML: TStringList; overload;
+      deprecated {$IFDEF FPC} 'Use procedure instead' {$ENDIF};
 
     // Writing
-   {$IFDEF FPC}
     procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
     procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
-    procedure WriteEXIFJpeg(AFileName: String); overload;
-   {$ENDIF}
+    procedure WriteEXIFJpeg(AFileName: String; AdjSize: Boolean = true); overload;
    {$IFNDEF dExifNoJpeg}
     procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
       AdjSize: boolean = true);  overload;
     procedure WriteEXIFJpeg(fname: String); overload;
     procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
    {$ENDIF}
-    procedure MergeToStream(AInputStream, AOutputStream: TStream;
-      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
 
     // Basic properties
     property FileName: String read FFilename;
     property FileDatetime: TDateTime read FFileDateTime;
     property FileSize: Int64 read FFileSize;
-    property Height: Integer read GetHeight;
-    property Width: Integer read GetWidth;
+    property Height: Integer read GetHeight write SetHeight;
+    property Width: Integer read GetWidth write SetWidth;
     property XResolution: Integer read GetXResolution;
     property YResolution: Integer read GetYResolution;
     property ResolutionUnit: String read GetResolutionUnit;
@@ -1558,11 +1578,8 @@ begin
   if AFmtStr <> '' then
   begin
     if Pos('%s', AFmtStr) > 0 then
-    begin
-      Result := Format(AFmtStr, [Result]);
-    end
-    else
-    begin
+      Result := Format(AFmtStr, [Result])
+    else begin
       dv := GetNumber(ABuffer, AFmt);
       Result := Format(AFmtStr, [dv]);
     end;
@@ -1763,7 +1780,7 @@ begin
       Format('Directory: Start, entries = %d, %d', [DirStart, numDirEntries]);
   if (DirStart + 2 + numDirEntries*12) > (DirStart + OffsetBase + ExifLength) then
   begin
-    Parent.ErrStr := 'Illegally sized directory';
+    Parent.FErrStr := 'Illegally sized directory';
     exit;
   end;
 
@@ -1890,6 +1907,7 @@ begin
         end;
       TAG_FLASH:
         FlashUsed := round(getNumber(rawStr, tagFormat));
+      (*
       TAG_IMAGELENGTH,
       TAG_EXIF_IMAGELENGTH:
         begin
@@ -1902,6 +1920,7 @@ begin
           WPosn := DirEntry + 8;
           Width := round(GetNumber(rawStr, tagFormat));
         end;
+        *)
       TAG_THUMBTYPE:
         if ATagType = ThumbTag then
           ThumbType := round(GetNumber(RawStr, tagFormat));
@@ -1939,10 +1958,10 @@ begin
     try
       newEntry.Name := fname;
       newEntry.Desc := fname;
-      NewEntry.Data := ARawStr;
-      NewEntry.Raw  := ARawStr;
-      NewEntry.Size := Length(ARawStr);
-      NewEntry.PRaw := 0;
+      newEntry.Data := ARawStr;
+      newEntry.Raw  := ARawStr;
+      newEntry.Size := Length(ARawStr);
+      newEntry.PRaw := 0;
       NewEntry.TType:= fType;
       newEntry.parentID := 0;
       newEntry.id := 0;
@@ -2108,7 +2127,7 @@ begin
 
   except
      on E: Exception do
-       Parent.ErrStr := 'Error detected: ' + E.Message;
+       Parent.FErrStr := 'Error detected: ' + E.Message;
   end;
 
    SetDataBuff(parent.DataBuff);
@@ -2183,9 +2202,11 @@ end;
 
 function TImageInfo.ToShortString: String;
 begin
+  {
   if parent.ExifSegment = nil then
     Result := ''
   else
+  }
   if Parent.ErrStr <> '<none>' then
     Result := ExtractFileName(parent.Filename) + ' Exif Error: '+Parent.ErrStr
   else
@@ -2196,16 +2217,10 @@ begin
               siif(odd(FlashUsed),' Flash', '');
 end;
 
-procedure TImageInfo.AdjExifSize(nh, nw: Longint);
+procedure TImageInfo.AdjExifSize(AHeight, AWidth: Integer);
 begin
-  if (Height <= 0) or (Width <= 0) then
-    exit;
-
-  if (nw <> Width) or (nh <> Height) then
-  begin
-    parent.WriteInt32(parent.ExifSegment^.data,nh,hPosn);
-    parent.WriteInt32(parent.ExifSegment^.data,nw,wPosn);
-  end;
+  TagValue['ImageWidth'] :=  AWidth;
+  TagValue['ImageLength'] := AHeight;
 end;
 
 
@@ -2359,14 +2374,64 @@ end;
 
 function TImageInfo.GetTagValueAsString(ATagName: String): String;
 var
+  tag: TTagEntry;
+  s: String;
+begin
+  Result := '';
+
+  tag := GetTagByName(ATagName);
+  if tag.Tag = 0 then
+    exit;
+
+  if tag.TType = FMT_STRING then
+  begin
+   {$IFDEF FPC}
+    {$IFNDEF FPC3+}
+    s := AnsiToUTF8(tag.Raw);
+    {$ELSE}
+    s := tag.Raw;
+    {$ENDIF}
+   {$ELSE}
+    s := tag.Raw;
+   {$ENDIF}
+    while s[Length(s)] = #0 do
+      Delete(s, Length(s), 1);
+    Result := s;
+  end
+  else
+    Result := FormatNumber(tag.Raw, tag.TType, tag.FormatS, tag.Code);
+end;
+
+procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
+var
   v: Variant;
 begin
-  v := GetTagValue(ATagName);
-  if VarIsNull(v) then
-    Result := ''
-  else
-    Result := VarToStr(v);
+  v := AValue;
+  SetTagValue(ATagName, v);
 end;
+(*
+var
+  P: PTagEntry;
+  tagDef: PTagEntry;
+  tagID: Word;
+  parentID: Word;
+  strValue: String;
+  intValue: Integer;
+  fracValue: TExifRational;
+begin
+  // Find the tag's ID
+  tagDef := FindExifTagByName(ATagName);
+  if tagDef = nil then begin
+    tagDef := FindGpsTagByName(ATagName);
+    if tagDef = nil then
+      raise Exception.CreateFmt('Tag "%s" not found.', [ATagName]);
+  end;
+  tagID := tagDef.Tag;
+  if
+
+  *)
+
+
 
 function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
 var
@@ -2528,6 +2593,43 @@ begin
   fiThumbArray[AIndex] := AValue;
 end;
 
+function TImageInfo.GetWidth: Integer;
+var
+  v: Variant;
+begin
+  Result := 0;
+  v := TagValue['ImageWidth'];
+  if VarIsNull(v) then begin
+    v := TagValue['ExifImageWidth'];
+    if VarIsNull(v) then
+      exit;
+  end;
+  Result := v;
+end;
+
+procedure TImageInfo.SetWidth(AValue: Integer);
+begin
+  TagValue['ImageWidth'] := AValue;
+end;
+
+function TImageInfo.GetHeight: Integer;
+var
+  v: Variant;
+begin
+  Result := 0;
+  v := TagValue['ImageLength'];
+  if VarIsNull(v) then begin
+    v := TagValue['ExifImageLength'];
+    if VarIsNull(v) then
+      exit;
+  end;
+  Result := v;
+end;
+
+procedure TImageInfo.SetHeight(AValue: Integer);
+begin
+  TagValue['ImageLength'] := AValue;
+end;
 
 procedure TImageInfo.RemoveTag(TagID: Word; ParentID: Word=0);
 var
@@ -2907,21 +3009,27 @@ end;
 
 // WARNING: The calling procedure must destroy the stringlist created here.
 function TImageInfo.EXIFArrayToXML: TStringList;
+begin
+  Result := TStringList.Create;
+  EXIFArrayToXML(Result);
+end;
+
+procedure TImageInfo.EXIFArrayToXML(AList: TStrings);
 var
   i: integer;
 begin
-  Result := TStringList.Create;
-  Result.Add('   <EXIFdata>');
+  Assert(AList <> nil, 'TImageInfo.ExifArrayToXML called with AList=nil.');
+  AList.Add('   <EXIFdata>');
   for i := 0 to fiTagCount-1 do
     with fITagArray[i] do
     begin
-      Result.Add('   <' + Name + '>');
-      if Tag in [105, 120] // headline and image caption
-        then Result.Add('      <![CDATA[' + Data + ']]>')
-        else Result.Add('      ' + Data);
-      Result.Add('   </' + Name + '>');
+      AList.Add('   <' + Name + '>');
+      if Tag in [105, 120] // headline and image caption         // wp: ?? 105 = $0069, 120 = $0078 -- there are no such tags!
+        then AList.Add('      <![CDATA[' + Data + ']]>')
+        else AList.Add('      ' + Data);
+      AList.Add('   </' + Name + '>');
     end;
-  Result.Add('   </EXIFdata>');
+  AList.Add('   </EXIFdata>');
 end;
 
 
@@ -3121,7 +3229,7 @@ begin
   end;
 end;
 
-{$IFDEF FPC}
+//{$IFDEF FPC}
 function TImgData.ExtractThumbnailJpeg(AStream: TStream): Boolean;
 var
   b: TBytes;
@@ -3142,6 +3250,8 @@ end;
 
 { A jpeg image has been written to a stream. The current EXIF data will be
   merged with this stream and saved to the specified file.
+  If AdjSize is true TImgData's image width/height are replaced by the
+  values found in the stream.
   NOTE: It is in the responsibility of the programmer to make sure that
   AJpeg is a stream of a valid jpeg image. }
 procedure TImgData.WriteEXIFJpeg(AJpeg: TStream; AFileName: String;
@@ -3157,7 +3267,7 @@ begin
     AJpeg.Position := 0;               // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
       JPGImageSize(AJpeg, w, h);
-      EXIFobj.AdjExifSize(w, h);       // Adjust EXIF to image size
+      EXIFobj.AdjExifSize(h, w);       // Adjust EXIF to image size
       AJpeg.Position := 0;             // Rewind stream
     end;
     //  SaveExif(jfs);
@@ -3198,19 +3308,19 @@ begin
 end;
 
 { Write the current EXIF data into the existing jpeg file named AFileName }
-procedure TImgData.WriteEXIFJpeg(AFilename: String);
+procedure TImgData.WriteEXIFJpeg(AFilename: String; AdjSize: Boolean = true);
 var
   imgStream: TMemoryStream;
 begin
   imgStream := TMemoryStream.Create;
   try
     imgStream.LoadFromFile(AFileName);
-    WriteEXIFJpeg(imgstream, AFileName, false);
+    WriteEXIFJpeg(imgstream, AFileName, AdjSize);
   finally
     imgStream.Free;
   end;
 end;
-{$ENDIF}
+//{$ENDIF}
 
 {$IFNDEF dExifNoJpeg}
 function TImgData.ExtractThumbnailJpeg: TJpegImage;
@@ -3435,7 +3545,7 @@ begin
 
   SetFileInfo(AFileName);
   try
-    ErrStr := 'Not an EXIF file';
+    FErrStr := 'Not an EXIF file';
     ext := LowerCase(ExtractFileExt(filename));
     if (ext = '.jpg') or (ext = '.jpeg') or (ext = '.jpe') then
     begin
@@ -3449,12 +3559,12 @@ begin
     end else
       exit;
 
-    ErrStr := '<none>';
+    FErrStr := '<none>';
 //    msAvailable := ReadMSData(Imageinfo);
 //    msName := gblUCMaker;
     Result := true;
   except
-    ErrStr := 'Illegal EXIF construction';
+    FErrStr := 'Illegal EXIF construction';
   end;
 end;
 
@@ -3473,10 +3583,33 @@ begin
   FindClose(sr);
 end;
 
+procedure TImgData.SetHeight(AValue: Integer);
+begin
+  CreateExifObj;
+  ExifObj.TagValue['ImageLength'] := AValue;
+  FHeight := AValue;
+end;
+
+procedure TImgData.SetWidth(AValue: Integer);
+begin
+  CreateExifObj;
+  ExifObj.TagValue['ImageWidth'] := AValue;
+  FWidth := AValue;
+end;
+
 procedure TImgData.CreateIPTCObj;
 begin
   MakeIPTCSegment('');
   IPTCobj := TIPTCdata.Create(self);
+end;
+
+function TImgData.CreateExifObj: TImageInfo;
+begin
+  if not HasExif then begin
+    ExifObj := TImageInfo.Create(self);
+    FErrStr := '<none>';
+  end;
+  Result := ExifObj;
 end;
 
 //--------------------------------------------------------------------------
@@ -3674,7 +3807,7 @@ begin
   hdr := copy(EXIFsegment^.Data, 3, Length(validExifHeader));
   if hdr <> validExifHeader then
   begin
-    errStr := 'Incorrect Exif header';
+    FErrStr := 'Incorrect Exif header';
     exit;
   end;
   if copy(EXIFsegment^.Data, 9, 2) = 'II' then
@@ -3683,7 +3816,7 @@ begin
     MotorolaOrder := true
   else
   begin
-    errStr := 'Invalid Exif alignment marker';
+    FErrStr := 'Invalid Exif alignment marker';
     exit;
   end;
   ExifObj.TraceStr := '';
@@ -3708,7 +3841,7 @@ begin
   FFilename := '';
   FFileDateTime := 0;
   FFileSize := 0;
-  ErrStr := '';
+  FErrStr := '';
   FreeAndNil(ExifObj);
   FreeAndNil(IptcObj);
   MotorolaOrder := false;
@@ -3774,8 +3907,7 @@ end;
 
 function TImgData.HasMetaData: boolean;
 begin
-  result := (EXIFsegment <> nil) or (CommentSegment <> nil) or
-            (IPTCsegment <> nil);
+  result := HasExif or HasComment or HasIPTC;
 end;
 
 function TImgData.HasEXIF: boolean;
@@ -3815,47 +3947,38 @@ end;
 
 // WARNING: The calling procedure must destroy the StringList created here!
 function TImgData.MetaDataToXML: TStringList;
+begin
+  Result := TStringList.Create;
+  MetaDataToXML(Result);
+end;
+
+procedure TImgData.MetaDataToXML(AList: TStrings);
 var
-  buff2: TStringList;
   sr: TSearchRec;
 begin
-  if FindFirst(Filename, faAnyFile, sr) <> 0 then
+  Assert(AList <> nil, 'MetaDataToXML called with AList=nil.');
+
+  if FindFirst(Filename,faAnyFile, sr) <> 0 then
   begin
     FindClose(sr);
-    Result := nil;
     exit;
   end;
 
-  Result := TStringList.Create;
-  Result.Add('<dImageFile>');
-  Result.Add('   <OSdata>');
-  Result.Add('      <name> ' + ExtractFileName(sr.Name) + ' </name>');
-  Result.Add('      <path> ' + ExtractFilePath(Filename) + ' </path>');
-  Result.Add('      <size> ' + IntToStr(sr.Size) + ' </size>');
-  Result.Add('      <date> ' + DateToStr(FileDateToDateTime(sr.time)) + ' </date>');
-  Result.Add('   </OSdata>');
+  AList.Add('<dImageFile>');
+  AList.Add('   <OSdata>');
+  AList.Add('      <name>' + ExtractFileName(sr.Name) + '</name>');
+  AList.Add('      <path>' + ExtractFilePath(Filename) + '</path>');
+  AList.Add('      <size>' + IntToStr(sr.Size) + '</size>');
+  AList.Add('      <date>' + DateToStr(FileDateToDateTime(sr.time)) + '</date>');
+  AList.Add('   </OSdata>');
 
   if ExifObj <> nil then
-  begin
-    buff2 := ExifObj.EXIFArrayToXML;
-    if buff2 <> nil then
-    begin
-      Result.AddStrings(buff2);
-      buff2.Free;
-    end;
-  end;
+    ExifObj.EXIFArrayToXML(AList);
 
   if IptcObj <> nil then
-  begin
-    buff2 := IptcObj.IPTCArrayToXML;
-    if buff2 <> nil then
-    begin
-      Result.AddStrings(buff2);
-      buff2.Free;
-    end;
-  end;
+    IptcObj.IPTCArrayToXML(AList);
 
-  Result.add('</dImageFile>');
+  AList.Add('</dImageFile>');
 end;
 
 {$IFDEF dEXIFpredeclare}

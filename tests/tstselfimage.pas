@@ -21,13 +21,14 @@ type
   published
     procedure CheckForNoPicture;
     procedure CreateImageJpg;
-    procedure CreateImageJpgWithEXIF;
+    procedure CreateImageJpgWithEmptyEXIF;
+    procedure CreateImageJpgWithMiniEXIF;
   end;
 
 implementation
 uses
-  Graphics
-  , dExif;
+  Graphics, Variants,
+  dExif;
 
 procedure TTstSelfImage.SetUp;
 begin
@@ -45,7 +46,7 @@ begin
   CheckFalse(FileExists(co_DUTPicSelfImage01),'Internal error: The file is prsent (should not !!!!)');
 end;
 
-procedure CreateGeenJpg(aFilename: String);
+procedure CreateGreenJpg(aFilename: String);
 const
   co_BMPWidht = 400;
   co_BMPHeigh = 250;
@@ -74,7 +75,7 @@ procedure TTstSelfImage.CreateImageJpg;
 var
   DUT: TImgData;
 begin
-  CreateGeenJpg(co_DUTPicSelfImage01);
+  CreateGreenJpg(co_DUTPicSelfImage01);
   CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
   DUT:= TImgData.Create();
   // Lazarus gerated Files have no EXIF information
@@ -82,14 +83,14 @@ begin
   DUT.Free;
 end;
 
-procedure TTstSelfImage.CreateImageJpgWithEXIF;
+procedure TTstSelfImage.CreateImageJpgWithEmptyEXIF;
 var
   DUT: TImgData;
 begin
-  CreateGeenJpg(co_DUTPicSelfImage01);
+  CreateGreenJpg(co_DUTPicSelfImage01);
   CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
   DUT:= TImgData.Create(GenAll);
-  // Lazarus gerated Files have no EXIF information
+  // Lazarus generated files have no EXIF information
   CheckFalse(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData can process file, but shouldnt:'+co_DUTPicSelfImage01);
   CheckFalse(DUT.HasEXIF,'TImgData should not have EXIF'+co_DUTPicSelfImage01);
   if not DUT.HasEXIF then begin
@@ -100,9 +101,57 @@ begin
     DUT:= TImgData.Create(GenAll);
     CheckTrue(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
     CheckTrue(DUT.HasEXIF,'TImgData should have EXIF now '+co_DUTPicSelfImage01);
+    CheckTrue(DUT.ExifObj.TagCount=0,'TImgData of '+co_DUTPicSelfImage01+' should not have any tags');
   end;
   DUT.Free;
 end;
+
+procedure TTstSelfImage.CreateImageJpgWithMiniEXIF;
+const
+  EXPECTED_ARTIST = 'dExif';
+  EXPECTED_WIDTH = 1000;
+  EXPECTED_EXPOSURETIME = 1/100;
+var
+  DUT: TImgData;
+  s: String;
+  v: variant;
+begin
+  CreateGreenJpg(co_DUTPicSelfImage01);
+  CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
+
+  DUT:= TImgData.Create(GenAll);
+  with DUT.CreateEXIFObj do begin
+    TagValue['Artist'] := EXPECTED_ARTIST;
+    s := TagValueAsString['Artist'];
+    CheckEquals(EXPECTED_ARTIST, s, 'Tag "Artist" mismatch');
+
+    TagValue['ImageWidth'] := EXPECTED_WIDTH;
+    v := TagValue['ImageWidth'];
+    CheckFalse(VarIsNull(v), 'Tag "ImageWidth" not found.');
+    CheckEquals(EXPECTED_WIDTH, Integer(v), 'Tag "ImageWidth" mismatch');
+
+    TagValue['ExposureTime'] := EXPECTED_EXPOSURETIME;
+    v := TagValue['ExposureTime'];
+    CheckFalse(VarIsNull(v), 'Tag "ExposureTime" not found.');
+    CheckEquals(EXPECTED_EXPOSURETIME, Double(v), 'Tag "ExposureTime" mismatch');
+  end;
+  DUT.WriteEXIFJpeg(co_DUTPicSelfImage01, false); // false required to avoid overwriting the image width tag with the file value
+  FreeAndNil(DUT);
+
+  DUT := TImgData.Create;
+  CheckTrue(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
+  CheckTrue(DUT.HasEXIF,'TImgData should have EXIF now '+co_DUTPicSelfImage01);
+  s := DUT.ExifObj.TagValueAsString['Artist'];
+  CheckEquals(EXPECTED_ARTIST, s, 'Tag "Artist" mismatch');
+  v := DUT.ExifObj.TagValue['ImageWidth'];
+  CheckFalse(VarIsNull(v), 'Tag "ImageWidth" not found.');
+  CheckEquals(EXPECTED_WIDTH, Integer(v), 'Tag "ImageWidth" mismatch');
+  v := DUT.ExifObj.TagValue['ExposureTime'];
+  CheckFalse(VarIsNull(v), 'Tag "ExposureTime" not found.');
+  CheckEquals(EXPECTED_EXPOSURETIME, Double(v), 'Tag "ExposureTime" mismatch');
+  DUT.Free;
+end;
+
 
 initialization
   RegisterTest(TTstSelfImage);
