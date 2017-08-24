@@ -31,7 +31,6 @@ type
 
   TForm1 = class(TForm)
     btnLoad: TButton;
-    btnCreateThumb: TButton;
     pdlg: TOpenPictureDialog;
     Memo1: TMemo;
     StatusBar1: TStatusBar;
@@ -48,6 +47,7 @@ type
     btnSaveThumb: TButton;
     btnLoadThumb: TButton;
     btnRemoveThumb: TButton;
+    btnCreateThumb: TButton;
     procedure btnAboutClick(Sender: TObject);
     procedure btnCmtClick(Sender: TObject);
     procedure btnCreateThumbClick(Sender: TObject);
@@ -172,6 +172,7 @@ var
 begin
   if not ImgData.HasExif then
     exit;
+
   ImgData.ExifObj.CreateThumbnail;
 
   fn := ChangeFileExt(ImgData.FileName, '') + '_new_thumbnail.jpg';
@@ -181,8 +182,7 @@ begin
     ms.LoadfromFile(ImgData.FileName);
     // and merge with current exif data (i.e. new thumbnail image)
     ImgData.WriteEXIFJpeg(ms, fn);
-    ms.Position := 0;
-    Image1.Picture.LoadfromStream(ms);
+    Image1.Picture.LoadFromFile(fn);
     btnRemoveThumb.Enabled := true;
     btnSaveThumb.Enabled := true;
     btnCreateThumb.Enabled := true;
@@ -269,7 +269,7 @@ begin
       Memo('No Thumbnail');
 
 
-    Image1.Visible := ImgData.HasThumbnail;
+//    Image1.Visible := ImgData.HasThumbnail;
     btnSaveThumb.Enabled := ImgData.HasThumbnail;
     btnRemoveThumb.Enabled := ImgData.HasThumbnail;
     btnLoadThumb.Enabled := ImgData.HasExif;
@@ -371,7 +371,8 @@ begin
     ms.LoadfromFile(ImgData.FileName);
     // and merge with current exif data (i.e. new thumbnail image)
     ImgData.WriteEXIFJpeg(ms, fn);
-    Image1.Hide;
+    CleanupPreview;
+//    Image1.Hide;
     btnRemoveThumb.Enabled := false;
     btnSaveThumb.Enabled := false;
   finally
@@ -405,7 +406,7 @@ begin
       try
         jpeg.LoadFromStream(ms);
         Image1.Picture.Assign(jpeg);
-        Image1.Show;
+//        Image1.Show;
       finally
         jpeg.Free;
       end;

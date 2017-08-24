@@ -25,6 +25,10 @@ unit msData;
 //
 //--------------------------------------------------------------------------
 
+{$IFDEF FPC}
+ {$MODE Delphi}
+{$ENDIF}
+
 {$I dExif.inc}
 
 interface

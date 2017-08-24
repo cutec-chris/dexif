@@ -4,11 +4,16 @@ unit dUtils;
  {$mode ObjFPC}{$H+}
 {$ENDIF}
 
+{$I dExif.inc}
+
 interface
 
 uses
   Classes, SysUtils,
-  {$IFDEF FPC}fgl,{$ENDIF}
+  {$IFDEF FPC}fgl,
+  {$ELSE}
+  {$IFNDEF dExifNoJpeg}Graphics, jpeg,{$ENDIF}
+  {$ENDIF}
   dGlobal;
 
 {$IFDEF FPC}
@@ -484,9 +489,12 @@ begin
   writer.Free;
 end;
 {$ELSE}
+{$IFNDEF dExifNoJpeg}
 var
   jpeg: TJPegImage;
   bmp: TBitmap;
+  w, h: Integer;
+  f: Double;
 begin
   jpeg := TJpegImage.Create;
   try
@@ -498,7 +506,7 @@ begin
     bmp.PixelFormat := pf24bit;
     bmp.Width := round(w * f);
     bmp.Height := round(h * f);
-    bmp.Canvas.StretchDrw(Rect(0, 0, bmp.Width, bmp.Height), jpeg);
+    bmp.Canvas.StretchDraw(Rect(0, 0, bmp.Width, bmp.Height), jpeg);
     jpeg.Free;
     jpeg := TJpegImage.Create;
     jpeg.Assign(bmp);
@@ -508,6 +516,11 @@ begin
     bmp.Free;
   end;
 end;
+{$ELSE}
+begin
+  // CreateThumb will not work in delphi if dExifNoJpeg is defined.
+end;
+{$ENDIF}
 {$ENDIF}
 
 

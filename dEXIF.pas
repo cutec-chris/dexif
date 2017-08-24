@@ -24,6 +24,10 @@ unit dEXIF;
 //  17.05.2002 MS Corrections/additions M. Schwaiger
 //--------------------------------------------------------------------------
 
+{$IFDEF FPC}
+ {$MODE Delphi}
+{$ENDIF}
+
 {$I dExif.inc}
 
 interface
@@ -2221,8 +2225,8 @@ begin
     exit;
 
   // Write the image from the stream into the thumbnail buffer
-  SetLength(FThumbnailBuffer, AStream.Size);
   n := AStream.Size;
+  SetLength(FThumbnailBuffer, n);
   if AStream.Read(FThumbnailBuffer[0], n) < n then
     raise Exception.Create('Could not read thumbnail image.');
 
@@ -2231,7 +2235,7 @@ begin
   SetThumbTagValue('ImageWidth', w);
   SetThumbTagValue('ImageLength', h);
   SetThumbTagValue('JPEGInterchangeFormat', 0);  // to be replaced by the offset to the thumbnail
-  SetThumbTagValue('JPEGInterchangeFormatLength', Length(FThumbnailbuffer));
+  SetThumbTagValue('JPEGInterchangeFormatLength', n);
 end;
 
 procedure TImageInfo.RemoveThumbnail;
@@ -2561,7 +2565,7 @@ begin
         if (intValue = -1) and not (not TryStrToInt(VarToStr(AValue), intValue)) then
           raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
         SetLength(p^.Raw, 4);
-        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
+        if MotorolaOrder then intValue := NToBE(DWord(intValue)) else intValue := NToLE(DWord(intValue));
         Move(PDWord(@intValue)^ , p^.Raw[1], 4);
         p^.Size := Length(p^.Raw);
         P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
@@ -3975,6 +3979,7 @@ function TImgData.ReadJpegFile(const AFileName: string): boolean;
 var
   fs: TFilestream;
 begin
+  ClearSections;
   TiffFmt := false;  // default mode
   fs := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
   try
@@ -4039,6 +4044,7 @@ var
   fs: TFileStream;
 begin
   TiffFmt := true;
+  ClearSections;
   fs := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
   try
     try

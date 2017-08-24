@@ -18,11 +18,13 @@ unit dIPTC;
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
 
-{$I dExif.inc}
-
 {$IFDEF FPC}
+ {$MODE Delphi}
  {$WARN 3177 off : Some fields coming after "$1" were not initialized}
 {$ENDIF}
+
+{$I dExif.inc}
+
 
 interface
 
