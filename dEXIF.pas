@@ -38,9 +38,11 @@ uses
   dGlobal, dUtils, dTags, dIPTC;
 
 const
+  {
   ExifTag = 1;  // default tag Types
   GpsTag = 2;
   ThumbTag = 4;
+  }
 
   GenericEXIF = 0;
   CustomEXIF = 1;
@@ -92,13 +94,22 @@ type
   private
     FITagArray: array of TTagEntry;
     FITagCount: integer;
+
     FIThumbArray: array of TTagEntry;
     FIThumbCount: integer;
+
+    FThumbStart: integer;
+    FThumbLength: integer;
+    FThumbType: integer;
+
+    FThumbnailBuffer: TBytes;
+    FThumbnailStartOffset: Integer;
+    FThumbnailSize: Integer;
 
     iterator: integer;
     iterThumb: integer;
 
-    // Getter / setter
+      // Getter / setter
     function GetDateTimeOriginal: TDateTime;
     procedure SetDateTimeOriginal(const AValue: TDateTime);
 
@@ -126,34 +137,39 @@ type
     function GetCopyright: String;
     procedure SetCopyright(const AValue: String);
 
-    function GetTagByID(ATagID: Word): TTagEntry;
-    procedure SetTagByID(ATagID: Word; const AValue: TTagEntry);
-
-    function GetTagByIndex(AIndex: Integer): TTagEntry;
-    procedure SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
-
-    function GetTagByName(ATagName: String): TTagEntry;
-    procedure SetTagByName(ATagName: String; const AValue: TTagEntry);
-
-    function GetTagValue(ATagName: String): variant;
-    procedure SetTagValue(ATagName: String; AValue: variant);
-
-    function GetTagValueAsString(ATagName: String): String;
-    procedure SetTagValueAsString(ATagName: String; AValue: String);
-
-    function GetThumbTagByIndex(AIndex: Integer): TTagEntry;
-    procedure SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
-
     function GetHeight: Integer;
     procedure Setheight(AValue: Integer);
 
     function GetWidth: Integer;
     procedure SetWidth(AValue: Integer);
 
+    function GetTagByID(ATagID: Word): TTagEntry;
+    procedure SetTagByID(ATagID: Word; const AValue: TTagEntry);
+    function GetTagByIndex(AIndex: Integer): TTagEntry;
+    procedure SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
+    function GetTagByName(ATagName: String): TTagEntry;
+    procedure SetTagByName(ATagName: String; const AValue: TTagEntry);
+    function GetTagValue(ATagName: String): variant;
+    procedure SetTagValue(ATagName: String; AValue: variant);
+    function GetTagValueAsString(ATagName: String): String;
+    procedure SetTagValueAsString(ATagName: String; AValue: String);
+
+    function GetThumbTagByID(ATagID: Word): TTagEntry;
+    procedure SetThumbTagByID(ATagID: Word; const AValue: TTagEntry);
+    function GetThumbTagByIndex(AIndex: Integer): TTagEntry;
+    procedure SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
+    function GetThumbTagByName(ATagName: String): TTagEntry;
+    procedure SetThumbTagByName(ATagName: String; const AValue: TTagEntry);
+    function GetThumbTagValue(ATagName: String): Variant;
+    procedure SetThumbTagValue(ATagName: String; AValue: variant);
+
+    function InternalGetTagValue(ATag: TTagEntry): Variant;
+    procedure InternalSetTagValue(ATagName: String; AValue: Variant; ATagTypes: TTagTypes);
+
     // misc
-    function GetTag(ATagID: Word; AForceCreate: Boolean=false; AParentID: word=0;
-      ATagType: word=65535{; AForceID: Boolean=false}): PTagEntry;
-    procedure RemoveTag(TagID: Word; parentID: word=0);
+    function GetTagPtr(ATagTypes: TTagTypes; ATagID: Word; AForceCreate: Boolean=false;
+      AParentID: word=0; ATagType: word=65535): PTagEntry;
+    procedure RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: word=0);
 
     procedure ClearDirStack;
     procedure PushDirStack(dirStart, offsetbase: Integer);
@@ -165,11 +181,12 @@ type
     function CreateExifBuf(parentID: word=0; offsetBase: integer=0): AnsiString;
     function CvtInt(ABuffer: Ansistring): Longint;
     function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
+    procedure ExtractThumbnail;
     function FormatNumber(ABuffer: ansistring; AFmt: integer; AFmtStr: string;
       ADecodeStr: string=''): String;
     function GetNumber(ABuffer: ansistring; AFmt: integer): double;
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: LongInt;
-      ATagType: integer=ExifTag; APrefix: string=''; AParentID: word=0);
+      ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word=0);
 
   public
     MaxTag: integer;
@@ -181,10 +198,7 @@ type
     MakerNote: ansistring;
     TiffFmt: boolean;
 // Add support for thumbnail
-    ThumbTrace:ansistring;
-    ThumbStart: integer;
-    ThumbLength: integer;
-    ThumbType: integer;
+    ThumbTrace: ansistring;
     MaxThumbTag: integer;
 //  Added the following elements to make the structure a little more code-friendly
     TraceLevel: integer;
@@ -225,6 +239,9 @@ type
     function HasThumbnail: boolean;
     procedure ProcessThumbnail;
     procedure RemoveThumbnail;
+    procedure LoadThumbnailFromStream(AStream: TStream);
+    procedure SaveThumbnailToStream(AStream: TStream);
+    property ThumbnailBuffer: TBytes read FThumbnailBuffer;
 
     // Collective output
     procedure EXIFArrayToXML(AList: TStrings); overload;
@@ -317,8 +334,10 @@ type
 
   protected
     ExifSegment: pSection;
+    function ExtractThumbnailBuffer: TBytes;
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
+    procedure ProcessEXIF;
     function ReadJpegSections(AStream: TStream):boolean;
     function ReadTiffSections(AStream: TStream):boolean;
     function SaveExif(jfs2: TStream; EnabledMeta: Byte=$FF;
@@ -346,10 +365,6 @@ type
     procedure ClearIPTC;
     procedure ClearComments;
 
-    function ReadIPTCStrings(const AFilename: String): TStringList;
-    function ReadJpegFile(const AFileName: string): boolean;
-    function ReadTiffFile(const AFileName: string): boolean;
-
     function FillInIptc: boolean;
 
   public
@@ -358,20 +373,23 @@ type
 
     // Manually create empty EXIF and IPTC structures
     function CreateExifObj: TImageInfo;
-    procedure CreateIPTCObj;
+    function CreateIPTCObj: TIPTCData;
 
     // Reading
+    function ReadJpegFile(const AFileName: string): boolean;
+    function ReadTiffFile(const AFileName: string): boolean;
+
     function ReadExifInfo(AFilename: String): boolean;
 
+    procedure ReadIPTCStrings(const AFilename: String; AList: TStrings); overload;
+    function ReadIPTCStrings(const AFilename: String): TStringList; overload;
+      deprecated {$IFDEF FPC} 'Use procedure instead' {$ENDIF};
+
     // Processing
-    procedure ProcessEXIF;
     function ProcessFile(const AFileName: String): boolean;
 
     // Thumbnail
-    function ExtractThumbnailBuffer: TBytes;
-//    {$IFDEF FPC}
     function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
-//    {$ELSE}
     {$IFNDEF dExifNoJpeg}
     function ExtractThumbnailJpeg: TJpegImage; overload;
     {$ENDIF}
@@ -396,7 +414,7 @@ type
    {$IFNDEF dExifNoJpeg}
     procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
       AdjSize: boolean = true);  overload;
-    procedure WriteEXIFJpeg(fname: String); overload;
+//    procedure WriteEXIFJpeg(fname: String); overload;
     procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
    {$ENDIF}
 
@@ -499,11 +517,11 @@ var
   ImgData:timgData;
 {$ENDIF}
 
-function FindExifTag(ATag: Word): PTagEntry;
-function FindGPSTag(ATag: Word): PTagEntry;
+function FindExifTagDefByID(ATagID: Word): PTagEntry;
+function FindGPSTagDefByID(ATagID: Word): PTagEntry;
 
-function FindExifTagByName(ATagName: String): PTagEntry;
-function FindGPSTagByName(ATagName: String): PTagEntry;
+function FindExifTagDefByName(ATagName: String): PTagEntry;
+function FindGPSTagDefByName(ATagName: String): PTagEntry;
 
 function LookupType(idx: integer): String;
 
@@ -651,7 +669,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $15B;   Name:'JPEGTables'             ),
   (TID:0;TType:0;ICode: 2;Tag: $15F;   Name:'OPIProxy'               ),
   (TID:0;TType:0;ICode: 2;Tag: $200;   Name:'JPEGProc'               ),
-  (TID:0;TType:4;ICode: 2;Tag: $201;   Name:'JPEGInterchangeFormat'  ),
+  (TID:0;TType:4;ICode: 2;Tag: $201;   Name:'JPEGInterchangeFormat'  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),
   (TID:0;TType:4;ICode: 2;Tag: $202;   Name:'JPEGInterchangeFormatLength'),
   (TID:0;TType:0;ICode: 2;Tag: $203;   Name:'JPEGRestartInterval'    ),         {70}
   (TID:0;TType:0;ICode: 2;Tag: $205;   Name:'JPEGLosslessPredictors' ),
@@ -880,7 +898,7 @@ var
 
   tagInit : boolean = false;
 
-function FindExifTagByName(ATagName: String): PTagEntry;
+function FindExifTagDefByName(ATagName: String): PTagEntry;
 var
   i: Integer;
 begin
@@ -892,19 +910,19 @@ begin
   Result := nil;
 end;
 
-function FindExifTag(ATag: word): PTagEntry;
+function FindExifTagDefByID(ATagID: word): PTagEntry;
 var
   i: Integer;
 begin
   for i:=0 to High(TagTable) do begin
     Result := @TagTable[i];
-    if Result^.Tag = ATag then
+    if Result^.Tag = ATagID then
       exit;
   end;
   Result := nil;
 end;
 
-function FindGpsTagByName(ATagName: String): PTagEntry;
+function FindGpsTagDefByName(ATagName: String): PTagEntry;
 var
   i: Integer;
 begin
@@ -916,13 +934,13 @@ begin
   Result := nil;
 end;
 
-function FindGpsTag(ATag: word): PTagEntry;
+function FindGpsTagDefByID(ATagID: word): PTagEntry;
 var
   i: Integer;
 begin
   for i:=0 to High(GpsTable) do begin
     Result := @GpsTable[i];
-    if Result^.Tag = ATag then
+    if Result^.Tag = ATagID then
       exit;
   end;
   Result := nil;
@@ -991,77 +1009,94 @@ begin
     end;
 end;
 
-function LookupTagByID(idx: integer; ATagType:integer = ExifTag): integer;
+function LookupTagDefByID(idx: integer; ATagType: TTagType = ttExif): integer;
 var
   i:integer;
 begin
   Result := -1;
   case ATagType of
-    ThumbTag,
-    ExifTag: for i := 0 to ExifTagCnt-1 do
-               if TagTable[i].Tag = idx then begin
-                 Result := i;
-                 break;
-               end;
-    GpsTag : for i := 0 to GPSCnt-1 do
-               if GPSTable[i].Tag = idx then begin
-                 Result := i;
-                 break;
-               end;
+    ttExif, ttThumb:
+      for i := 0 to ExifTagCnt-1 do
+        if TagTable[i].Tag = idx then begin
+          Result := i;
+          break;
+        end;
+    ttGps:
+      for i := 0 to GPSCnt-1 do
+        if GPSTable[i].Tag = idx then begin
+          Result := i;
+          break;
+        end;
   end;
 end;
 
-function FetchTagByID(idx: integer; ATagType:integer=ExifTag): TTagEntry;
+function FetchTagDefByID(idx: integer; ATagType: TTagType = ttExif): TTagEntry;
 var
   i: integer;
 begin
   Result := TagTable[ExifTagCnt-1];
   case ATagType of
-    ThumbTag,
-    ExifTag: for i := 0 to ExifTagCnt-1 do
-               if TagTable[i].Tag = idx then begin
-                 result := TagTable[i];
-                 break;
-               end;
-    GpsTag : for i := 0 to GPSCnt-1 do
-               if GPSTable[i].Tag = idx then begin
-                 result := GPSTable[i];
-                 break;
-               end;
+    ttExif, ttThumb:
+      for i := 0 to ExifTagCnt-1 do
+        if TagTable[i].Tag = idx then begin
+          result := TagTable[i];
+          break;
+        end;
+    ttGps:
+      for i := 0 to GPSCnt-1 do
+        if GPSTable[i].Tag = idx then begin
+          result := GPSTable[i];
+          break;
+        end;
   end;
 end;
 
-function LookupCode(idx: integer; ATagType:integer=ExifTag): String; overload;
+function LookupCode(ATagID: Word; ATagType: TTagType=ttExif): String; overload;
 var
   i:integer;
 begin
   Result := '';
   case ATagType of
-    ThumbTag,
-    ExifTag: for i := 0 to ExifTagCnt-1 do
-               if TagTable[i].Tag = idx then begin
-                 Result := TagTable[i].Code;
-                 break;
-               end;
-    GpsTag : for i := 0 to GPSCnt-1 do
-               if GPSTable[i].Tag = idx then begin
-                 Result := GPSTable[i].Code;
-                 break;
-               end;
+    ttExif, ttThumb:
+      for i := 0 to ExifTagCnt-1 do
+        if TagTable[i].Tag = ATagID then begin
+          Result := TagTable[i].Code;
+          break;
+        end;
+    ttGps:
+      for i := 0 to GPSCnt-1 do
+        if GPSTable[i].Tag = ATagID then begin
+          Result := GPSTable[i].Code;
+          break;
+        end;
   end;
 end;
 
-function LookupCode(idx: integer; TagTbl: array of TTagEntry): String; overload;
+function LookupCode(ATagID: Word; TagTbl: array of TTagEntry): String; overload;
 var
   i: integer;
 begin
   Result := '';
   for i := 0 to High(TagTbl) do
-    if TagTbl[i].Tag = idx then begin
+    if TagTbl[i].Tag = ATagID then begin
       Result := TagTbl[i].Code;
       break;
     end;
 end;
+
+function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
+var
+  i: Integer;
+begin
+  if ATag.Code <> '' then
+    Result := FindTextIndexInCode(AValue, ATag.Code)
+  else
+  if TryStrToInt(AValue, i) then
+    Result := i
+  else
+    Result := -1;
+end;
+
 
 
 {------------------------------------------------------------------------------}
@@ -1400,12 +1435,12 @@ procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
+  p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
-    RemoveTag(TAG_DATETIME_ORIGINAL, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_ORIGINAL, p^.ID);
     exit;
   end;
-  p := GetTag(TAG_DATETIME_ORIGINAL, true, p^.ID, FMT_STRING);
+  p := GetTagPtr([ttExif], TAG_DATETIME_ORIGINAL, true, p^.ID, FMT_STRING);
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
@@ -1425,12 +1460,12 @@ procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
+  p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
-    RemoveTag(TAG_DATETIME_DIGITIZED, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_DIGITIZED, p^.ID);
     exit;
   end;
-  p := GetTag(TAG_DATETIME_DIGITIZED, true, p^.ID, FMT_STRING);
+  p := GetTagPtr([ttExif], TAG_DATETIME_DIGITIZED, true, p^.ID, FMT_STRING);
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
@@ -1450,9 +1485,9 @@ procedure TImageInfo.SetDateTimeModified(const AValue: TDateTime);
 var
   p: PTagEntry;
 begin
-  p := GetTag(TAG_DATETIME_MODIFY, true, 0, FMT_STRING);
+  p := GetTagPtr([ttExif], TAG_DATETIME_MODIFY, true, 0, FMT_STRING);
   if AValue = 0 then begin
-    RemoveTag(TAG_DATETIME_MODIFY, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_MODIFY, p^.ID);
     exit;
   end;
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
@@ -1761,7 +1796,7 @@ end;
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
 procedure  TImageInfo.ProcessExifDir(DirStart, OffsetBase, ExifLength: longint;
-  ATagType: integer = ExifTag; APrefix: string=''; AParentID: word = 0);
+  ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word = 0);
 var
   byteCount: integer;
   tag, tagFormat, tagComponents: integer;
@@ -1790,11 +1825,11 @@ begin
     Format('%d,%d,%d,%d+%s', [DirStart, numDirEntries,OffsetBase,ExifLength, parent.ErrStr]);
   }
 
-  if (ATagType = ExifTag) and (ThumbStart = 0) and not TiffFmt then
+  if (ATagType = ttExif) and (FThumbStart = 0) and not TiffFmt then
   begin
     DirEntry := DirStart + 2 + 12*numDirEntries;
-    ThumbStart := Get32u(DirEntry);
-    ThumbLength := OffsetBase + ExifLength - ThumbStart;
+    FThumbStart := Get32u(DirEntry);
+    FThumbLength := OffsetBase + ExifLength - FThumbStart;
   end;
 
   for de := 0 to numDirEntries-1 do
@@ -1820,7 +1855,7 @@ begin
 
     if BuildList in [GenString, GenAll] then
     begin
-      lookUpEntry := FetchTagByID(tag, ATagType);
+      lookUpEntry := FetchTagDefByID(tag, ATagType);
 
       with lookUpEntry do
       begin
@@ -1859,7 +1894,7 @@ begin
           siif(ExifTrace > 0, ' [size: ' + IntToStr(byteCount) + ']', '') +
           siif(ExifTrace > 0, ' [start: ' + IntToStr(valuePtr) + ']', '');
 
-      if ATagType = ThumbTag then
+      if ATagType = ttThumb then
         Thumbtrace := ThumbTrace + tmpTR
       else
         TraceStr := TraceStr + tmpTR;
@@ -1878,7 +1913,7 @@ begin
             if not TestDirStack(subDirStart, OffsetBase) then begin
               tagID := tag; //IDCnt;
 //               IDCnt := IDCnt + 1;
-              ProcessExifDir(subdirStart, OffsetBase, ExifLength, ExifTag, '', tagID);
+              ProcessExifDir(subdirStart, OffsetBase, ExifLength, ttExif, '', tagID);
             end;
           except
           end;
@@ -1890,7 +1925,7 @@ begin
             if not TestDirStack(subDirStart, OffsetBase) then begin
               tagID := tag; //idCnt;
 //               inc(idCnt);
-              ProcessExifDir(subdirStart, OffsetBase, ExifLength, GpsTag, '', tagID);
+              ProcessExifDir(subdirStart, OffsetBase, ExifLength, ttGps, '', tagID);
             end;
           except
           end;
@@ -1921,9 +1956,13 @@ begin
           Width := round(GetNumber(rawStr, tagFormat));
         end;
         *)
-      TAG_THUMBTYPE:
-        if ATagType = ThumbTag then
-          ThumbType := round(GetNumber(RawStr, tagFormat));
+      TAG_THUMBSTARTOFFSET:
+        FThumbnailStartOffset := Get32u(ValuePtr);
+      TAG_THUMBSIZE:
+        FThumbnailSize := Get32u(ValuePtr);
+      TAG_COMPRESSION:
+        if ATagType = ttThumb then
+          FThumbType := round(GetNumber(RawStr, tagFormat));
     end;
 
     if BuildList in [GenList,GenAll] then
@@ -1937,7 +1976,7 @@ begin
         NewEntry.TType := tagFormat;
         NewEntry.ParentID := AParentID;
         NewEntry.id := tagID;
-        if ATagType = ThumbTag then
+        if ATagType = ttThumb then
           AddTagToThumbArray(newEntry)
         else
           AddTagToArray(newEntry);
@@ -1949,53 +1988,6 @@ begin
   end;
 end;
 
-Procedure TImageInfo.AddMSTag(fname: String; ARawStr: ansistring; fType: word);
-var
-  newEntry: TTagEntry;
-begin
-  if BuildList in [GenList,GenAll] then
-  begin
-    try
-      newEntry.Name := fname;
-      newEntry.Desc := fname;
-      newEntry.Data := ARawStr;
-      newEntry.Raw  := ARawStr;
-      newEntry.Size := Length(ARawStr);
-      newEntry.PRaw := 0;
-      NewEntry.TType:= fType;
-      newEntry.parentID := 0;
-      newEntry.id := 0;
-      newEntry.TID  := 1; // MsSpecific
-      AddTagToArray(newEntry);
-    except
-      // if we're here: unknown tag.
-      // item is recorded in trace string
-    end;
-  end;
-end;
-
-Procedure TImageInfo.ProcessThumbnail;
-var
-  start: integer;
-begin
-  start := ThumbStart+9;
-  ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail', 1);
-end;
-
-Procedure TImageInfo.RemoveThumbnail;
-var
-  newSize: integer;
-begin
-  newSize := ThumbStart - 6;
-  with parent do
-  begin
-    SetLength(ExifSegment^.data, newSize);
-    ExifSegment^.size := newSize;
-    // size calculations should really be moved to save routine
-    ExifSegment^.data[1] := ansichar(newSize div 256);
-    ExifSegment^.data[2] := ansichar(newSize mod 256);
-  end;
-end;
 
 procedure TImageInfo.ProcessHWSpecific(MakerBuff: ansistring;
   TagTbl: array of TTagEntry; DirStart: Longint; AMakerOffset: Longint;
@@ -2115,7 +2107,7 @@ begin
           NewEntry.Raw   := rawStr;
           NewEntry.TType := tagFormat;
           NewEntry.TID   := 1; // MsSpecific
-          
+
           AddTagToArray(NewEntry);
         except
           // if we're here: unknown tag.
@@ -2131,6 +2123,127 @@ begin
   end;
 
    SetDataBuff(parent.DataBuff);
+end;
+
+procedure TImageInfo.AddMSTag(fname: String; ARawStr: ansistring; fType: word);
+var
+  newEntry: TTagEntry;
+begin
+  if BuildList in [GenList,GenAll] then
+  begin
+    try
+      newEntry.Name := fname;
+      newEntry.Desc := fname;
+      newEntry.Data := ARawStr;
+      newEntry.Raw  := ARawStr;
+      newEntry.Size := Length(ARawStr);
+      newEntry.PRaw := 0;
+      NewEntry.TType:= fType;
+      newEntry.parentID := 0;
+      newEntry.id := 0;
+      newEntry.TID  := 1; // MsSpecific
+      AddTagToArray(newEntry);
+    except
+      // if we're here: unknown tag.
+      // item is recorded in trace string
+    end;
+  end;
+end;
+
+function TImageInfo.HasThumbnail: boolean;
+begin
+  Result := Length(FThumbnailBuffer) > 0;
+  {
+  // 19 is minimum valid starting position
+  result := (FThumbStart > 21) and (FThumbLength > 256);
+  }
+end;
+
+(*
+Procedure TImageInfo.ProcessThumbnail;
+var
+start: integer;
+begin
+start := ThumbStart+9;
+ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail', 1);
+end;                   *)
+
+procedure TImageInfo.ProcessThumbnail;
+var
+  start: Integer;
+begin
+  FiThumbCount := 0;
+  start := FThumbStart + 9;
+  ProcessExifDir(start, 9, FThumbLength - 12, ttThumb, 'Thumbnail', 1);
+  ExtractThumbnail;
+end;
+
+procedure TImageInfo.ExtractThumbnail;
+begin
+  if FThumbnailStartOffset > 0 then begin
+    SetLength(FThumbnailBuffer, FThumbnailSize);
+    Move(Parent.ExifSegment^.Data[FThumbnailStartOffset + 9], FThumbnailBuffer[0], FThumbnailSize);
+  end else
+    FThumbnailBuffer := nil;
+end;
+
+Procedure TImageInfo.RemoveThumbnail;
+var
+  newSize: integer;
+begin
+  SetLength(FThumbnailBuffer, 0);
+  fiThumbCount := 0;
+
+  if FThumbStart > 0 then begin
+    newSize := FThumbStart - 6;
+    with parent do
+    begin
+      SetLength(ExifSegment^.Data, newSize);
+      ExifSegment^.Size := newSize;
+      // size calculations should really be moved to save routine
+      ExifSegment^.data[1] := ansichar(newSize div 256);
+      ExifSegment^.data[2] := ansichar(newSize mod 256);
+    end;
+
+    FThumbStart := 0;
+  end;
+end;
+
+procedure TImageInfo.LoadThumbnailFromStream(AStream: TStream);
+var
+  n: Integer;
+  w, h: Integer;
+begin
+  RemoveThumbnail;
+
+  // Check whether the image is a jpeg, and extract size of the thrumbnail image
+  if not JPGImageSize(AStream, w, h) then
+    exit;
+
+  // Write the image from the stream into the thumbnail buffer
+  SetLength(FThumbnailBuffer, AStream.Size);
+  n := AStream.Size;
+  if AStream.Read(FThumbnailBuffer[0], n) < n then
+    raise Exception.Create('Could not read thumbnail image.');
+
+  // Make sure that the IFD1 tags for the thumbnail are correct
+  SetThumbTagValue('Compression', 6);     // 6 = JPEG - this was checked above.
+  SetThumbTagValue('ImageWidth', w);
+  SetThumbTagValue('ImageLength', h);
+  SetThumbTagValue('JPEGInterchangeFormat', 0);  // to be replaced by the offset to the thumbnail
+  SetThumbTagValue('JPEGInterchangeFormatLength', Length(FThumbnailbuffer));
+end;
+
+procedure TImageInfo.SaveThumbnailToStream(AStream: TStream);
+var
+  n: Int64;
+begin
+  if HasThumbnail then
+  begin
+    n := Length(FThumbnailBuffer);
+    if  AStream.Write(FThumbnailBuffer[0], n) <> n then
+      raise Exception.Create('Cannot write Thumbnail image to stream.');
+  end;
 end;
 
 function TImageInfo.ToLongString(ALabelWidth: Integer = 15): String;
@@ -2242,108 +2355,45 @@ begin
   inherited;
 end;
 
-function TImageInfo.GetTagByID(ATagID: Word): TTagEntry;
+function TImageInfo.InternalGetTagValue(ATag: TTagEntry): Variant;
 var
-  i: Integer;
-begin
-  for i:= 0 to fiTagCount - 1 do
-    if fiTagArray[i].Tag = ATagID then begin
-      Result := fiTagArray[i];
-      exit;
-    end;
-  Result := EmptyEntry;
-end;
-
-procedure TImageInfo.SetTagByID(ATagID: Word; const AValue: TTagEntry);
-var
-  i: Integer;
-begin
-  for i:=0 to fiTagCount-1 do
-    if fITagArray[i].Tag = ATagID then begin
-      fITagArray[i] := AValue;
-      exit;
-    end;
-end;
-
-
-function TImageInfo.GetTagByIndex(AIndex: Integer): TTagEntry;
-begin
-  Result := fiTagArray[AIndex];
-end;
-
-procedure TImageInfo.SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
-begin
-  FITagArray[AIndex] := AValue;
-end;
-
-
-function TImageInfo.GetTagByName(ATagName: String): TTagEntry;
-var
-  i: integer;
-begin
-  i := LookupTag(ATagName);
-  if i >= 0 then
-    Result := fITagArray[i]
-  else
-    Result := EmptyEntry;
-end;
-
-procedure TImageInfo.SetTagByName(ATagName: String; const AValue: TTagEntry);
-var
-  i: integer;
-begin
-  i := LookupTag(ATagName);
-  if i >= 0 then
-    fITagArray[i] := AValue
-  else
-  begin
-    AddTagToArray(AValue);
-  end;
-end;
-
-
-function TImageInfo.GetTagValue(ATagName: String): Variant;
-var
-  tag: TTagEntry;
   s: String;
   r: TExifRational;
 begin
   Result := Null;
-
-  tag := GetTagByName(ATagName);
-  if tag.Tag = 0 then
+  if ATag.Tag = 0 then
     exit;
 
-  case tag.TType of
+  case ATag.TType of
     FMT_STRING:
       begin
        {$IFDEF FPC}
         {$IFNDEF FPC3+}
-         s := AnsiToUTF8(tag.Raw);
+         s := AnsiToUTF8(ATag.Raw);
         {$ELSE}
-         s := tag.Raw;
+         s := ATag.Raw;
         {$ENDIF}
        {$ELSE}
-         s := tag.Raw;
+         s := ATag.Raw;
        {$ENDIF}
          while s[Length(s)] = #0 do
            Delete(s, Length(s), 1);
          Result := s;
       end;
     FMT_BYTE:
-      Result := PByte(@tag.Raw[1])^;
+      Result := PByte(@ATag.Raw[1])^;
     FMT_USHORT:
       if MotorolaOrder then
-        Result := BEToN(PWord(@tag.Raw[1])^) else
-        Result := LEToN(PWord(@tag.Raw[1])^);
+        Result := BEToN(PWord(@ATag.Raw[1])^) else
+        Result := LEToN(PWord(@ATag.Raw[1])^);
     FMT_ULONG:
       if MotorolaOrder then
-        Result := BEToN(PWord(@tag.Raw[1])^) else
-        Result := LEToN(PDWord(@tag.Raw[1])^);
+        Result := BEToN(PWord(@ATag.Raw[1])^) else
+        Result := LEToN(PDWord(@ATag.Raw[1])^);
     FMT_URATIONAL,
     FMT_SRATIONAL:
       begin
-        r := PExifRational(@tag.Raw[1])^;
+        r := PExifRational(@ATag.Raw[1])^;
         if MotorolaOrder then begin
           r.Numerator := BEToN(DWord(r.Numerator));       // Type cast needed for D7
           r.Denominator := BEToN(DWord(r.Denominator));
@@ -2351,105 +2401,32 @@ begin
           r.Numerator := LEToN(DWord(r.Numerator));
           r.Denominator := LEtoN(DWord(r.Denominator));
         end;
-        if tag.TType = FMT_SRATIONAL then begin
-          r.Numerator := Int32(r.Numerator);
-          r.Denominator := Int32(r.Denominator);
+        if ATag.TType = FMT_SRATIONAL then begin
+          r.Numerator := LongInt(r.Numerator);
+          r.Denominator := LongInt(r.Denominator);
         end;
         Result := r.Numerator / r.Denominator;
       end;
     FMT_BINARY:
-      if tag.Size = 1 then
-        Result := PByte(@tag.Raw[1])^
+      if ATag.Size = 1 then
+        Result := PByte(@ATag.Raw[1])^
       else
         Result := '<binary>';
   end;
 
   // Correction for some special cases
-  case tag.Tag of
+  case ATag.Tag of
     TAG_SHUTTERSPEED:
       // Is stored as -log2 of exposure time
       Result := power(2.0, -Result);
   end;
 end;
 
-function TImageInfo.GetTagValueAsString(ATagName: String): String;
-var
-  tag: TTagEntry;
-  s: String;
-begin
-  Result := '';
-
-  tag := GetTagByName(ATagName);
-  if tag.Tag = 0 then
-    exit;
-
-  if tag.TType = FMT_STRING then
-  begin
-   {$IFDEF FPC}
-    {$IFNDEF FPC3+}
-    s := AnsiToUTF8(tag.Raw);
-    {$ELSE}
-    s := tag.Raw;
-    {$ENDIF}
-   {$ELSE}
-    s := tag.Raw;
-   {$ENDIF}
-    while s[Length(s)] = #0 do
-      Delete(s, Length(s), 1);
-    Result := s;
-  end
-  else
-    Result := FormatNumber(tag.Raw, tag.TType, tag.FormatS, tag.Code);
-end;
-
-procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
-var
-  v: Variant;
-begin
-  v := AValue;
-  SetTagValue(ATagName, v);
-end;
-(*
-var
-  P: PTagEntry;
-  tagDef: PTagEntry;
-  tagID: Word;
-  parentID: Word;
-  strValue: String;
-  intValue: Integer;
-  fracValue: TExifRational;
-begin
-  // Find the tag's ID
-  tagDef := FindExifTagByName(ATagName);
-  if tagDef = nil then begin
-    tagDef := FindGpsTagByName(ATagName);
-    if tagDef = nil then
-      raise Exception.CreateFmt('Tag "%s" not found.', [ATagName]);
-  end;
-  tagID := tagDef.Tag;
-  if
-
-  *)
-
-
-
-function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
-var
-  i: Integer;
-begin
-  if ATag.Code <> '' then
-    Result := FindTextIndexInCode(AValue, ATag.Code)
-  else
-  if TryStrToInt(AValue, i) then
-    Result := i
-  else
-    Result := -1;
-end;
-
 // WARNING: There are tags which consist of multiple values of the same type.
 // At the moment, there is no way to detect this case here. Writing them here
 // will cause malfunction of the EXIF segment and/or file.
-procedure TImageInfo.SetTagValue(ATagName: String; AValue: Variant);
+procedure TImageInfo.InternalSetTagValue(ATagName: String; AValue: Variant;
+  ATagTypes: TTagTypes);
 const
   IGNORE_PARENT = $FFFF;
 var
@@ -2461,18 +2438,21 @@ var
   intValue: Integer;
   fracValue: TExifRational;
 begin
-  // Find the tag's ID
-  tagDef := FindExifTagByName(ATagName);
-  if tagDef = nil then begin
-    tagDef := FindGpsTagByName(ATagName);
-    if tagDef = nil then
-      raise Exception.CreateFmt('Tag "%s" not found.', [ATagName]);
-  end;
+  // Find the tag's ID from the lists of tag definitions.
+  // Note: Normal ("Exif") and thumbnail tags share the same list, gps tags
+  // are separate.
+  if (ATagTypes * [ttExif, ttThumb] <> []) then
+    tagDef := FindExifTagDefByName(ATagName) else
+    tagDef := nil;
+  if (tagDef = nil) and (ttGps in ATagTypes) then
+    tagDef := FindGpsTagDefByName(ATagName);
+  if tagDef = nil then
+    raise Exception.CreateFmt('Tag "%s" not found.', [ATagName]);
   tagID := tagDef.Tag;
 
   // Delete this tag if the provided value is varNull or varEmpty
   if VarIsNull(AValue) or VarIsEmpty(AValue) then begin
-    RemoveTag(tagID);
+    RemoveTag(ATagTypes, tagID);
     exit;
   end;
 
@@ -2487,7 +2467,7 @@ begin
   end;
 
   // Find the pointer to the tag
-  P := GetTag(tagID, false, IGNORE_PARENT);
+  P := GetTagPtr(ATagTypes, tagID, false, IGNORE_PARENT);
   if P = nil then begin
     // The tag does not yet exist --> create a new one.
     // BUT: The TagTable does not show the ParentIDs...
@@ -2495,7 +2475,7 @@ begin
     // (IFD0). Since this may not be allowed there's a risk that the EXIF in the
     // modified file cannot be read correctly...
     parentID := 0;
-    P := GetTag(tagID, true, parentID, tagDef.TType);
+    P := GetTagPtr(ATagTypes, tagID, true, parentID, tagDef.TType);
   end;
   if P = nil then
     raise Exception.CreateFmt('Failure to create tag "%s"', [ATagName]);
@@ -2583,6 +2563,167 @@ begin
 end;
 
 
+function TImageInfo.GetTagByID(ATagID: Word): TTagEntry;
+var
+  i: Integer;
+begin
+  for i:= 0 to fiTagCount - 1 do
+    if fiTagArray[i].Tag = ATagID then begin
+      Result := fiTagArray[i];
+      exit;
+    end;
+  Result := EmptyEntry;
+end;
+
+procedure TImageInfo.SetTagByID(ATagID: Word; const AValue: TTagEntry);
+var
+  i: Integer;
+  P: PTagEntry;
+begin
+  for i:=0 to fiTagCount-1 do
+    if fITagArray[i].Tag = ATagID then begin
+      fITagArray[i] := AValue;
+      exit;
+    end;
+
+  // If not found: add it as a new tag to the array
+  P := FindExifTagDefByID(ATagID);
+  if P = nil then begin
+    P := FindGpsTagDefByID(ATagID);
+    if P = nil then
+      raise Exception.CreateFmt('TagID $%.4x unknown.', [ATagID]);
+  end;
+  AddTagToArray(AValue);
+end;
+
+function TImageInfo.GetTagByIndex(AIndex: Integer): TTagEntry;
+begin
+  Result := fiTagArray[AIndex];
+end;
+
+procedure TImageInfo.SetTagByIndex(AIndex: Integer; const AValue: TTagEntry);
+begin
+  FITagArray[AIndex] := AValue;
+end;
+
+
+function TImageInfo.GetTagByName(ATagName: String): TTagEntry;
+var
+  i: integer;
+begin
+  i := LookupTag(ATagName);
+  if i >= 0 then
+    Result := fITagArray[i]
+  else
+    Result := EmptyEntry;
+end;
+
+procedure TImageInfo.SetTagByName(ATagName: String; const AValue: TTagEntry);
+var
+  i: integer;
+  P: PTagEntry;
+begin
+  i := LookupTag(ATagName);
+  if i >= 0 then
+    fITagArray[i] := AValue
+  else
+  begin
+    // If not found: add it as a new tag to the array
+    P := FindExifTagDefByName(ATagName);
+    if P = nil then begin
+      P := FindGpsTagDefByName(ATagName);
+      if P = nil then
+        raise Exception.Create('Tag "' + ATagName + '" unknown.');
+    end;
+    AddTagToArray(AValue);
+  end;
+end;
+
+function TImageInfo.GetTagValue(ATagName: String): Variant;
+var
+  tag: TTagEntry;
+begin
+  Result := Null;
+  tag := GetTagByName(ATagName);
+  if tag.Tag = 0 then
+    exit;
+  Result := InternalGetTagValue(tag);
+end;
+
+procedure TImageInfo.SetTagValue(ATagName: String; AValue: Variant);
+begin
+  InternalSetTagValue(ATagName, AValue, [ttExif, ttGps]);
+end;
+
+function TImageInfo.GetTagValueAsString(ATagName: String): String;
+var
+  tag: TTagEntry;
+  s: String;
+begin
+  Result := '';
+
+  tag := GetTagByName(ATagName);
+  if tag.Tag = 0 then
+    exit;
+
+  if tag.TType = FMT_STRING then
+  begin
+   {$IFDEF FPC}
+    {$IFNDEF FPC3+}
+    s := AnsiToUTF8(tag.Raw);
+    {$ELSE}
+    s := tag.Raw;
+    {$ENDIF}
+   {$ELSE}
+    s := tag.Raw;
+   {$ENDIF}
+    while s[Length(s)] = #0 do
+      Delete(s, Length(s), 1);
+    Result := s;
+  end
+  else
+    Result := FormatNumber(tag.Raw, tag.TType, tag.FormatS, tag.Code);
+end;
+
+procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
+var
+  v: Variant;
+begin
+  v := AValue;
+  SetTagValue(ATagName, v);
+end;
+
+function TImageInfo.GetThumbTagByID(ATagID: Word): TTagEntry;
+var
+  i: Integer;
+begin
+  for i:= 0 to fiThumbCount - 1 do
+    if fiThumbArray[i].Tag = ATagID then begin
+      Result := fiThumbArray[i];
+      exit;
+    end;
+  Result := EmptyEntry;
+end;
+
+procedure TImageInfo.SetThumbTagByID(ATagID: Word; const AValue: TTagEntry);
+var
+  i: Integer;
+  P: PTagEntry;
+begin
+  for i:=0 to fiThumbCount-1 do
+    if fIThumbArray[i].Tag = ATagID then begin
+      fIThumbArray[i] := AValue;
+      exit;
+    end;
+  {
+  // If not found: add it as a new tag to the array
+  P := FindExifTagDefByID(ATagID);   // Thumb tags are stored in Exif table
+  if P = nil then
+    raise Exception.CreateFmt('TagID $%.4x unknown.', [ATagID]);
+  AddTagToThumbArray(AValue);
+  }
+end;
+
 function TImageInfo.GetThumbTagByIndex(AIndex: Integer): TTagEntry;
 begin
   Result := fiThumbArray[AIndex];
@@ -2591,6 +2732,52 @@ end;
 procedure TImageInfo.SetThumbTagByIndex(AIndex: Integer; const AValue: TTagEntry);
 begin
   fiThumbArray[AIndex] := AValue;
+end;
+
+function TImageInfo.GetThumbTagByName(ATagName: String): TTagEntry;
+var
+  i: integer;
+begin
+  ATagName := Uppercase(ATagName);
+  for i:= 0 to fiThumbCount - 1 do
+    if Uppercase(fiThumbArray[i].Name) = ATagName then begin
+      Result := fiThumbArray[i];
+      exit;
+    end;
+  Result := EmptyEntry;
+end;
+
+procedure TImageInfo.SetThumbTagByName(ATagName: String; const AValue: TTagEntry);
+var
+  i: Integer;
+  P: PTagEntry;
+begin
+  ATagName := Uppercase(ATagName);
+  for i:=0 to fiThumbCount-1 do
+    if Uppercase(fIThumbArray[i].Name) = ATagName then begin
+      fIThumbArray[i] := AValue;
+      exit;
+    end;
+  {
+  // If not found: add it as a new tag to the array
+  P := FindExifTagDefByName(ATagName);   // Thumb tags are stored in Exif table
+  if P = nil then
+    raise Exception.Create('Tag "' + ATagName + '" unknown.');
+  AddTagToThumbArray(AValue);
+  }
+end;
+
+function TImageInfo.GetThumbTagValue(ATagName: String): Variant;
+var
+  tag: TTagEntry;
+begin
+  tag := GetThumbTagByName(ATagName);
+  Result := InternalGetTagValue(tag);
+end;
+
+procedure TImageInfo.SetThumbTagValue(ATagName: String; AValue: Variant);
+begin
+  InternalSetTagValue(ATagName, AValue, [ttThumb]);
 end;
 
 function TImageInfo.GetWidth: Integer;
@@ -2631,70 +2818,87 @@ begin
   TagValue['ImageLength'] := AValue;
 end;
 
-procedure TImageInfo.RemoveTag(TagID: Word; ParentID: Word=0);
+procedure TImageInfo.RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: Word=0);
 var
-  i,j : integer;
+  i, j: integer;
 begin
   j := 0;
-  for i := 0 to Length(fiTagArray)-1 do begin
-    if (j <> 0) then
-      fiTagArray[i-j] := fiTagArray[i];
-    if (fiTagArray[i].ParentID = parentID) and (fiTagArray[i].Tag = TagID) then
-      inc(j);
+  if ttThumb in ATagTypes then begin
+    for i := 0 to fiThumbCount-1 do begin
+      if (j <> 0) then
+        fiThumbArray[i-j] := fiThumbArray[i];
+      if (fiThumbArray[i].ParentID = AParentID) and (fiThumbArray[i].Tag = ATagID) then
+        inc(j);
+    end;
+    if (j <> 0) and (fiThumbCount > 0) then
+      dec(fiThumbCount);
+  end else
+  begin
+    for i := 0 to fiTagCount-1 do begin
+      if (j <> 0) then
+        fiTagArray[i-j] := fiTagArray[i];
+      if (fiTagArray[i].ParentID = AParentID) and (fiTagArray[i].Tag = ATagID) then
+        inc(j);
+    end;
+    if (j <> 0) and (fiTagCount > 0) then
+      dec(fiTagCount);
   end;
-  if (j <> 0) then
-    SetLength(fiTagArray, Length(fiTagArray)-j);
 end;
 
-function TImageInfo.GetTag(ATagID: word; AForceCreate: Boolean=false;
-  AParentID:word=0; ATagType: word=65535 {; AForceID: Boolean=false}): PTagEntry;
+function TImageInfo.GetTagPtr(ATagTypes: TTagTypes; ATagID: word;
+  AForceCreate: Boolean=false; AParentID:word=0; ATagType: word=65535): PTagEntry;
 var
   i, j: integer;
   tag: TTagEntry;
 begin
   Result := nil;
 
-  if AParentID = $FFFF then     // $FFFF: ignore parent
-    for i := 0 to fiTagCount - 1 do
-      if (fiTagArray[i].Tag = ATagID) then begin
+  if (ttThumb in ATagTypes) then begin
+    if AParentID = $FFFF then     // $FFFF: ignore parent
+      for i:= 0 to fiThumbCount-1 do
+        if (fiThumbArray[i].Tag = ATagID) then begin
+          Result := @fiThumbArray[i];
+          exit;
+        end;
+    for i := 0 to fiThumbCount-1 do
+      if (fiThumbArray[i].ParentID = AParentID) and (fiThumbArray[i].Tag = ATagID) then
+      begin
+        Result := @fiThumbArray[i];
+        exit;
+      end;
+  end else
+  begin
+    if AParentID = $FFFF then        // $FFFF: ignore parent
+      for i := 0 to fiTagCount - 1 do
+        if (fiTagArray[i].Tag = ATagID) then begin
+          Result := @fiTagArray[i];
+          exit;
+        end;
+    for i := 0 to fiTagCount-1 do
+      if (fiTagArray[i].ParentID = AParentID) and (fiTagArray[i].Tag = ATagID) then
+      begin
         Result := @fiTagArray[i];
         exit;
       end;
-
-  for i := 0 to fiTagCount-1 do
-    if (fiTagArray[i].ParentID = AParentID) and (fiTagArray[i].Tag = ATagID) then
-    begin
-      Result := @fiTagArray[i];
-      exit;
-    end;
+  end;
 
   if AForceCreate then begin
-    tag := FindExifTag(ATagID)^;
-    {
-    for j := 0 to Length(TagTable)-1 do
-      if (TagTable[j].Tag = ATagID) then begin
-        tag := TagTable[j];
-        break;
-      end;
-      }
+    tag := FindExifTagDefByID(ATagID)^;
     if ATagType <> 65535 then
       tag.TType := ATagType;
-    tag.parentID := AParentID;
     tag.Id := 0;
     if tag.Size > 0 then
       tag.Raw := StringOfChar(#0, tag.Size);
-    i := AddTagToArray(tag);
-
-    (*
-    if AForceID then begin
-      j := 1;
-      for i := 0 to Length(fiTagArray)-1 do
-        if (fiTagArray[i].id >= j) then
-          j := fiTagArray[i].id+1;
-      fiTagArray[i].Id := j;
+    if (ttThumb in ATagTypes) then begin
+      tag.ParentID := 1;
+      i := AddTagToThumbArray(tag);
+      Result := @fiThumbArray[i];
     end;
-    *)
-    Result := @fiTagArray[i];
+    if ([ttExif, ttGps] * ATagTypes <> []) then begin
+      tag.parentID := AParentID;
+      i := AddTagToArray(tag);
+      Result := @fiTagArray[i];
+    end;
   end;
 end;
 
@@ -2708,10 +2912,10 @@ var
   p : PTagEntry;
 begin
   if (v = '') then begin
-    RemoveTag(TAG_ARTIST, 0);
+    RemoveTag([ttExif], TAG_ARTIST, 0);
     exit;
   end;
-  p := GetTag(TAG_ARTIST, true, 0, 2);
+  p := GetTagPtr([ttExif], TAG_ARTIST, true, 0, 2);
   {$IFDEF FPC}
   p^.Raw := UTF8ToAnsi(v) + #0;
   {$ELSE}
@@ -2730,10 +2934,10 @@ var
 begin
   Result := '';
   w := '';
-  p := GetTag(TAG_EXIF_OFFSET);
+  p := GetTagPtr([ttExif], TAG_EXIF_OFFSET);
   if (p = nil) then
     exit;
-  p := GetTag(TAG_USERCOMMENT, false, p^.ID);
+  p := GetTagPtr([ttExif], TAG_USERCOMMENT, false, p^.ID);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
 
@@ -2777,13 +2981,13 @@ var
   a: AnsiString;
   u: Boolean;
 begin
-  p := GetTag(TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
+  p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (v = '') then begin
-    RemoveTag(TAG_USERCOMMENT, p^.ID);
+    RemoveTag([ttExif], TAG_USERCOMMENT, p^.ID);
     exit;
   end;
 
-  p := GetTag(TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
+  p := GetTagPtr([ttExif], TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
   u := false;
   for i:=1 to Length(v) do
     if byte(v[i]) > 127 then begin
@@ -3202,6 +3406,11 @@ begin
 end;
 
 function TImgData.ExtractThumbnailBuffer: TBytes;
+begin
+  Result := nil;
+  if HasExif and ExifObj.HasThumbnail then
+    Result := ExifObj.ThumbnailBuffer;
+  {
 var
   STARTmarker, STOPmarker: integer;
   tb: ansistring;
@@ -3210,7 +3419,7 @@ begin
   if HasThumbnail then
   begin
     try
-      tb := copy(DataBuff, ExifObj.ThumbStart, ExifObj.ThumbLength);
+      tb := copy(DataBuff, ExifObj.FThumbStart, ExifObj.FThumbLength);
       STARTmarker := Pos(#$ff#$d8#$ff#$db, tb);
       if Startmarker = 0 then
         STARTmarker := Pos(#$ff#$d8#$ff#$c4, tb);
@@ -3227,6 +3436,7 @@ begin
       // Result will nil...
     end;
   end;
+  }
 end;
 
 //{$IFDEF FPC}
@@ -3236,7 +3446,14 @@ var
   p: Int64;
 begin
   Result := false;
-  if (AStream <> nil) and HasThumbnail and (ExifObj.ThumbType = JPEG_COMP_TYPE) then
+  if (AStream <> nil) and HasExif and ExifObj.HasThumbnail then
+  begin
+    ExifObj.SaveThumbnailToStream(AStream);
+    Result := true;
+  end;
+  {
+  else
+  if (AStream <> nil) and HasThumbnail and (ExifObj.FThumbType = JPEG_COMP_TYPE) then
   begin
     b := ExtractThumbnailBuffer();
     if b <> nil then begin
@@ -3246,6 +3463,7 @@ begin
       Result := true;
     end;
   end;
+  }
 end;
 
 { A jpeg image has been written to a stream. The current EXIF data will be
@@ -3312,6 +3530,8 @@ procedure TImgData.WriteEXIFJpeg(AFilename: String; AdjSize: Boolean = true);
 var
   imgStream: TMemoryStream;
 begin
+  if not FileExists(AFileName) then
+    raise Exception.Create('Image file "' + AFilename + '" does not exist.');
   imgStream := TMemoryStream.Create;
   try
     imgStream.LoadFromFile(AFileName);
@@ -3329,6 +3549,21 @@ var
   b: TBytes;
 begin
   Result := nil;
+  if HasExif and ExifObj.HasThumbnail then begin
+    ms := TMemoryStream.Create;
+    try
+      ExifObj.SaveThumbnailToStream(ms);
+      ms.Position := 0;
+      Result := TJpegImage.Create;
+      Result.LoadFromStream(ms);
+    finally
+      ms.Free;
+    end;
+  end;
+end;
+
+{
+  Result := nil;
   if HasThumbnail and (ExifObj.ThumbType = JPEG_COMP_TYPE) then
   begin
     b := ExtractThumbnailBuffer();
@@ -3344,7 +3579,7 @@ begin
       ms.Free;
     end;
   end;
-end;
+end;      }
 
 procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname, origName: String;
   AdjSize: boolean = true);
@@ -3358,7 +3593,7 @@ begin
   end;
   WriteEXIFJpeg(j,fname,adjSize);
 end;
-
+                (*
 procedure TImgData.WriteEXIFJpeg(fname: String);
 var
   img: TJpegImage;
@@ -3370,7 +3605,7 @@ begin
   finally
     img.Free;
   end;
-end;
+end;              *)
 
 procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname: String;
   AdjSize:boolean = true);
@@ -3597,19 +3832,20 @@ begin
   FWidth := AValue;
 end;
 
-procedure TImgData.CreateIPTCObj;
-begin
-  MakeIPTCSegment('');
-  IPTCobj := TIPTCdata.Create(self);
-end;
-
 function TImgData.CreateExifObj: TImageInfo;
 begin
-  if not HasExif then begin
-    ExifObj := TImageInfo.Create(self);
-    FErrStr := '<none>';
-  end;
+  ExifObj.Free;
+  ExifObj := TImageInfo.Create(self);
+  FErrStr := '<none>';
   Result := ExifObj;
+end;
+
+function TImgData.CreateIPTCObj: TIPTCData;
+begin
+  IPTCObj.Free;
+  MakeIPTCSegment('');
+  IPTCobj := TIPTCdata.Create(self);
+  Result := IPTCObj;
 end;
 
 //--------------------------------------------------------------------------
@@ -3828,7 +4064,9 @@ begin
     then ExifObj.ProcessExifDir(17, 9, EXIFsegment^.Size-6)
     else ExifObj.ProcessExifDir(9+offset, 9, EXIFsegment^.Size-6);
   if ErrStr <> '' then
-    EXIFobj.Calc35Equiv();
+    ExifObj.Calc35Equiv();
+
+  ExifObj.ProcessThumbnail;
 end;
 
 procedure TImgData.Reset;
@@ -3917,7 +4155,7 @@ end;
 
 function TImgData.HasThumbnail: boolean;
 begin
-  result := (EXIFsegment <> nil) and EXIFobj.HasThumbnail;
+  Result := Assigned(ExifObj) and ExifObj.HasThumbnail;
 end;
 
 function TImgData.HasIPTC: boolean;
@@ -3927,22 +4165,22 @@ end;
 
 function TImgData.HasComment: boolean;
 begin
-  result := (Commentsegment <> nil);
-end;
-
-function TImageInfo.HasThumbnail: boolean;
-begin
-  // 19 is minimum valid starting position
-  result := (ThumbStart > 21) and (ThumbLength > 256);
+  result := (CommentSegment <> nil);
 end;
 
 // WARNING: The calling routine must destroy the returned stringlist!
 function TImgData.ReadIPTCStrings(const AFilename: String): TStringList;
 begin
+  Result := TStringList.Create;
+  ReadIPTCStrings(AFileName, Result);
+  if Result.Count = 0 then
+    FreeAndNil(Result);
+end;
+
+procedure TImgData.ReadIPTCStrings(const AFileName: String; AList: TStrings);
+begin
   if ProcessFile(AFilename) and HasIPTC then
-    Result := IPTCObj.ParseIPTCStrings(IPTCSegment^.Data)
-  else
-    Result := nil;
+    IPTCObj.ParseIPTCStrings(IPTCSegment^.Data, AList);
 end;
 
 // WARNING: The calling procedure must destroy the StringList created here!

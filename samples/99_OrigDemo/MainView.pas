@@ -44,11 +44,17 @@ type
     cbDecode: TCheckBox;
     btnCmt: TButton;
     Image1: TImage;
+    btnSaveThumb: TButton;
+    btnLoadThumb: TButton;
+    btnRemoveThumb: TButton;
     procedure btnAboutClick(Sender: TObject);
     procedure btnCmtClick(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
+    procedure btnRemoveThumbClick(Sender: TObject);
+    procedure btnLoadThumbClick(Sender: TObject);
     procedure btnTreeClick(Sender: TObject);
     procedure btnWriteClick(Sender: TObject);
+    procedure btnSaveThumbClick(Sender: TObject);
     procedure cbDecodeClick(Sender: TObject);
     procedure cbVerboseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -218,7 +224,7 @@ begin
       jpegThumb := imgData.ExtractThumbnailJpeg();
       try
         if jpegThumb <> nil then
-          image1.Picture.Assign(jpegThumb)
+          Image1.Picture.Assign(jpegThumb)
         else begin
           Memo(' ');
           Memo('Thumbnail expected, but not found');
@@ -231,6 +237,10 @@ begin
     else
       Memo('No Thumbnail');
 
+    Image1.Visible := ImgData.HasThumbnail;
+    btnSaveThumb.Enabled := ImgData.HasThumbnail;
+    btnRemoveThumb.Enabled := ImgData.HasThumbnail;
+    btnLoadThumb.Enabled := true;
 
     if ImgData.commentSegment <> nil then
     begin
@@ -255,7 +265,7 @@ begin
 
     if not ImgData.HasEXIF then
       exit;
-
+             (*
     if ImgData.HasThumbnail then
     begin
       {$IFDEF FPC}
@@ -279,7 +289,7 @@ begin
       jpegThumb := nil;
       {$ENDIF}
     end;
-
+            *)
     try
     // ProcessHWSpecific(ImageInfo.MakerNote,Nikon1Table,8,MakerOffset);
       Memo(' ');
@@ -311,6 +321,82 @@ begin
             memo1.Perform(EM_LINESCROLL,0,-memo1.Lines.Count);
     end;
   end;
+end;
+
+procedure TForm1.btnRemoveThumbClick(Sender: TObject);
+var
+  ms: TMemoryStream;
+  fn: String;
+begin
+  ImgData.ExifObj.RemoveThumbnail;
+
+  // Save ExifObj without thumbnail to a new file
+  fn := ChangeFileExt(ImgData.FileName, '') + '_no_thumbnail.jpg';
+  ms := TMemoryStream.Create;
+  try
+    // Load current image data
+    ms.LoadfromFile(ImgData.FileName);
+    // and merge with current exif data (i.e. new thumbnail image)
+    ImgData.WriteEXIFJpeg(ms, fn);
+    Image1.Hide;
+    btnRemoveThumb.Enabled := false;
+    btnSaveThumb.Enabled := false;
+  finally
+    ms.Free;
+  end;
+
+  Memo('Image with removed thumbnail saved to "' + fn + '"');
+end;
+
+procedure TForm1.btnLoadThumbClick(Sender: TObject);
+var
+  ms: TMemoryStream;
+  fn: String;
+  jpeg: TJpegImage;
+begin
+  if not ImgData.HasExif then
+    exit;
+
+  pdlg.Filename := '';
+  if pdlg.Execute then begin
+    ms := TMemoryStream.Create;
+    try
+      // load new thumbnail image from file
+      ms.LoadFromFile(pdlg.Filename);
+      // attach new thumbnail to ExifObj
+      ms.Position := 0;
+      ImgData.ExifObj.LoadThumbnailFromStream(ms);
+      // Show new thumbnail
+      ms.Position := 0;
+      jpeg := TJpegImage.Create;
+      try
+        jpeg.LoadFromStream(ms);
+        Image1.Picture.Assign(jpeg);
+        Image1.Show;
+      finally
+        jpeg.Free;
+      end;
+      btnRemoveThumb.Enabled := ImgData.HasThumbnail;
+      btnSaveThumb.Enabled := ImgData.HasThumbnail;
+    finally
+      ms.Free;
+    end;
+
+    // Save ExifObj with new thumbnail to a new file
+    fn := ChangeFileExt(ImgData.FileName, '') + '_changed_thumbnail.jpg';
+    ms := TMemoryStream.Create;
+    try
+      // Load current image data
+      ms.LoadfromFile(ImgData.FileName);
+      // and merge with current exif data (i.e. new thumbnail image)
+      ImgData.WriteEXIFJpeg(ms, fn);
+    finally
+      ms.Free;
+    end;
+
+    Memo('Image with replaced thumbnail saved to "' + fn + '"');
+  end;
+
 end;
 
 procedure TForm1.Memo(s:string);
@@ -379,8 +465,10 @@ var item:TTagEntry;
 begin
   Memo(' ');
   Memo(' -- Thumbnail Data ---- ');
-  Memo('Thumbnail Start = ' +inttostr(ImgData.ExifObj.ThumbStart));
-  Memo('Thumbnail Length = '+inttostr(ImgData.ExifObj.ThumbLength));
+  {
+  Memo('Thumbnail Start = ' +inttostr(ImgData.ExifObj.FThumbStart));
+  Memo('Thumbnail Length = '+inttostr(ImgData.ExifObj.FThumbLength));
+  }
   // verbose data is only available in the trace strings
   if cbVerbose.Checked then
     Memo1.Lines.Add(ImgData.ExifObj.ThumbTrace)
@@ -402,6 +490,9 @@ begin
 //  DoubleBuffered := true;
 //  memo1.DoubleBuffered := true;
   PBar.Hide;
+  btnRemoveThumb.Enabled := false;
+  btnSaveThumb.Enabled := false;
+  btnLoadThumb.Enabled := false;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -581,6 +672,25 @@ begin
     Orig.Free;
     SMaller.Free;
   end;
+end;
+
+procedure TForm1.btnSaveThumbClick(Sender: TObject);
+var
+  fn: String;
+  stream: TFileStream;
+begin
+  if not (ImgData.HasExif and ImgData.HasThumbnail) then
+    exit;
+
+  fn := ChangeFileExt(ImgData.FileName, '') + '_thumbnail.jpg';
+  stream := TFileStream.Create(fn, fmCreate);
+  try
+    ImgData.ExifObj.SaveThumbnailToStream(stream);
+  finally
+    stream.Free;
+  end;
+
+  Memo('Thumbnail image saved as "' + fn + '"');
 end;
 
 procedure TForm1.cbDecodeClick(Sender: TObject);

@@ -2,10 +2,10 @@ object Form1: TForm1
   Left = 287
   Height = 330
   Top = 191
-  Width = 706
+  Width = 701
   Caption = 'Delphi EXIF Jpeg Viewer'
   ClientHeight = 330
-  ClientWidth = 706
+  ClientWidth = 701
   Color = clBtnFace
   Font.Color = clWindowText
   OnCreate = FormCreate
@@ -14,10 +14,10 @@ object Form1: TForm1
   Position = poDefaultPosOnly
   LCLVersion = '1.9.0.0'
   object Image1: TImage
-    Left = 523
+    Left = 536
     Height = 121
     Top = 8
-    Width = 169
+    Width = 151
     Anchors = [akTop, akRight]
   end
   object btnLoad: TButton
@@ -33,7 +33,7 @@ object Form1: TForm1
     Left = 120
     Height = 291
     Top = 8
-    Width = 394
+    Width = 408
     Anchors = [akTop, akLeft, akRight, akBottom]
     Font.Color = clWindowText
     Font.Height = -12
@@ -47,7 +47,7 @@ object Form1: TForm1
     Left = 0
     Height = 23
     Top = 307
-    Width = 706
+    Width = 701
     Panels = <>
   end
   object cbClearOnLoad: TCheckBox
@@ -83,7 +83,7 @@ object Form1: TForm1
     Left = 128
     Height = 16
     Top = 265
-    Width = 564
+    Width = 559
     Anchors = [akLeft, akRight, akBottom]
     Step = 1
     TabOrder = 6
@@ -128,6 +128,33 @@ object Form1: TForm1
     OnClick = btnCmtClick
     TabOrder = 10
   end
+  object btnSaveThumb: TButton
+    Left = 552
+    Height = 25
+    Top = 144
+    Width = 124
+    Caption = 'Save thumbnail'
+    OnClick = btnSaveThumbClick
+    TabOrder = 11
+  end
+  object btnLoadThumb: TButton
+    Left = 552
+    Height = 25
+    Top = 176
+    Width = 124
+    Caption = 'Replace thumbnail'
+    OnClick = btnLoadThumbClick
+    TabOrder = 12
+  end
+  object btnRemoveThumb: TButton
+    Left = 552
+    Height = 25
+    Top = 208
+    Width = 124
+    Caption = 'Remove thumbnail'
+    OnClick = btnRemoveThumbClick
+    TabOrder = 13
+  end
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'
     InitialDir = '.'
@@ -136,6 +163,6 @@ object Form1: TForm1
   end
   object JpegOut: TSavePictureDialog
     left = 144
-    top = 48
+    top = 88
   end
 end

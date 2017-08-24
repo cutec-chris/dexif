@@ -50,6 +50,9 @@ type
 
   TTagArray = array of TTagEntry;
 
+  TTagType = (ttExif, ttGPS, ttThumb);
+  TTagTypes = set of TTagType;
+
   TTiffHeader = packed record
     BOM: Array[0..1] of AnsiChar;   // 'II' for little endian, 'MM' for big endian
     Signature: Word;     // Signature (42)
@@ -69,7 +72,7 @@ type
     the count is '1' even though it is 2 Bytes." }
 
   TExifRational = record
-    Numerator, Denominator: Int32;
+    Numerator, Denominator: LongInt;
   end;
   PExifRational = ^TExifRational;
 

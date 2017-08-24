@@ -356,7 +356,7 @@ var
   i: Integer;
   P: PTagEntry;
 begin
-  P := FindExifTagByName(ATagName);
+  P := FindExifTagDefByName(ATagName);
   if P = nil then
     raise Exception.Create('Tag "' + ATagName + '" not found.');
   Result := P^.TType;

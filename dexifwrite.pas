@@ -159,9 +159,11 @@ var
   offs: DWord;
   count: Integer;
   dataStartOffset: Int64;
+  thumbStartOffset: Int64;
   startPos: Int64;
   sizeOfTagPart: DWord;
   offsetToIFD1: Int64;
+  offsetToThumb: Int64;
   w: Word;
   dw: DWord;
   tag: TTagEntry;
@@ -173,20 +175,6 @@ begin
     tagCount := FImgData.ExifObj.ThumbTagCount
   else
     tagCount := FImgData.ExifObj.TagCount;
-
-  {
-  if ADirectoryID = 1 then
-  begin   // Thumbnail tags (IFD1)
-    tagArray := TTagArray(FImgdata.ExifObj.FIThumbArray);
-    //tag := @FImgData.ExifObj.FIThumbArray[0];
-    tagCount := FImgData.ExifObj.FiThumbCount;
-  end else
-  begin   // IFD0 and its subIFDs
-    tagArray := TTagArray(FImgData.ExifObj.FITagArray);
-    //tag := @FImgData.ExifObj.FITagArray[0];
-    tagCount := FImgData.ExifObj.FITagCount;
-  end;
-  }
 
   valueStream := TMemoryStream.Create;
   try
@@ -218,6 +206,11 @@ begin
       SizeOf(DWord);                 // offset to next IFD, as 32-bit integer.
     dataStartOffset := startPos + sizeOfTagPart - FTiffHeaderPosition;
 
+    // In case of IFD1 (ADirectoryID = 1) the thumbnail will be written
+    // immediately after all tags of IFD1. This offset position must be noted
+    // in the tag
+    thumbStartOffset := dataStartOffset;
+
     // Write record count as 16-bit integer
     w := FixEndian16(count);
     AStream.WriteBuffer(w, SizeOf(w));
@@ -240,6 +233,13 @@ begin
         if TagLinksToSubIFD(tag.Tag) then
           ASubIFDList.Add(AStream.Position);
 
+        // If the tag contains the offset to the thumb image we write the
+        // correct value into the tag - it is not known earlier.
+        if tag.Tag = TAG_THUMBSTARTOFFSET then begin
+          dw := FixEndian32(thumbStartOffset);
+          Move(dw, tag.Raw[1], 4);
+        end;
+
         // Now write the tag
         WriteTag(AStream, valueStream, datastartOffset, tag);
       end;
@@ -257,7 +257,7 @@ begin
     dw := FixEndian32(offs);
     AStream.WriteBuffer(dw, SizeOf(dw));
 
-    // Copy the value stream to the end of the tag stream (AStream)
+    // Copy the valuestream to the end of the tag stream (AStream)
     valueStream.Seek(0, soFromBeginning);
     AStream.CopyFrom(valueStream, valueStream.Size);
 
@@ -269,7 +269,7 @@ begin
 
   // Write the thumbnail
   if ADirectoryID = 1 then begin
-    b := FImgData.ExtractThumbnailBuffer;
+    b := FImgData.ExifObj.ThumbnailBuffer;
     AStream.Write(b[0], Length(b));
   end;
 end;

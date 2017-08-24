@@ -45,6 +45,8 @@ type
     procedure Test_CameraModel;
     procedure Test_Copyright;
 
+    procedure Test_RemoveThumbnail;
+
   end;
 
 implementation
@@ -339,6 +341,39 @@ end;
 procedure TTstWriteReadFile_dEXIF.Test_Copyright;
 begin
   GenericTest(13);
+end;
+
+{ Remove thumbnail }
+procedure TTstWriteReadFile_dEXIF.Test_RemoveThumbnail;
+var
+  DUT: TImgData;
+  ms: TMemoryStream;
+begin
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(FSourceFileName);
+    CheckTRUE(DUT.HasExif, 'No EXIF in source file "' + FSourceFileName + '"');
+    CheckTRUE(DUT.HasThumbnail, 'The source file "' + FSourceFileName + '" does not contain a thumbnail - it should...');
+    DUT.ExifObj.RemoveThumbnail;
+    ms := TMemoryStream.Create;
+    try
+      ms.LoadFromFile(FSourceFileName);
+      DUT.WriteEXIFJpeg(ms, FDestFileName);
+    finally
+      ms.Free;
+    end;
+  finally
+    DUT.Free;
+  end;
+
+  DUT := TImgData.Create;
+  try
+    DUT.ProcessFile(FDestFilename);
+    CheckTRUE(DUT.HasExif, 'No EXIF in written file');
+    CheckFALSE(DUT.HasThumbnail, 'The written file has a thumbnail - it should not.');
+  finally
+    DUT.Free;
+  end;
 end;
 
 

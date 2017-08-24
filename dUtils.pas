@@ -54,7 +54,7 @@ function GetCardinal(var AStream: TStream): Cardinal;
 
 function InsertSpaces(InStr: String): String;
 
-procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
+function JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
 
 function MakeHex(s: String): String;
 function MakePrintable(s: String): String;
@@ -395,8 +395,9 @@ begin
 end;
 
 { Extracts the width and height of a JPEG image from its data without loading
-  it into a TJpegImage. }
-procedure JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer);
+  it into a TJpegImage.
+  Returns false if the stream does not contain a jpeg image. }
+function JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
 type
   TJPGHeader = array[0..1] of Byte; //FFD8 = StartOfImage (SOI)
   TJPGRecord = packed record
@@ -411,6 +412,8 @@ var
   p: Int64;
   savedPos: Int64;
 begin
+  Result := false;
+
   AWidth := 0;
   AHeight := 0;
 
@@ -434,6 +437,7 @@ begin
             AStream.Seek(1, soFromCurrent);  // Skip "bits per sample"
             AHeight := BEToN(GetWord(AStream));
             AWidth := BEToN(GetWord(AStream));
+            Result := true;
             exit;
           end;
         $D9:  // end of image;

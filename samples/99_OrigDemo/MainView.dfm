@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 135
   Top = 179
+  Width = 759
+  Height = 375
   Caption = 'Delphi EXIF Jpeg Viewer'
-  ClientHeight = 336
-  ClientWidth = 743
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -135,6 +135,36 @@ object Form1: TForm1
     Enabled = False
     TabOrder = 10
     OnClick = btnCmtClick
+  end
+  object btnSaveThumb: TButton
+    Left = 568
+    Top = 160
+    Width = 153
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Save thumbnail'
+    TabOrder = 11
+    OnClick = btnSaveThumbClick
+  end
+  object btnLoadThumb: TButton
+    Left = 568
+    Top = 191
+    Width = 153
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Replace thumbnail'
+    TabOrder = 12
+    OnClick = btnLoadThumbClick
+  end
+  object btnRemoveThumb: TButton
+    Left = 568
+    Top = 222
+    Width = 153
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Remove thumbnail'
+    TabOrder = 13
+    OnClick = btnRemoveThumbClick
   end
   object pdlg: TOpenPictureDialog
     Filter = 
