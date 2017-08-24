@@ -31,6 +31,7 @@ type
 
   TForm1 = class(TForm)
     btnLoad: TButton;
+    btnCreateThumb: TButton;
     pdlg: TOpenPictureDialog;
     Memo1: TMemo;
     StatusBar1: TStatusBar;
@@ -49,12 +50,13 @@ type
     btnRemoveThumb: TButton;
     procedure btnAboutClick(Sender: TObject);
     procedure btnCmtClick(Sender: TObject);
+    procedure btnCreateThumbClick(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
-    procedure btnRemoveThumbClick(Sender: TObject);
     procedure btnLoadThumbClick(Sender: TObject);
+    procedure btnRemoveThumbClick(Sender: TObject);
+    procedure btnSaveThumbClick(Sender: TObject);
     procedure btnTreeClick(Sender: TObject);
     procedure btnWriteClick(Sender: TObject);
-    procedure btnSaveThumbClick(Sender: TObject);
     procedure cbDecodeClick(Sender: TObject);
     procedure cbVerboseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -162,6 +164,35 @@ begin
   Clock := TimeGetTime;
 end;
 
+
+procedure TForm1.btnCreateThumbClick(Sender: TObject);
+var
+  ms: TMemoryStream;
+  fn: String;
+begin
+  if not ImgData.HasExif then
+    exit;
+  ImgData.ExifObj.CreateThumbnail;
+
+  fn := ChangeFileExt(ImgData.FileName, '') + '_new_thumbnail.jpg';
+  ms := TMemoryStream.Create;
+  try
+    // Load current image data
+    ms.LoadfromFile(ImgData.FileName);
+    // and merge with current exif data (i.e. new thumbnail image)
+    ImgData.WriteEXIFJpeg(ms, fn);
+    ms.Position := 0;
+    Image1.Picture.LoadfromStream(ms);
+    btnRemoveThumb.Enabled := true;
+    btnSaveThumb.Enabled := true;
+    btnCreateThumb.Enabled := true;
+  finally
+    ms.Free;
+  end;
+
+  Memo('Thumbnail image created. Image saved as "' + fn + '"');
+end;
+
 procedure TForm1.btnLoadClick(Sender: TObject);
 var
   i: integer;
@@ -237,10 +268,12 @@ begin
     else
       Memo('No Thumbnail');
 
+
     Image1.Visible := ImgData.HasThumbnail;
     btnSaveThumb.Enabled := ImgData.HasThumbnail;
     btnRemoveThumb.Enabled := ImgData.HasThumbnail;
-    btnLoadThumb.Enabled := true;
+    btnLoadThumb.Enabled := ImgData.HasExif;
+    btnCreateThumb.Enabled := ImgData.HasExif;
 
     if ImgData.commentSegment <> nil then
     begin
@@ -493,6 +526,7 @@ begin
   btnRemoveThumb.Enabled := false;
   btnSaveThumb.Enabled := false;
   btnLoadThumb.Enabled := false;
+  btnCreateThumb.Enabled := false;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);

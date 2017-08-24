@@ -236,6 +236,7 @@ type
     function  GetImgDateTime: TDateTime;
 
     // Thumbnail
+    procedure CreateThumbnail(AThumbnailSize: Integer = DEFAULT_THUMBNAIL_SIZE);
     function HasThumbnail: boolean;
     procedure ProcessThumbnail;
     procedure RemoveThumbnail;
@@ -2150,6 +2151,27 @@ begin
   end;
 end;
 
+{ Creates a thumbnail image from the main image loaded. The size of the thumbnail
+  (width or height whichever is longer) is specified as AThumbnailSize.
+  The current thumbnail image is replaced by the new one, or, if the image did
+  not have a thumbnail image so far it is added to the image. }
+procedure TImageInfo.CreateThumbnail(AThumbnailSize: Integer = DEFAULT_THUMBNAIL_SIZE);
+var
+  srcStream, destStream: TMemoryStream;
+begin
+  srcStream := TMemoryStream.Create;
+  destStream := TMemoryStream.Create;
+  try
+    srcStream.LoadFromFile(Parent.FileName);
+    JpegScaleImage(srcStream, destStream, AThumbnailSize);
+    destStream.Position := 0;
+    LoadThumbnailFromStream(destStream);
+  finally
+    destStream.Free;
+    srcStream.Free;
+  end;
+end;
+
 function TImageInfo.HasThumbnail: boolean;
 begin
   Result := Length(FThumbnailBuffer) > 0;
@@ -2187,28 +2209,6 @@ begin
     FThumbnailBuffer := nil;
 end;
 
-Procedure TImageInfo.RemoveThumbnail;
-var
-  newSize: integer;
-begin
-  SetLength(FThumbnailBuffer, 0);
-  fiThumbCount := 0;
-
-  if FThumbStart > 0 then begin
-    newSize := FThumbStart - 6;
-    with parent do
-    begin
-      SetLength(ExifSegment^.Data, newSize);
-      ExifSegment^.Size := newSize;
-      // size calculations should really be moved to save routine
-      ExifSegment^.data[1] := ansichar(newSize div 256);
-      ExifSegment^.data[2] := ansichar(newSize mod 256);
-    end;
-
-    FThumbStart := 0;
-  end;
-end;
-
 procedure TImageInfo.LoadThumbnailFromStream(AStream: TStream);
 var
   n: Integer;
@@ -2217,7 +2217,7 @@ begin
   RemoveThumbnail;
 
   // Check whether the image is a jpeg, and extract size of the thrumbnail image
-  if not JPGImageSize(AStream, w, h) then
+  if not JPEGImageSize(AStream, w, h) then
     exit;
 
   // Write the image from the stream into the thumbnail buffer
@@ -2232,6 +2232,28 @@ begin
   SetThumbTagValue('ImageLength', h);
   SetThumbTagValue('JPEGInterchangeFormat', 0);  // to be replaced by the offset to the thumbnail
   SetThumbTagValue('JPEGInterchangeFormatLength', Length(FThumbnailbuffer));
+end;
+
+procedure TImageInfo.RemoveThumbnail;
+var
+  newSize: integer;
+begin
+  SetLength(FThumbnailBuffer, 0);
+  fiThumbCount := 0;
+
+  if FThumbStart > 1 then begin
+    newSize := FThumbStart - 6;
+    with parent do
+    begin
+      SetLength(ExifSegment^.Data, newSize);
+      ExifSegment^.Size := newSize;
+      // size calculations should really be moved to save routine
+      ExifSegment^.data[1] := ansichar(newSize div 256);
+      ExifSegment^.data[2] := ansichar(newSize mod 256);
+    end;
+
+    FThumbStart := 0;
+  end;
 end;
 
 procedure TImageInfo.SaveThumbnailToStream(AStream: TStream);
@@ -3484,7 +3506,7 @@ begin
   try
     AJpeg.Position := 0;               // JPEG reader must be at begin of stream
     if AdjSize and (EXIFobj <> nil) then begin
-      JPGImageSize(AJpeg, w, h);
+      JPEGImageSize(AJpeg, w, h);
       EXIFobj.AdjExifSize(h, w);       // Adjust EXIF to image size
       AJpeg.Position := 0;             // Rewind stream
     end;

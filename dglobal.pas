@@ -111,6 +111,8 @@ const
 
   ValidExifHeader: ansistring = 'Exif'#0;
 
+  DEFAULT_THUMBNAIL_SIZE = 200;
+
   {$IFDEF FPC}
   crlf = LineEnding;
   {$ELSE}

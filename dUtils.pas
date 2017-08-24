@@ -54,7 +54,9 @@ function GetCardinal(var AStream: TStream): Cardinal;
 
 function InsertSpaces(InStr: String): String;
 
-function JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
+function JPEGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
+procedure JPEGScaleImage(ASrcStream, ADestStream: TStream;
+  ADestSize: Integer = DEFAULT_THUMBNAIL_SIZE);
 
 function MakeHex(s: String): String;
 function MakePrintable(s: String): String;
@@ -89,6 +91,9 @@ function xpTranslate(instr: AnsiString): String;
 implementation
 
 uses
+{$IFDEF FPC}
+  fpreadjpeg, fpwritejpeg, fpimage, fpcanvas, fpimgcanv,
+{$ENDIF}
   Math;
 
 {$IFNDEF FPC}
@@ -397,7 +402,7 @@ end;
 { Extracts the width and height of a JPEG image from its data without loading
   it into a TJpegImage.
   Returns false if the stream does not contain a jpeg image. }
-function JPGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
+function JPEGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
 type
   TJPGHeader = array[0..1] of Byte; //FFD8 = StartOfImage (SOI)
   TJPGRecord = packed record
@@ -449,6 +454,61 @@ begin
     AStream.Position := savedPos;
   end;
 end;
+
+procedure JPEGScaleImage(ASrcStream, ADestStream: TStream;
+  ADestSize: Integer = DEFAULT_THUMBNAIL_SIZE);
+{$IFDEF FPC}
+var
+  srcImage, destImage: TFPCustomImage;
+  destCanvas: TFPImageCanvas;
+  reader: TFPCustomImageReader;
+  writer: TFPCustomImageWriter;
+  w, h: Integer;
+  f: Double;
+begin
+  srcImage := TFPMemoryImage.Create(10, 10);
+  reader := TFPReaderJPEG.Create;
+  srcImage.LoadFromStream(ASrcStream, reader);
+  reader.Free;
+
+  w := srcImage.Width;
+  h := srcImage.Height;
+  if w > h then f := ADestSize / w else f := ADestSize / h;
+
+  destImage := TFPMemoryImage.Create(round(w*f), round(h*f));
+  destCanvas := TFPImageCanvas.Create(destImage);
+  destCanvas.StretchDraw(0, 0, destImage.Width, destImage.Height, srcImage);
+
+  writer := TFPWriterJPEG.Create;
+  destImage.SaveToStream(ADestStream, writer);
+  writer.Free;
+end;
+{$ELSE}
+var
+  jpeg: TJPegImage;
+  bmp: TBitmap;
+begin
+  jpeg := TJpegImage.Create;
+  try
+    jpeg.LoadfromStream(ASrcStream);
+    w := jpeg.Width;
+    h := jpeg.Height;
+    if w > h then f := ADestSize / w else f := ADestSize / h;
+    bmp := TBitmap.Create;
+    bmp.PixelFormat := pf24bit;
+    bmp.Width := round(w * f);
+    bmp.Height := round(h * f);
+    bmp.Canvas.StretchDrw(Rect(0, 0, bmp.Width, bmp.Height), jpeg);
+    jpeg.Free;
+    jpeg := TJpegImage.Create;
+    jpeg.Assign(bmp);
+    jpeg.SaveToStream(ADestStream);
+  finally
+    jpeg.Free;
+    bmp.Free;
+  end;
+end;
+{$ENDIF}
 
 
 { Formatting callbacks }

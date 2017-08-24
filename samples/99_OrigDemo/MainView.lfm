@@ -155,6 +155,15 @@ object Form1: TForm1
     OnClick = btnRemoveThumbClick
     TabOrder = 13
   end
+  object btnCreateThumb: TButton
+    Left = 552
+    Height = 25
+    Top = 240
+    Width = 124
+    Caption = 'Create thumbnail'
+    OnClick = btnCreateThumbClick
+    TabOrder = 14
+  end
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'
     InitialDir = '.'

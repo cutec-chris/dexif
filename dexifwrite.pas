@@ -192,10 +192,6 @@ begin
       end;
     end;
 
-    // No records in this directory? Nothing to do...
-    if count = 0 then
-      exit;
-
     // The IFD begins at the current stream position...
     startPos := AStream.Position;
     // ... and, knowing the size of tag part of the subdirectory, we can
@@ -216,34 +212,35 @@ begin
     AStream.WriteBuffer(w, SizeOf(w));
 
     // Now write all the records in this directory
-   // tag := firstTag;
-    for i:=0 to tagCount-1 do begin
-      if ADirectoryID = 1then
-        tag := FImgData.ExifObj.ThumbTagByIndex[i] else
-        tag := FImgData.ExifObj.TagByIndex[i];
-      if AHardwareSpecific and (tag.TID <> 1) then continue;
-      if (not AHardwareSpecific) and (tag.TID = 1) then continue;
+    if count > 0 then begin
+      for i:=0 to tagCount-1 do begin
+        if ADirectoryID = 1then
+          tag := FImgData.ExifObj.ThumbTagByIndex[i] else
+          tag := FImgData.ExifObj.TagByIndex[i];
+        if AHardwareSpecific and (tag.TID <> 1) then continue;
+        if (not AHardwareSpecific) and (tag.TID = 1) then continue;
 
-      if tag.ParentID = ADirectoryID then begin
-        // Some tags will link to subdirectories. The offset to the start of
-        // a subdirectory must be specified in the DataValue field of the
-        // written ifd record. Since it is not clear at this moment where the
-        // subdirectory will begin we store the offset to the ifd record in
-        // ASubIFDlist for later correction.
-        if TagLinksToSubIFD(tag.Tag) then
-          ASubIFDList.Add(AStream.Position);
+        if tag.ParentID = ADirectoryID then begin
+          // Some tags will link to subdirectories. The offset to the start of
+          // a subdirectory must be specified in the DataValue field of the
+          // written ifd record. Since it is not clear at this moment where the
+          // subdirectory will begin we store the offset to the ifd record in
+          // ASubIFDlist for later correction.
+          if TagLinksToSubIFD(tag.Tag) then
+            ASubIFDList.Add(AStream.Position);
 
-        // If the tag contains the offset to the thumb image we write the
-        // correct value into the tag - it is not known earlier.
-        if tag.Tag = TAG_THUMBSTARTOFFSET then begin
-          dw := FixEndian32(thumbStartOffset);
-          Move(dw, tag.Raw[1], 4);
+          // If the tag contains the offset to the thumb image we write the
+          // correct value into the tag - it is not known earlier.
+          if tag.Tag = TAG_THUMBSTARTOFFSET then begin
+            dw := FixEndian32(thumbStartOffset);
+            Move(dw, tag.Raw[1], 4);
+          end;
+
+          // Now write the tag
+          WriteTag(AStream, valueStream, datastartOffset, tag);
         end;
-
-        // Now write the tag
-        WriteTag(AStream, valueStream, datastartOffset, tag);
+        //inc(tag);
       end;
-      //inc(tag);
     end;
 
     // The last entry of the directory is the offset to the next IFD, or 0
@@ -359,7 +356,7 @@ begin
     if Length(s) <= 4 then begin
       n := 0;
       Move(s[1], n, Length(s));
-      rec.DataValue := FixEndian32(n);
+      rec.DataValue := n;  // tag.Raw is already has the endianness needed  //FixEndian32(n);
     end else begin
       rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
       AValueStream.WriteBuffer(s[1], Length(s));
@@ -370,7 +367,8 @@ begin
     if Length(ATag.Raw) <= 4 then begin
       n := 0;
       Move(ATag.Raw[1], n, Length(ATag.Raw));
-      rec.DataValue := FixEndian32(n);
+      rec.DataValue := n;  // tag.Raw is already has the endianness needed  //FixEndian32(n);
+//      rec.DataValue := FixEndian32(n);
     end else begin
       rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
       AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
@@ -383,14 +381,17 @@ begin
     // with all the IDFRecords is not complete at this moment we store the
     // offsets to these fields in the OffsetList for correction later.
     // For this reason, we do not take care of endianness here as well.
-    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType];
+    rec.DataCount := FixEndian32(Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]);
     rec.DataValue := FixEndian32(DWord(ADataStartOffset + AValueStream.Position));
     case ATag.TType of
       FMT_URATIONAL, FMT_SRATIONAL:
         begin
+          // Note: ATag.Raw already has the correct endianness!
           rat := PExifRational(@ATag.Raw[1])^;
-          rat.Numerator := FixEndian32(rat.Numerator);
-          rat.Denominator := FixEndian32(rat.Denominator);
+//          rat.Numerator := FixEndian32(rat.Numerator);
+//          rat.Denominator := FixEndian32(rat.Denominator);
+          rat.Numerator := rat.Numerator;
+          rat.Denominator := rat.Denominator;
           AValueStream.WriteBuffer(rat, SizeOf(TExifRational));
         end;
       FMT_DOUBLE:
@@ -402,14 +403,17 @@ begin
   begin
     // If the size of the data field is not larger than 4 bytes
     // then the data value is written to the rec.DataValue field directly.
-    rec.DataCount := Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]; //1; // ????? FixEndian32(BYTES_PER_FORMAT[ATag.TType]);
+    // Note: ATag.Raw already has the correct endianness
+    rec.DataCount := FixEndian32(Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]);
     case ATag.TType of
       FMT_BYTE, FMT_SBYTE:
         rec.DataValue := byte(ATag.Raw[1]);
       FMT_USHORT, FMT_SSHORT:
-        rec.DataValue := FixEndian32(PWord(@ATag.Raw[1])^);
+        rec.DataValue := PWord(@ATag.Raw[1])^;
+        //rec.DataValue := FixEndian32(PWord(@ATag.Raw[1])^);
       FMT_ULONG, FMT_SLONG:
-        rec.DataValue := FixEndian32(PDWord(@ATag.Raw[1])^);
+        rec.DataValue := PDWord(@ATag.Raw[1])^;
+        //rec.DataValue := FixEndian32(PDWord(@ATag.Raw[1])^);
       FMT_SINGLE:
         Move(ATag.Raw[1], rec.DataValue, SizeOf(Single));
     end;
