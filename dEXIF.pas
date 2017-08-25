@@ -247,6 +247,8 @@ type
     procedure LoadThumbnailFromStream(AStream: TStream);
     procedure SaveThumbnailToStream(AStream: TStream);
     property ThumbnailBuffer: TBytes read FThumbnailBuffer;
+    property ThumbTagValue[ATagName: String]: variant
+        read GetThumbTagValue write SetThumbTagValue;
 
     // Collective output
     procedure EXIFArrayToXML(AList: TStrings); overload;
@@ -416,6 +418,7 @@ type
     procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
     procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
     procedure WriteEXIFJpeg(AFileName: String; AdjSize: Boolean = true); overload;
+    procedure WriteEXIFJpegTo(AFileName: String);
    {$IFNDEF dExifNoJpeg}
     procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
       AdjSize: boolean = true);  overload;
@@ -3566,7 +3569,24 @@ begin
     imgStream.Free;
   end;
 end;
-//{$ENDIF}
+
+{ Writes the current Exif data and the image data of the loaded file to the
+  specified new file. }
+procedure TImgData.WriteExifJpegTo(AFileName: String);
+var
+  imgStream: TMemoryStream;
+begin
+  if FFileName = '' then
+    raise Exception.Create('TImgData has no filename.');
+
+  imgStream := TMemoryStream.Create;
+  try
+    imgStream.LoadFromFile(FFileName);
+    WriteExifJpeg(imgStream, AFilename, false);
+  finally
+    imgStream.Free;
+  end;
+end;
 
 {$IFNDEF dExifNoJpeg}
 function TImgData.ExtractThumbnailJpeg: TJpegImage;

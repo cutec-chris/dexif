@@ -3,8 +3,8 @@ program TestGUIdEXIF;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, tstBasic, tstreadexif, tstselfimage, 
-  tstwritereadexif, dEXIF, dIPTC, msData, dUtils;
+  Interfaces, Forms, GuiTestRunner, dEXIF, dIPTC, msData, dUtils,
+  tstBasic, tstreadexif, tstwritereadexif, tstthumbnail, tstselfimage;
 
 {$R *.res}
 
