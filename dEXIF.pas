@@ -2534,7 +2534,7 @@ begin
       end;
   end;
 
-  // NOTE: Since hardware-specific data are not yet decoded the ekement Raw
+  // NOTE: Since hardware-specific data are not yet decoded the element Raw
   // is still in the endianness of the source!
   case P^.TType of
     FMT_STRING:
@@ -3050,6 +3050,7 @@ begin
     Move(a[1], p^.Raw[9], Length(a));
   end;
   p^.Size := Length(p^.Raw);
+  p^.Data := v;
 end;
 
 function TImageInfo.GetImageDescription: String;
