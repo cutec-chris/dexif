@@ -383,17 +383,13 @@ type
     function CreateIPTCObj: TIPTCData;
 
     // Reading
+    function ProcessFile(const AFileName: String): boolean;
     function ReadJpegFile(const AFileName: string): boolean;
     function ReadTiffFile(const AFileName: string): boolean;
-
     function ReadExifInfo(AFilename: String): boolean;
-
     procedure ReadIPTCStrings(const AFilename: String; AList: TStrings); overload;
     function ReadIPTCStrings(const AFilename: String): TStringList; overload;
       deprecated {$IFDEF FPC} 'Use procedure instead' {$ENDIF};
-
-    // Processing
-    function ProcessFile(const AFileName: String): boolean;
 
     // Thumbnail
     function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
@@ -1403,18 +1399,25 @@ type
      sec:  Array [1..2] of ansichar;
   end;
   PConvert= ^TConvert;
+var
+  yr, mn, dy, h, m, s: Integer;
+  d: TDate;
+  t: TTime;
 begin
-  try
+  Result := 0;
+  if Length(ARawStr) >= SizeOf(TConvert) then
     with PConvert(@ARawStr[1])^ do
-      Result := EncodeDate(StrToInt( year),
-                           StrToInt( mon ),
-                           StrToInt( day ))
-             +  EncodeTime(StrToInt( hr  ),
-                           StrToInt( min ),
-                           StrToInt( sec ), 0);
-  except
-    Result := 0;
-  end;
+      if TryStrToInt(year, yr) and
+         TryStrToInt(mon, mn) and
+         TryStrToInt(day, dy) and
+         TryEncodeDate(yr, mn, dy, d)
+      and
+         TryStrToInt(hr, h) and
+         TryStrToInt(min, m) and
+         TryStrToInt(sec, s) and
+         TryEncodeTime(h, m, s, 0, t)
+      then
+        Result := d + t;
 end;
 
 
@@ -1809,11 +1812,11 @@ var
   byteCount: integer;
   tag, tagFormat, tagComponents: integer;
   de, dirEntry, offsetVal, numDirEntries, valuePtr, subDirStart: Longint;
+  value: Integer;
   rawStr, fStr, transStr: ansistring;
   msInfo: TMsInfo;
   lookupEntry, newEntry: TTagEntry;
   tmpTR: ansistring;
-  tmpDateTime: string;
   tagID: word;
 begin
   PushDirStack(DirStart, OffsetBase);
@@ -1887,11 +1890,13 @@ begin
       end;
 
       Case tag of
-        TAG_USERCOMMENT:     // strip off comment header
+        TAG_USERCOMMENT:
+          // strip off comment header
           fStr := trim(Copy(rawStr, 9, byteCount-8));
-        TAG_DATETIME_MODIFY, // Conversion from EXIF format (2009:01:02 12:10:12) to ISO (2009-01-02 12:10:12)
+        TAG_DATETIME_MODIFY,
         TAG_DATETIME_ORIGINAL,
         TAG_DATETIME_DIGITIZED:
+          // Conversion from EXIF format (2009:01:02 12:10:12) to ISO (2009-01-02 12:10:12)
           fStr := FormatDateTime(ISODateFormat, ExifDateToDateTime(fStr));
       end;
 
@@ -1915,12 +1920,12 @@ begin
       TAG_INTEROP_OFFSET:
         begin
           try
-            subdirStart := OffsetBase + LongInt(Get32u(valuePtr));
+            value := Get32u(valuePtr);
+            subdirStart := OffsetBase + LongInt(value);
             // some mal-formed images have recursive references...
             // if (subDirStart <> DirStart) then
             if not TestDirStack(subDirStart, OffsetBase) then begin
-              tagID := tag; //IDCnt;
-//               IDCnt := IDCnt + 1;
+              tagID := tag;
               ProcessExifDir(subdirStart, OffsetBase, ExifLength, ttExif, '', tagID);
             end;
           except
@@ -1931,8 +1936,7 @@ begin
           try
             subdirStart := OffsetBase + LongInt(Get32u(ValuePtr));
             if not TestDirStack(subDirStart, OffsetBase) then begin
-              tagID := tag; //idCnt;
-//               inc(idCnt);
+              tagID := tag;
               ProcessExifDir(subdirStart, OffsetBase, ExifLength, ttGps, '', tagID);
             end;
           except
@@ -3986,10 +3990,14 @@ begin
           FWidth := BEToN(pw^);
           dec(SectionCnt);
         end;
+      {
       M_SOF1..M_SOF15:
         begin
           // process_SOFn(Data, marker);
         end;
+        }
+      else
+        dec(SectionCnt);  // Discard this section
     end;  // case
   end;
   Result := HasMetaData();
