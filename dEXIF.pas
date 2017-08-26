@@ -1448,10 +1448,10 @@ var
 begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
-    RemoveTag([ttExif], TAG_DATETIME_ORIGINAL, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_ORIGINAL, TAG_EXIF_OFFSET);
     exit;
   end;
-  p := GetTagPtr([ttExif], TAG_DATETIME_ORIGINAL, true, p^.ID, FMT_STRING);
+  p := GetTagPtr([ttExif], TAG_DATETIME_ORIGINAL, true, TAG_EXIF_OFFSET, FMT_STRING);
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
@@ -1473,10 +1473,10 @@ var
 begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (AValue = 0) then begin
-    RemoveTag([ttExif], TAG_DATETIME_DIGITIZED, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_DIGITIZED, TAG_EXIF_OFFSET);
     exit;
   end;
-  p := GetTagPtr([ttExif], TAG_DATETIME_DIGITIZED, true, p^.ID, FMT_STRING);
+  p := GetTagPtr([ttExif], TAG_DATETIME_DIGITIZED, true, TAG_EXIF_OFFSET, FMT_STRING);
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
@@ -1498,7 +1498,7 @@ var
 begin
   p := GetTagPtr([ttExif], TAG_DATETIME_MODIFY, true, 0, FMT_STRING);
   if AValue = 0 then begin
-    RemoveTag([ttExif], TAG_DATETIME_MODIFY, p^.ID);
+    RemoveTag([ttExif], TAG_DATETIME_MODIFY, 0);
     exit;
   end;
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
@@ -2973,7 +2973,7 @@ begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET);
   if (p = nil) then
     exit;
-  p := GetTagPtr([ttExif], TAG_USERCOMMENT, false, p^.ID);
+  p := GetTagPtr([ttExif], TAG_USERCOMMENT, false, TAG_EXIF_OFFSET);
   if (p = nil) or (Length(p^.Raw) <= 10) then
     exit;
 
@@ -3019,11 +3019,11 @@ var
 begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (v = '') then begin
-    RemoveTag([ttExif], TAG_USERCOMMENT, p^.ID);
+    RemoveTag([ttExif], TAG_USERCOMMENT, TAG_EXIF_OFFSET);
     exit;
   end;
 
-  p := GetTagPtr([ttExif], TAG_USERCOMMENT, true, p^.ID, FMT_BINARY);
+  p := GetTagPtr([ttExif], TAG_USERCOMMENT, true, TAG_EXIF_OFFSET, FMT_BINARY);
   u := false;
   for i:=1 to Length(v) do
     if byte(v[i]) > 127 then begin
