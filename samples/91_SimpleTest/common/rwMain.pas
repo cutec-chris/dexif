@@ -239,7 +239,7 @@ begin
 
     // Write new tags to file
 //    {$IFDEF FPC}
-    ImgData.WriteEXIFJpeg(OutFile, false);
+    ImgData.WriteEXIFJpegTo(OutFile); //, false);
     // Parameter false needed to avoid overwriting Exif's image size with the file values.
     (*
     {$ELSE}
@@ -320,7 +320,7 @@ end;
 procedure TMainForm.ExifToListview(AImgData: TImgData; AListView: TListView);
 var
   i: Integer;
-  tag: TTagEntry;
+  lTag: TTagEntry;
 begin
   AListview.Items.BeginUpdate;
   try
@@ -328,21 +328,21 @@ begin
     if not AImgData.HasExif then
       exit;
     for i:=0 to AImgData.ExifObj.TagCount-1 do begin
-      tag := AImgData.ExifObj.TagByIndex[i];
-      if Tag.Tag = 0 then
+      lTag := AImgData.ExifObj.TagByIndex[i];
+      if lTag.Tag = 0 then
         Continue;
       with AListView.Items.Add do begin
-        Caption := tag.Desc;
-        SubItems.Add(tag.Data);
+        Caption := lTag.Desc;
+        SubItems.Add(lTag.Data);
       end;
     end;
     for i:=0 to AImgData.ExifObj.ThumbTagCount-1 do begin
-      tag := AImgData.ExifObj.ThumbTagByIndex[i];
-      if Tag.Tag = 0 then
+      lTag := AImgData.ExifObj.ThumbTagByIndex[i];
+      if lTag.Tag = 0 then
         Continue;
       with AListView.Items.Add do begin
-        Caption := tag.Desc;
-        SubItems.Add(tag.Data);
+        Caption := lTag.Desc;
+        SubItems.Add(lTag.Data);
       end;
     end;
     AListView.AlphaSort;
@@ -403,17 +403,17 @@ end;
 
 procedure TMainForm.ExifTabControlChange(Sender: TObject);
 var
-  imgData: TImgData;
+  data: TImgData;
 begin
-  imgData := TImgData.Create;
+  data := TImgData.Create;
   try
     case ExifTabControl.TabIndex of
-      0: imgData.ProcessFile(EdTestFile.Text);
-      1: imgData.ProcessFile(OutFile);
+      0: data.ProcessFile(EdTestFile.Text);
+      1: data.ProcessFile(OutFile);
     end;
-    ExifToListView(imgData, ExifListView);
+    ExifToListView(data, ExifListView);
   finally
-    imgData.Free;
+    data.Free;
   end;
 end;
 

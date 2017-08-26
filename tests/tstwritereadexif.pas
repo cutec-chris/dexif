@@ -232,6 +232,8 @@ begin
     // matches the written value
     // -------------------------------------------------------------------------
 
+    srcDUT.WriteExifJpegTo(FDestFileName);
+    (*
     imgStream := TMemoryStream.Create;
     try
       imgStream.LoadFromFile(FSourceFilename);
@@ -239,7 +241,7 @@ begin
     finally
       imgStream.Free;
     end;
-
+      *)
 //    srcDUT.WriteExifJpeg(FDestFileName, FSourceFilename);
 
     destDUT := TImgData.Create;

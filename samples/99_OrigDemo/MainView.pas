@@ -758,7 +758,7 @@ begin
 
       // Save to file ("_comment" appended to filename)
       fn := ChangeFileExt(ImgData.FileName, '') + '_comment.jpg';
-      ImgData.WriteEXIFJpeg(fn);
+      ImgData.WriteEXIFJpegTo(fn);
       Memo1.Lines.Add('');
       Memo1.Lines.Add('Image saved in: ' + fn );
     end;

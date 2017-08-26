@@ -418,7 +418,7 @@ type
    {$IFNDEF dExifNoJpeg}
     procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
       AdjSize: boolean = true);  overload;
-//    procedure WriteEXIFJpeg(fname: String); overload;
+    procedure WriteEXIFJpeg(fname: String); overload;
     procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
    {$ENDIF}
 
@@ -1401,8 +1401,8 @@ type
   PConvert= ^TConvert;
 var
   yr, mn, dy, h, m, s: Integer;
-  d: TDate;
-  t: TTime;
+  d: TDateTime;
+  t: TDateTime;
 begin
   Result := 0;
   if Length(ARawStr) >= SizeOf(TConvert) then
@@ -2233,6 +2233,9 @@ begin
 
   // Write the image from the stream into the thumbnail buffer
   n := AStream.Size;
+  if n > 65000 then  // limit probably still too high, thumbnail must fit into a 64k segment along with all other tags...
+    raise Exception.Create('Thumbnail too large.');
+
   SetLength(FThumbnailBuffer, n);
   if AStream.Read(FThumbnailBuffer[0], n) < n then
     raise Exception.Create('Could not read thumbnail image.');
@@ -3537,7 +3540,8 @@ begin
 end;
 
 { Replaces or adds the currently loaded EXIF data to the image in AOrigName
-  and saves as AFileName }
+  and saves as AFileName.
+  WARNING: This destroys the currently loaded exif data! }
 procedure TImgData.WriteEXIFJpeg(AFileName, AOrigName: String;
   AdjSize: Boolean = true);
 var
@@ -3558,7 +3562,9 @@ begin
   end;
 end;
 
-{ Write the current EXIF data into the existing jpeg file named AFileName }
+{ Write the current EXIF data into the existing jpeg file named AFileName.
+  NOTE: THis does not work if the specified file does not exist because this
+  is where the image data come from. }
 procedure TImgData.WriteEXIFJpeg(AFilename: String; AdjSize: Boolean = true);
 var
   imgStream: TMemoryStream;
@@ -3574,8 +3580,10 @@ begin
   end;
 end;
 
-{ Writes the current Exif data and the image data of the loaded file to the
-  specified new file. }
+{ Writes Exif and image data of the currently loaded file to a file with
+  the specified name.
+  NOTE: This does not work if the exif data were created manaully because
+  there is no filename where to get the image data from. }
 procedure TImgData.WriteExifJpegTo(AFileName: String);
 var
   imgStream: TMemoryStream;
@@ -3612,25 +3620,6 @@ begin
   end;
 end;
 
-{
-  Result := nil;
-  if HasThumbnail and (ExifObj.ThumbType = JPEG_COMP_TYPE) then
-  begin
-    b := ExtractThumbnailBuffer();
-    if (b = nil) then
-      exit;
-    ms := TMemoryStream.Create;
-    try
-      ms.WriteBuffer(b[0], Length(b));
-      ms.Position := 0;
-      Result := TJpegImage.create;
-      Result.LoadFromStream(ms);
-    finally
-      ms.Free;
-    end;
-  end;
-end;      }
-
 procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname, origName: String;
   AdjSize: boolean = true);
 begin
@@ -3643,7 +3632,7 @@ begin
   end;
   WriteEXIFJpeg(j,fname,adjSize);
 end;
-                (*
+
 procedure TImgData.WriteEXIFJpeg(fname: String);
 var
   img: TJpegImage;
@@ -3655,7 +3644,7 @@ begin
   finally
     img.Free;
   end;
-end;              *)
+end;
 
 procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname: String;
   AdjSize:boolean = true);

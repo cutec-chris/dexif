@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 135
   Top = 179
+  Width = 759
+  Height = 375
   Caption = 'Delphi EXIF Jpeg Viewer'
-  ClientHeight = 336
-  ClientWidth = 743
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

@@ -95,7 +95,7 @@ begin
   CheckFalse(DUT.HasEXIF,'TImgData should not have EXIF'+co_DUTPicSelfImage01);
   if not DUT.HasEXIF then begin
     // write a file with an empty exif
-    DUT.WriteEXIFJpeg(co_DUTPicSelfImage01);
+    DUT.WriteEXIFJpegTo(co_DUTPicSelfImage01);
     FreeAndNil(DUT);
     // Reread the file
     DUT:= TImgData.Create(GenAll);
@@ -115,6 +115,7 @@ var
   DUT: TImgData;
   s: String;
   v: variant;
+  imgStream: TMemoryStream;
 begin
   CreateGreenJpg(co_DUTPicSelfImage01);
   CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
@@ -135,7 +136,15 @@ begin
     CheckFalse(VarIsNull(v), 'Tag "ExposureTime" not found.');
     CheckEquals(EXPECTED_EXPOSURETIME, Double(v), 'Tag "ExposureTime" mismatch');
   end;
-  DUT.WriteEXIFJpeg(co_DUTPicSelfImage01, false); // false required to avoid overwriting the image width tag with the file value
+
+  // Merge these exif data with the image file
+  imgStream := TMemorystream.Create;
+  try
+    imgStream.LoadFromFile(co_DUTPicSelfImage01);
+    DUT.WriteEXIFJpeg(imgStream, co_DUTPicSelfImage01, false);
+  finally
+    imgStream.Free;
+  end;
   FreeAndNil(DUT);
 
   DUT := TImgData.Create;
