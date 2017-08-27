@@ -540,7 +540,7 @@ const
   JPEG_COMP_TYPE = 6;
   TIFF_COMP_TYPE = 1;
 
-  GPSCnt = 31 - 4;
+  GPSCnt = 32;
   ExifTagCnt = 251 - 5;  // NOTE: was 250 before, but "count" is 251
   TotalTagCnt = GPSCnt + ExifTagCnt;
 
@@ -601,14 +601,14 @@ var
 // TagTable : array of TTagEntry =
 // TagTable : TTagDefArray [0..ExifTagCnt] =
 // TagTable: TTagDefArray =
- ((TID:0; TType:0; ICode:2; Tag:$0001; Name:'InteroperabilityIndex'  ),         {0}
-  (TID:0; TType:0; ICode:2; Tag:$0002; Name:'InteroperabilityVersion'),
-  (TID:0; TType:0; ICode:2; Tag:$000B; Name:'ACDComment'             ),
-  (TID:0; TType:0; ICode:2; Tag:$00FE; Name:'NewSubfileType'         ),
-  (TID:0; TType:0; ICode:2; Tag:$00FF; Name:'SubfileType'            ),
+ ((TID:0; TType:2; ICode:2; Tag:$0001; Name:'InteroperabilityIndex'  ),         {0}
+  (TID:0; TType:7; ICode:2; Tag:$0002; Name:'InteroperabilityVersion'),
+  (TID:0; TType:2; ICode:2; Tag:$000B; Name:'ACDComment'             ),
+  (TID:0; TType:4; ICode:2; Tag:$00FE; Name:'NewSubfileType'         ),
+  (TID:0; TType:3; ICode:2; Tag:$00FF; Name:'SubfileType'            ),
   (TID:0; TType:4; ICode:2; Tag:$0100; Name:'ImageWidth'             ),
   (TID:0; TType:4; ICode:2; Tag:$0101; Name:'ImageLength'            ),
-  (TID:0; TType:0; ICode:2; Tag:$0102; Name:'BitsPerSample'          ),
+  (TID:0; TType:3; ICode:2; Tag:$0102; Name:'BitsPerSample'; Count:3),
   (TID:0; TType:3; ICode:2; Tag:$0103; Name:'Compression'            ;Desc:'';Code:'6:Jpeg,3:Uncompressed,1:TIFF'),
   (TID:0; TType:3; ICode:2; Tag:$0106; Name:'PhotometricInterpretation';Desc:''; Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
   (TID:0; TType:3; ICode:2; Tag:$010A; Name:'FillOrder'              ),         {10}
@@ -640,19 +640,19 @@ var
   (TID:0; TType:0; ICode:2; Tag:$0124; Name:'T4Options'              ),
   (TID:0; TType:0; ICode:2; Tag:$0125; Name:'T6Options'              ),
   (TID:0; TType:3; ICode:2; Tag:$0128; Name:'ResolutionUnit'         ;Desc:''; Code:'1:None Specified,2:Inch,3:Centimeter'),
-  (TID:0; TType:0; ICode:2; Tag:$0129; Name:'PageNumber'             ),
-  (TID:0; TType:0; ICode:2; Tag:$012D; Name:'TransferFunction'       ),
+  (TID:0; TType:3; ICode:2; Tag:$0129; Name:'PageNumber';    Count:2 ),
+  (TID:0; TType:3; ICode:2; Tag:$012D; Name:'TransferFunction'; Count:768),
   (TID:0; TType:2; ICode:2; Tag:$0131; Name:'Software'               ),
   (TID:0; TType:2; ICode:2; Tag:$0132; Name:'DateTime'               ),
   (TID:0; TType:2; ICode:2; Tag:$013B; Name:'Artist'                 ),
   (TID:0; TType:2; ICode:2; Tag:$013C; Name:'HostComputer'           ),         {40}
   (TID:0; TType:3; ICode:2; Tag:$013D; Name:'Predictor'              ),
-  (TID:0; TType:0; ICode:2; Tag:$013E; Name:'WhitePoint'             ),
-  (TID:0; TType:0; ICode:2; Tag:$013F; Name:'PrimaryChromaticities'  ),
+  (TID:0; TType:5; ICode:2; Tag:$013E; Name:'WhitePoint';    Count:2 ),
+  (TID:0; TType:5; ICode:2; Tag:$013F; Name:'PrimaryChromaticities'; Count:6),
   (TID:0; TType:0; ICode:2; Tag:$0140; Name:'ColorMap'               ),
-  (TID:0; TType:0; ICode:2; Tag:$0141; Name:'HalfToneHints'          ),
-  (TID:0; TType:0; ICode:2; Tag:$0142; Name:'TileWidth'              ),
-  (TID:0; TType:0; ICode:2; Tag:$0143; Name:'TileLength'             ),
+  (TID:0; TType:3; ICode:2; Tag:$0141; Name:'HalfToneHints'; Count:2 ),
+  (TID:0; TType:4; ICode:2; Tag:$0142; Name:'TileWidth'              ),
+  (TID:0; TType:4; ICode:2; Tag:$0143; Name:'TileLength'             ),
   (TID:0; TType:0; ICode:2; Tag:$0144; Name:'TileOffsets'            ),
   (TID:0; TType:0; ICode:2; Tag:$0145; Name:'TileByteCounts'         ),
   (TID:0; TType:0; ICode:2; Tag:$014A; Name:'SubIFDs'                ),         {50}
@@ -681,10 +681,10 @@ var
   (TID:0; TType:0; ICode:2; Tag:$0207; Name:'JPEGQTables'            ),
   (TID:0; TType:0; ICode:2; Tag:$0208; Name:'JPEGDCTables'           ),
   (TID:0; TType:0; ICode:2; Tag:$0209; Name:'JPEGACTables'           ),
-  (TID:0; TType:5; ICode:2; Tag:$0211; Name:'YCbCrCoefficients'      ),
-  (TID:0; TType:0; ICode:2; Tag:$0212; Name:'YCbCrSubSampling'       ),
+  (TID:0; TType:5; ICode:2; Tag:$0211; Name:'YCbCrCoefficients'; Count:3),
+  (TID:0; TType:3; ICode:2; Tag:$0212; Name:'YCbCrSubSampling'; Count:2),
   (TID:0; TType:3; ICode:2; Tag:$0213; Name:'YCbCrPositioning'       ; Desc:'';Code:'1:Centered,2:Co-sited'),
-  (TID:0; TType:0; ICode:2; Tag:$0214; Name:'ReferenceBlackWhite'    ),
+  (TID:0; TType:5; ICode:2; Tag:$0214; Name:'ReferenceBlackWhite'; Count:6),
   (TID:0; TType:1; ICode:2; Tag:$02BC; Name:'ExtensibleMetadataPlatform' ),     {80}
   (TID:0; TType:0; ICode:2; Tag:$0301; Name:'Gamma'                     ),
   (TID:0; TType:0; ICode:2; Tag:$0302; Name:'ICCProfileDescriptor'      ),
@@ -761,8 +761,8 @@ var
   (TID:0; TType:0; ICode:2; Tag:$80E4; Name:'DataType'               ),   //* obsoleted by SampleFormat */
   (TID:0; TType:0; ICode:2; Tag:$80E5; Name:'ImageDepth'             ),
   (TID:0; TType:0; ICode:2; Tag:$80E6; Name:'TileDepth'              ),
-  (TID:0; TType:0; ICode:2; Tag:$828D; Name:'CFARepeatPatternDim'    ),
-  (TID:0; TType:0; ICode:2; Tag:$828E; Name:'CFAPattern'             ),
+  (TID:0; TType:3; ICode:2; Tag:$828D; Name:'CFARepeatPatternDim'; Count:2),
+  (TID:0; TType:1; ICode:2; Tag:$828E; Name:'CFAPattern'             ),  //count: ???
   (TID:0; TType:0; ICode:2; Tag:$828F; Name:'BatteryLevel'           ),
   (TID:0; TType:2; ICode:2; Tag:$8298; Name:'Copyright'              ),
   (TID:0; TType:5; ICode:2; Tag:$829A; Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; FormatS:'%s sec'),   {160}
@@ -779,15 +779,15 @@ var
         '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
   (TID:0; TType:2; ICode:2; Tag:$8824; Name:'SpectralSensitivity'    ),
   (TID:0; TType:0; ICode:2; Tag:$8825; Name:'GPSInfo';               Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),         {170}
-  (TID:0; TType:0; ICode:2; Tag:$8827; Name:'ISOSpeedRatings'        ), { 171 }
+  (TID:0; TType:3; ICode:2; Tag:$8827; Name:'ISOSpeedRatings'        ), { 171 }
   (TID:0; TType:0; ICode:2; Tag:$8828; Name:'OECF'                   ),
   (TID:0; TType:0; ICode:2; Tag:$8829; Name:'Interlace'              ),
-  (TID:0; TType:0; ICode:2; Tag:$882A; Name:'TimeZoneOffset'         ),
+  (TID:0; TType:8; ICode:2; Tag:$882A; Name:'TimeZoneOffset'         ),
   (TID:0; TType:3; ICode:2; Tag:$882B; Name:'SelfTimerMode'          ),
-  (TID:0; TType:0; ICode:2; Tag:$9000; Name:'ExifVersion'            ),
+  (TID:0; TType:7; ICode:2; Tag:$9000; Name:'ExifVersion'            ),
   (TID:0; TType:2; ICode:2; Tag:$9003; Name:'DateTimeOriginal'       ),
   (TID:0; TType:2; ICode:2; Tag:$9004; Name:'DateTimeDigitized'      ),
-  (TID:0; TType:0; ICode:2; Tag:$9101; Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:GenCompConfig),
+  (TID:0; TType:7; ICode:2; Tag:$9101; Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:GenCompConfig),
   (TID:0; TType:5; ICode:2; Tag:$9102; Name:'CompressedBitsPerPixel' ),         {180}
   (TID:0; TType:10;ICode:2; Tag:$9201; Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:SSpeedCallBack),
   (TID:0; TType:5; ICode:2; Tag:$9202; Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
@@ -810,13 +810,13 @@ var
   (TID:0; TType:4; ICode:2; Tag:$9211; Name:'ImageNumber'            ),
   (TID:0; TType:2; ICode:2; Tag:$9212; Name:'SecurityClassification' ),
   (TID:0; TType:2; ICode:2; Tag:$9213; Name:'ImageHistory'           ),
-  (TID:0; TType:0; ICode:2; Tag:$9214; Name:'SubjectLocation'        ),         {200}
+  (TID:0; TType:3; ICode:2; Tag:$9214; Name:'SubjectLocation'; Count:2),         {200}
   (TID:0; TType:0; ICode:2; Tag:$9215; Name:'ExposureIndex'          ),
   (TID:0; TType:0; ICode:2; Tag:$9216; Name:'TIFF/EPStandardID'      ),
   (TID:0; TType:0; ICode:2; Tag:$9217; Name:'SensingMethod'          ),
   (TID:0; TType:0; ICode:2; Tag:$923F; Name:'StoNits'                ),
-  (TID:0; TType:0; ICode:2; Tag:$927C; Name:'MakerNote'              ),
-  (TID:0; TType:0; ICode:2; Tag:$9286; Name:'UserComment'            ),
+  (TID:0; TType:7; ICode:2; Tag:$927C; Name:'MakerNote'              ),
+  (TID:0; TType:7; ICode:2; Tag:$9286; Name:'UserComment'            ),
   (TID:0; TType:2; ICode:2; Tag:$9290; Name:'SubSecTime'             ),
   (TID:0; TType:2; ICode:2; Tag:$9291; Name:'SubSecTimeOriginal'     ),
   (TID:0; TType:2; ICode:2; Tag:$9292; Name:'SubSecTimeDigitized'    ),
@@ -840,16 +840,16 @@ var
   (TID:0; TType:0; ICode:2; Tag:$A211; Name:'ImageNumber'             ),
   (TID:0; TType:0; ICode:2; Tag:$A212; Name:'SecurityClassification'  ),
   (TID:0; TType:0; ICode:2; Tag:$A213; Name:'ImageHistory'            ),
-  (TID:0; TType:0; ICode:2; Tag:$A214; Name:'SubjectLocation'         ),        {230}
+  (TID:0; TType:3; ICode:2; Tag:$A214; Name:'SubjectLocation'; Count:2),        {230}
   (TID:0; TType:5; ICode:2; Tag:$A215; Name:'ExposureIndex'           ),
   (TID:0; TType:0; ICode:2; Tag:$A216; Name:'TIFF/EPStandardID'       ;   Desc:'TIFF/EPStandardID' ),
   (TID:0; TType:3; ICode:2; Tag:$A217; Name:'SensingMethod'           ;   Desc:'';Code:'0:Unknown,1:MonochromeArea,'+
     '1:Not defined,2:OneChipColorArea,3:TwoChipColorArea,4:ThreeChipColorArea,'+
     '5:ColorSequentialArea,6:MonochromeLinear,7:TriLinear,'+
     '8:ColorSequentialLinear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
-  (TID:0; TType:0; ICode:2; Tag:$A300; Name:'FileSource'              ;  Desc:'';Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
-  (TID:0; TType:0; ICode:2; Tag:$A301; Name:'SceneType'               ;  Desc:'';Code:'0:Unknown,1:Directly Photographed'),
-  (TID:0; TType:0; ICode:2; Tag:$A302; Name:'CFAPattern'              ),
+  (TID:0; TType:7; ICode:2; Tag:$A300; Name:'FileSource'              ;  Desc:'';Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
+  (TID:0; TType:7; ICode:2; Tag:$A301; Name:'SceneType'               ;  Desc:'';Code:'0:Unknown,1:Directly Photographed'),
+  (TID:0; TType:7; ICode:2; Tag:$A302; Name:'CFAPattern'              ),
   (TID:0; TType:3; ICode:2; Tag:$A401; Name:'CustomRendered'          ;  Desc:'';Code:'0:Normal process,1:Custom process'),
   (TID:0; TType:3; ICode:2; Tag:$A402; Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
   (TID:0; TType:3; ICode:2; Tag:$A403; Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
@@ -865,39 +865,39 @@ var
   (TID:0; TType:2; ICode:2; Tag:$A420; Name:'ImageUniqueID'           ; Desc:''; Code:'0:Close view,1:Distant view'),  {250}
   (TID:0; TType:0; ICode:2; Tag:0;     Name:'Unknown'));                        {250}
 
-
  GPSTable : array [0..GPSCnt-1] of TTagEntry =
- ((TID:0; TType:0; ICode:2; Tag:$000; Name:'GPSVersionID'           ),
-  (TID:0; TType:2; ICode:2; Tag:$001; Name:'GPSLatitudeRef'         ),
-  (TID:0; TType:0; ICode:2; Tag:$002; Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$003; Name:'GPSLongitudeRef'        ),
-  (TID:0; TType:0; ICode:2; Tag:$004; Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:0; ICode:2; Tag:$005; Name:'GPSAltitudeRef'         ; Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
-//  (TID:0; TType:0; ICode:2; Tag:$006; Name:'GPSAltitude'            ;   CallBack:GpsAltitude),
-//  (TID:0; TType:0; ICode:2; Tag:$007; Name:'GPSTimeStamp'           ;   CallBack:CvtTime),
+ ((TID:0; TType:1; ICode:2; Tag:$000; Name:'GPSVersionID';   Count:4),
+  (TID:0; TType:2; ICode:2; Tag:$001; Name:'GPSLatitudeRef'; Count:2),
+  (TID:0; TType:5; ICode:2; Tag:$002; Name:'GPSLatitude';    Count:3;  Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0; TType:2; ICode:2; Tag:$003; Name:'GPSLongitudeRef';Count:2),
+  (TID:0; TType:5; ICode:2; Tag:$004; Name:'GPSLongitude';   Count:3 ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0; TType:1; ICode:2; Tag:$005; Name:'GPSAltitudeRef'          ; Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
+  (TID:0; TType:5; ICode:2; Tag:$006; Name:'GPSAltitude'             ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsAltitude),
+  (TID:0; TType:5; ICode:2; Tag:$007; Name:'GPSTimeStamp';   Count:3;  Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:CvtTime),
   (TID:0; TType:2; ICode:2; Tag:$008; Name:'GPSSatellites'          ),
-  (TID:0; TType:0; ICode:2; Tag:$009; Name:'GPSStatus'              ),
-  (TID:0; TType:2; ICode:2; Tag:$00A; Name:'GPSMeasureMode'         ),
-  (TID:0; TType:0; ICode:2; Tag:$00B; Name:'GPSDOP'                 ),
-  (TID:0; TType:2; ICode:2; Tag:$00C; Name:'GPSSpeedRef'            ),
-  (TID:0; TType:0; ICode:2; Tag:$00D; Name:'GPSSpeed'               ),
-  (TID:0; TType:2; ICode:2; Tag:$00E; Name:'GPSTrackRef'            ),
-  (TID:0; TType:0; ICode:2; Tag:$00F; Name:'GPSTrack'               ),
-  (TID:0; TType:2; ICode:2; Tag:$010; Name:'GPSImageDirectionRef'   ),
-  (TID:0; TType:0; ICode:2; Tag:$011; Name:'GPSImageDirection'      ),
+  (TID:0; TType:2; ICode:2; Tag:$009; Name:'GPSStatus';      Count:2;  Desc:''; Code:'A:Active;V:Void'),
+  (TID:0; TType:2; ICode:2; Tag:$00A; Name:'GPSMeasureMode'; Count:2;  Desc:''; Code:'2:2D,3:3D'),
+  (TID:0; TType:5; ICode:2; Tag:$00B; Name:'GPSDOP'                 ),
+  (TID:0; TType:2; ICode:2; Tag:$00C; Name:'GPSSpeedRef';    Count:2;  Desc:''; Code:'K:km/h,M:mph,N:knots'),
+  (TID:0; TType:5; ICode:2; Tag:$00D; Name:'GPSSpeed'               ),
+  (TID:0; TType:2; ICode:2; Tag:$00E; Name:'GPSTrackRef';    Count:2;  Desc:''; Code:'M:Magnetic North,T:True North'),
+  (TID:0; TType:5; ICode:2; Tag:$00F; Name:'GPSTrack'               ),
+  (TID:0; TType:2; ICode:2; Tag:$010; Name:'GPSImageDirectionRef'; Count:2; Desc:''; Code:'M:Magnetic North,T:True North'),
+  (TID:0; TType:5; ICode:2; Tag:$011; Name:'GPSImageDirection'      ),
   (TID:0; TType:2; ICode:2; Tag:$012; Name:'GPSMapDatum'            ),
-  (TID:0; TType:2; ICode:2; Tag:$013; Name:'GPSDestLatitudeRef'     ),
-//  (TID:0; TType:0; ICode:2; Tag:$014; Name:'GPSDestLatitude'        ;   CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$015; Name:'GPSDestLongitudeRef'    ),
-//  (TID:0; TType:0; ICode:2; Tag:$016; Name:'GPSDestLongitude'       ;   CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$017; Name:'GPSDestBearingRef'      ),
-  (TID:0; TType:0; ICode:2; Tag:$018; Name:'GPSDestBearing'         ),
-  (TID:0; TType:2; ICode:2; Tag:$019; Name:'GPSDestDistanceRef'     ),
-  (TID:0; TType:0; ICode:2; Tag:$01A; Name:'GPSDestDistance'        ),
-  (TID:0; TType:0; ICode:2; Tag:$01B; Name:'GPSProcessingMode'      ),
-  (TID:0; TType:0; ICode:2; Tag:$01C; Name:'GPSAreaInformation'     ),
-  (TID:0; TType:2; ICode:2; Tag:$01D; Name:'GPSDateStamp'           ),
-  (TID:0; TType:0; ICode:2; Tag:$01E; Name:'GPSDifferential'        )
+  (TID:0; TType:2; ICode:2; Tag:$013; Name:'GPSDestLatitudeRef'; Count:2; Desc:''; Code:'N:North,S:South'),
+  (TID:0; TType:5; ICode:2; Tag:$014; Name:'GPSDestLatitude'; Count:3; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0; TType:2; ICode:2; Tag:$015; Name:'GPSDestLongitudeRef'; Count:2; Desc:''; Code: 'E:East,W:West'),
+  (TID:0; TType:5; ICode:2; Tag:$016; Name:'GPSDestLongitude'; Count:3; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0; TType:2; ICode:2; Tag:$017; Name:'GPSDestBearingRef'; Count:2; Desc:''; Code:'M:Magnetic North,T:True North'),
+  (TID:0; TType:5; ICode:2; Tag:$018; Name:'GPSDestBearing'         ),
+  (TID:0; TType:2; ICode:2; Tag:$019; Name:'GPSDestDistanceRef'; Count:2; Desc:''; Code:'K:Kilometers,M:Miles,N:Nautic Miles'),
+  (TID:0; TType:5; ICode:2; Tag:$01A; Name:'GPSDestDistance'        ),
+  (TID:0; TType:7; ICode:2; Tag:$01B; Name:'GPSProcessingMode'      ),
+  (TID:0; TType:7; ICode:2; Tag:$01C; Name:'GPSAreaInformation'     ),
+  (TID:0; TType:2; ICode:2; Tag:$01D; Name:'GPSDateStamp';   Count:7),
+  (TID:0; TType:3; ICode:2; Tag:$01E; Name:'GPSDifferential'; Count:1; Desc:''; Code:'0:No Correction,1:Differential Correction'),
+  (TID:0; TType:5; ICode:2; Tag:$01F; Name:'GPSHPositioningError')
   );
 
   tagInit : boolean = false;
