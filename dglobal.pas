@@ -34,8 +34,8 @@ type
     TType: word;         // tag type  -- see FMT_XXXX constants
     ICode: Word;         // iptc code
     Tag: Word;           // primary key
-    Name: String;        // searchable
     Count: Word;         // count of TType elements
+    Name: String;        // searchable
     Desc: String;        // translatable
     Code: String;        // decode capability
     Data: String;            // display value
@@ -104,8 +104,8 @@ const
   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
-  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Name:''; Count:1;
-    Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0;
+  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Count:1;
+    Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0;
     CallBack: nil; id:0; parentID:0);
 
   GpsFormat = gf_DMS_Short;

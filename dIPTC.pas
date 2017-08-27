@@ -152,7 +152,7 @@ var
      ( TID:0; TType:0; ICode:2; Tag: 60; Name:'TimeCreated';      Desc:'Time created'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
      ( TID:0; TType:0; ICode:2; Tag: 62; Name:'DigitizeDate';     Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
      ( TID:0; TType:0; ICode:2; Tag: 63; Name:'DigitizeTime';     Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-     ( TID:0; TType:0; ICode:2; Tag: 65; Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';FormatS:'';Size: 32),
+     ( TID:0; TType:0; ICode:2; Tag: 65; Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
      ( TID:0; TType:0; ICode:2; Tag: 70; Name:'ProgramVersion';   Desc:'Program version'; Code:'';Data:'';Raw:'';FormatS:'';Size: 10),
      ( TID:0; TType:0; ICode:2; Tag: 75; Name:'ObjectCycle';      Desc:'Object Cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
      ( TID:0; TType:0; ICode:2; Tag: 80; Name:'ByLine';           Desc:'ByLine';       Code:'';Data:'';Raw:'';FormatS:'';Size:32),
@@ -160,9 +160,9 @@ var
      ( TID:0; TType:0; ICode:2; Tag: 90; Name:'City';             Desc:'City';         Code:'';Data:'';Raw:'';FormatS:'';Size:32),
      ( TID:0; TType:0; ICode:2; Tag: 92; Name:'SubLocation';      Desc:'Sublocation';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
      ( TID:0; TType:0; ICode:2; Tag: 95; Name:'State';            Desc:'Province/State';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-     ( TID:0; TType:0; ICode:2; Tag:100; Name:'LocationCode';     Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
-     ( TID:0; TType:0; ICode:2; Tag:101; Name:'LocationName';     Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size:   64),
-     ( TID:0; TType:0; ICode:2; Tag:103; Name:'TransmissionRef';  Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:   32),
+     ( TID:0; TType:0; ICode:2; Tag:100; Name:'LocationCode';     Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+     ( TID:0; TType:0; ICode:2; Tag:101; Name:'LocationName';     Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+     ( TID:0; TType:0; ICode:2; Tag:103; Name:'TransmissionRef';  Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
      ( TID:0; TType:0; ICode:2; Tag:105; Name:'ImageHeadline';    Desc:'Image headline'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
      ( TID:0; TType:0; ICode:2; Tag:110; Name:'ImageCredit';      Desc:'Image credit';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
      ( TID:0; TType:0; ICode:2; Tag:115; Name:'Source';           Desc:'Source';        Code:'';Data:'';Raw:'';FormatS:'';Size:32),
@@ -170,10 +170,10 @@ var
      ( TID:0; TType:0; ICode:2; Tag:118; Name:'Contact';          Desc:'Contact';       Code:'';Data:'';Raw:'';FormatS:'';Size:128),
      ( TID:0; TType:0; ICode:2; Tag:120; Name:'ImageCaption';     Desc:'Image caption'; Code:'';Data:'';Raw:'';FormatS:'';Size:2000),
      ( TID:0; TType:0; ICode:2; Tag:122; Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-     ( TID:0; TType:0; ICode:2; Tag:130; Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2 ),
-     ( TID:0; TType:0; ICode:2; Tag:131; Name:'Orientation';      Desc:'Image Orientation'; Code:'';Data:'';Raw:'';FormatS:'';Size:1 ),
-     ( TID:0; TType:0; ICode:2; Tag:135; Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3 ),
-     ( TID:0; TType:0; ICode:8; Tag:10;  Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2 )
+     ( TID:0; TType:0; ICode:2; Tag:130; Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+     ( TID:0; TType:0; ICode:2; Tag:131; Name:'Orientation';      Desc:'Image Orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
+     ( TID:0; TType:0; ICode:2; Tag:135; Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+     ( TID:0; TType:0; ICode:8; Tag:10;  Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
     );
 
 procedure IPTCWriteTransFile(const AFileName: String);
