@@ -30,7 +30,6 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
-    btnLoad: TButton;
     pdlg: TOpenPictureDialog;
     Memo1: TMemo;
     StatusBar1: TStatusBar;
@@ -39,24 +38,27 @@ type
     btnTree: TButton;
     PBar: TProgressBar;
     cbVerbose: TCheckBox;
-    btnWrite: TButton;
     JpegOut: TSavePictureDialog;
     cbDecode: TCheckBox;
-    btnCmt: TButton;
     Image1: TImage;
+    btnLoad: TButton;
+    btnWriteSame: TButton;
+    btnWriteSmall: TButton;
+    btnComment: TButton;
     btnSaveThumb: TButton;
     btnLoadThumb: TButton;
     btnRemoveThumb: TButton;
     btnCreateThumb: TButton;
     procedure btnAboutClick(Sender: TObject);
-    procedure btnCmtClick(Sender: TObject);
+    procedure btnCommentClick(Sender: TObject);
     procedure btnCreateThumbClick(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
     procedure btnLoadThumbClick(Sender: TObject);
     procedure btnRemoveThumbClick(Sender: TObject);
     procedure btnSaveThumbClick(Sender: TObject);
     procedure btnTreeClick(Sender: TObject);
-    procedure btnWriteClick(Sender: TObject);
+    procedure btnWriteSameClick(Sender: TObject);
+    procedure btnWriteSmallClick(Sender: TObject);
     procedure cbDecodeClick(Sender: TObject);
     procedure cbVerboseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -204,8 +206,9 @@ var
   jpegThumb:tjpegimage;
   {$ENDIF}
 begin
-  btnWrite.enabled := false;
-  btnCmt.enabled := false;
+  btnWriteSame.Enabled := false;
+  btnWriteSmall.Enabled := false;
+  btnComment.Enabled := false;
   if pdlg.Execute then
   begin
     CleanupPreview;
@@ -332,10 +335,12 @@ begin
       Memo(' -- EXIF Summary -(long)---- ');
       Memo(ImgData.ExifObj.toLongString());
     // only allow image to be written if no errors
-      if ImgData.ErrStr = '<none>' then
-        btnWrite.Enabled := true;
+      if ImgData.ErrStr = '<none>' then begin
+        btnWriteSmall.Enabled := true;
+        btnWriteSame.Enabled := true;
+      end;
       if ImgData.ExifObj.ExifComment <> '' then
-        btnCmt.Enabled := true;
+        btnComment.Enabled := true;
       Memo('');
     // An example of pulling some specific tags out of
     // the found items list.  I'll change the names
@@ -552,7 +557,8 @@ end;
 
 procedure TForm1.btnTreeClick(Sender: TObject);
 begin
-  btnWrite.Enabled := false;
+  btnWriteSame.Enabled := false;
+  btnWriteSmall.Enabled := false;
   if cbClearOnLoad.Checked then
     Memo1.Clear;
   CleanupPreview;
@@ -643,7 +649,7 @@ begin
   Verbose := cbVerbose.Checked;
 end;
 
-procedure TForm1.btnWriteClick(Sender: TObject);
+procedure TForm1.btnWriteSmallClick(Sender: TObject);
 var
   Orig, Smaller: TJpegImage;
   buffer: tbitmap;
@@ -709,6 +715,16 @@ begin
   end;
 end;
 
+procedure TForm1.btnWriteSameClick(Sender: TObject);
+var
+  fn: String;
+begin
+  fn := ChangeFileExt(ImgData.Filename, '') + '_same.jpg';
+  ImgData.WriteExifJpegTo(fn);
+  Memo('');
+  Memo('Currently loaded image written to "' + fn + '"');
+end;
+
 procedure TForm1.btnSaveThumbClick(Sender: TObject);
 var
   fn: String;
@@ -735,7 +751,7 @@ begin
   DexifDecode := cbDecode.Checked;
 end;
 
-procedure TForm1.btnCmtClick(Sender: TObject);
+procedure TForm1.btnCommentClick(Sender: TObject);
 var
   cmt:string;
   fn: String;

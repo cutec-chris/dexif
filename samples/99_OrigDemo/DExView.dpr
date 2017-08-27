@@ -1,9 +1,5 @@
 program DExView;
 
-
-
-
-
 uses
   Forms,
   MainView in 'MainView.pas' {Form1},

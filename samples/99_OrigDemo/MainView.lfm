@@ -97,14 +97,14 @@ object Form1: TForm1
     OnClick = cbVerboseClick
     TabOrder = 7
   end
-  object btnWrite: TButton
+  object btnWriteSmall: TButton
     Left = 24
     Height = 25
     Top = 176
     Width = 75
     Caption = 'Write Small'
     Enabled = False
-    OnClick = btnWriteClick
+    OnClick = btnWriteSmallClick
     TabOrder = 8
   end
   object cbDecode: TCheckBox
@@ -118,14 +118,14 @@ object Form1: TForm1
     State = cbChecked
     TabOrder = 9
   end
-  object btnCmt: TButton
+  object btnComment: TButton
     Left = 24
     Height = 25
     Top = 144
     Width = 75
     Caption = 'Comment...'
     Enabled = False
-    OnClick = btnCmtClick
+    OnClick = btnCommentClick
     TabOrder = 10
   end
   object btnSaveThumb: TButton
@@ -163,6 +163,15 @@ object Form1: TForm1
     Caption = 'Create thumbnail'
     OnClick = btnCreateThumbClick
     TabOrder = 14
+  end
+  object btnWriteSame: TButton
+    Left = 24
+    Height = 25
+    Top = 207
+    Width = 75
+    Caption = 'Write same'
+    OnClick = btnWriteSameClick
+    TabOrder = 15
   end
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'

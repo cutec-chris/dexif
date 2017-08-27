@@ -202,10 +202,13 @@ begin
       SizeOf(DWord);                 // offset to next IFD, as 32-bit integer.
     dataStartOffset := startPos + sizeOfTagPart - FTiffHeaderPosition;
 
-    // In case of IFD1 (ADirectoryID = 1) the thumbnail will be written
-    // immediately after all tags of IFD1. This offset position must be noted
-    // in the tag
-    thumbStartOffset := dataStartOffset;
+    if (ADirectoryID = 1) and FImgData.ExifObj.HasThumbnail then begin
+      // In case of IFD1 (ADirectoryID = 1) the thumbnail will be written
+      // immediately after all tags of IFD1. This offset position must be noted
+      // in the tag
+      thumbStartOffset := dataStartOffset;
+      dataStartOffset := dataStartOffset + Length(FImgData.ExifObj.ThumbnailBuffer);
+    end;
 
     // Write record count as 16-bit integer
     w := FixEndian16(count);
@@ -254,6 +257,12 @@ begin
     dw := FixEndian32(offs);
     AStream.WriteBuffer(dw, SizeOf(dw));
 
+    // Write the thumbnail
+    if ADirectoryID = 1 then begin
+      b := FImgData.ExifObj.ThumbnailBuffer;
+      AStream.Write(b[0], Length(b));
+    end;
+
     // Copy the valuestream to the end of the tag stream (AStream)
     valueStream.Seek(0, soFromBeginning);
     AStream.CopyFrom(valueStream, valueStream.Size);
@@ -264,11 +273,6 @@ begin
     valueStream.Free;
   end;
 
-  // Write the thumbnail
-  if ADirectoryID = 1 then begin
-    b := FImgData.ExifObj.ThumbnailBuffer;
-    AStream.Write(b[0], Length(b));
-  end;
 end;
 
 //------------------------------------------------------------------------------

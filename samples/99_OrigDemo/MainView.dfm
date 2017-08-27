@@ -105,7 +105,7 @@ object Form1: TForm1
     TabOrder = 7
     OnClick = cbVerboseClick
   end
-  object btnWrite: TButton
+  object btnWriteSmall: TButton
     Left = 24
     Top = 176
     Width = 75
@@ -113,7 +113,17 @@ object Form1: TForm1
     Caption = 'Write Small'
     Enabled = False
     TabOrder = 8
-    OnClick = btnWriteClick
+    OnClick = btnWriteSmallClick
+  end
+  object btnWriteSame: TButton
+    Left = 24
+    Top = 207
+    Width = 75
+    Height = 25
+    Caption = 'Write same'
+    Enabled = False
+    TabOrder = 15
+    OnClick = btnWriteSameClick
   end
   object cbDecode: TCheckBox
     Left = 16
@@ -126,7 +136,7 @@ object Form1: TForm1
     TabOrder = 9
     OnClick = cbDecodeClick
   end
-  object btnCmt: TButton
+  object btnComment: TButton
     Left = 24
     Top = 144
     Width = 75
@@ -134,7 +144,7 @@ object Form1: TForm1
     Caption = 'Comment...'
     Enabled = False
     TabOrder = 10
-    OnClick = btnCmtClick
+    OnClick = btnCommentClick
   end
   object btnSaveThumb: TButton
     Left = 568
