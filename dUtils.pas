@@ -57,6 +57,7 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
+procedure InitTagEntry(out ATagEntry: TTagEntry);
 function InsertSpaces(InStr: String): String;
 
 function JPEGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
@@ -698,6 +699,27 @@ begin
        if ch <> #0 then
          Result := Result + ch;
     end;
+end;
+
+procedure InitTagEntry(out ATagEntry: TTagEntry);
+begin
+  with ATagEntry do begin
+    TID := 0;          // TagTableID - EXIF use
+    TType := 0;        // tag type
+    ICode := 0;        // iptc code
+    Tag := 0;          // primary key
+    Name := '';        // searchable
+    Count := 1;        // elements of TType
+    Desc := '';        // translatable
+    Code := '';        // decode capability
+    Data := '';        // display value
+    Raw := '';         // unprocessed value
+    FormatS := '';     // Format string
+    Size := 0;         // used by ITPC module
+    CallBack := nil;   // formatting string
+    id := 0;           // msta - used for exif-parent-child-structure
+    parentID := 0;     // msta - used for exif-parent-child-structure
+  end;
 end;
 
 function InsertSpaces(InStr: String): String;
