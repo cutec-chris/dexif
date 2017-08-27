@@ -39,7 +39,6 @@ type
     Code: String;        // decode capability
     Data: String;            // display value
     Raw: ansistring;         // unprocessed value  -- DO NOT CHANGE TO STRING !!!
-//    PRaw: integer;       // pointer to unprocessed
     FormatS: string;     // Format string
     Size: integer;       // used by ITPC module
     CallBack: TStrFunc;  // formatting string
@@ -104,8 +103,9 @@ const
   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
-  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Name:''; Desc:'';
-    Code:''; Data:''; Raw:''; FormatS:''; Size:0);
+  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0;
+    Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0;
+    CallBack: nil; id:0; parentID:0);
 
   GpsFormat = gf_DMS_Short;
 
