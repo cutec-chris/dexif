@@ -627,8 +627,8 @@ var
   (TID:0;TType:4;ICode: 2;Tag: $117;   Name:'StripByteCounts'        ),
   (TID:0;TType:3;ICode: 2;Tag: $118;   Name:'MinSampleValue'         ),         {20}
   (TID:0;TType:3;ICode: 2;Tag: $119;   Name:'MaxSampleValue'         ),
-  (TID:0;TType:5;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
-  (TID:0;TType:5;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f'),
+  (TID:0;TType:5;ICode: 2;Tag: $11A;   Name:'XResolution'            ; Desc:''; Code:''; Data:''; Raw:''; FormatS:'%5.2f'),
+  (TID:0;TType:5;ICode: 2;Tag: $11B;   Name:'YResolution'            ; Desc:''; Code:''; Data:''; Raw:''; FormatS:'%5.2f'),
   (TID:0;TType:3;ICode: 2;Tag: $11C;   Name:'PlanarConfiguration'    ),
   (TID:0;TType:2;ICode: 2;Tag: $11D;   Name:'PageName'               ),
   (TID:0;TType:5;ICode: 2;Tag: $11E;   Name:'XPosition'              ),
@@ -673,7 +673,7 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $15B;   Name:'JPEGTables'             ),
   (TID:0;TType:0;ICode: 2;Tag: $15F;   Name:'OPIProxy'               ),
   (TID:0;TType:0;ICode: 2;Tag: $200;   Name:'JPEGProc'               ),
-  (TID:0;TType:4;ICode: 2;Tag: $201;   Name:'JPEGInterchangeFormat'  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),
+  (TID:0;TType:4;ICode: 2;Tag: $201;   Name:'JPEGInterchangeFormat'  ; Desc:'';Code:''; Data:''; Raw:''; FormatS:''; Size:4),
   (TID:0;TType:4;ICode: 2;Tag: $202;   Name:'JPEGInterchangeFormatLength'),
   (TID:0;TType:0;ICode: 2;Tag: $203;   Name:'JPEGRestartInterval'    ),         {70}
   (TID:0;TType:0;ICode: 2;Tag: $205;   Name:'JPEGLosslessPredictors' ),
@@ -765,20 +765,20 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $828E;  Name:'CFAPattern'             ),
   (TID:0;TType:0;ICode: 2;Tag: $828F;  Name:'BatteryLevel'           ),
   (TID:0;TType:2;ICode: 2;Tag: $8298;  Name:'Copyright'              ),
-  (TID:0;TType:5;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%s sec'),   {160}
-  (TID:0;TType:5;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:5;ICode: 2;Tag: $829A;  Name:'ExposureTime'             ; Desc:'Exposure time'; Code:''; Data:''; Raw:''; FormatS:'%s sec'),   {160}
+  (TID:0;TType:5;ICode: 2;Tag: $829D;  Name:'FNumber'                  ; Desc:''; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
   (TID:0;TType:4;ICode: 2;Tag: $83BB;  Name:'IPTC/NAA'                 ; Desc:'IPTC/NAA'),
   (TID:0;TType:0;ICode: 2;Tag: $84E3;  Name:'IT8RasterPadding'         ),
   (TID:0;TType:0;ICode: 2;Tag: $84E5;  Name:'IT8ColorTable'            ),
   (TID:0;TType:0;ICode: 2;Tag: $8649;  Name:'ImageResourceInformation' ),
-  (TID:0;TType:0;ICode: 2;Tag: $8769;  Name:'ExifOffset'               ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),
+  (TID:0;TType:0;ICode: 2;Tag: $8769;  Name:'ExifOffset'               ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),
   (TID:0;TType:0;ICode: 2;Tag: $8773;  Name:'InterColorProfile'        ),
   (TID:0;TType:3;ICode: 2;Tag: $8822;  Name:'ExposureProgram'          ; Desc:'';Code:
         '0:Unidentified,1:Manual,2:Normal,3:Aperture priority,'+
         '4:Shutter priority,5:Creative(slow),'+
         '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
   (TID:0;TType:2;ICode: 2;Tag: $8824;  Name:'SpectralSensitivity'    ),
-  (TID:0;TType:0;ICode: 2;Tag: $8825;  Name:'GPSInfo';               Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:4),         {170}
+  (TID:0;TType:0;ICode: 2;Tag: $8825;  Name:'GPSInfo';               Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),         {170}
   (TID:0;TType:0;ICode: 2;Tag: $8827;  Name:'ISOSpeedRatings'        ), { 171 }
   (TID:0;TType:0;ICode: 2;Tag: $8828;  Name:'OECF'                   ),
   (TID:0;TType:0;ICode: 2;Tag: $8829;  Name:'Interlace'              ),
@@ -787,20 +787,20 @@ var
   (TID:0;TType:0;ICode: 2;Tag: $9000;  Name:'ExifVersion'            ),
   (TID:0;TType:2;ICode: 2;Tag: $9003;  Name:'DateTimeOriginal'       ),
   (TID:0;TType:2;ICode: 2;Tag: $9004;  Name:'DateTimeDigitized'      ),
-  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:GenCompConfig),
+  (TID:0;TType:0;ICode: 2;Tag: $9101;  Name:'ComponentsConfiguration'; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:GenCompConfig),
   (TID:0;TType:5;ICode: 2;Tag: $9102;  Name:'CompressedBitsPerPixel' ),         {180}
-  (TID:0;TType:10;ICode: 2;Tag: $9201; Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; Callback:SSpeedCallBack),
-  (TID:0;TType:5;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:10;ICode: 2;Tag: $9201; Name:'ShutterSpeedValue'      ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:SSpeedCallBack),
+  (TID:0;TType:5;ICode: 2;Tag: $9202;  Name:'ApertureValue'          ; Desc:'Aperture value'; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
   (TID:0;TType:10;ICode: 2;Tag: $9203; Name:'BrightnessValue'        ),
   (TID:0;TType:10;ICode: 2;Tag: $9204; Name:'ExposureBiasValue'      ),
-  (TID:0;TType:5;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'F%0.1f'),
+  (TID:0;TType:5;ICode: 2;Tag: $9205;  Name:'MaxApertureValue'       ; Desc:''; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
   (TID:0;TType:5;ICode: 2;Tag: $9206;  Name:'SubjectDistance'        ),
   (TID:0;TType:3;ICode: 2;Tag: $9207;  Name:'MeteringMode'           ; Desc:'';Code:
         '0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
   (TID:0;TType:3;ICode: 2;Tag: $9208;  Name:'LightSource'            ; Desc:'';Code:
         '0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
-  (TID:0;TType:3;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:FlashCallBack),
-  (TID:0;TType:5;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%0.2f mm'), {190}
+  (TID:0;TType:3;ICode: 2;Tag: $9209;  Name:'Flash'                  ; Desc:'';Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:FlashCallBack),
+  (TID:0;TType:5;ICode: 2;Tag: $920A;  Name:'FocalLength'            ; Desc:'Focal length'; Code:''; Data:''; Raw:''; FormatS:'%0.2f mm'), {190}
   (TID:0;TType:0;ICode: 2;Tag: $920B;  Name:'FlashEnergy'             ),
   (TID:0;TType:0;ICode: 2;Tag: $920C;  Name:'SpatialFrequencyResponse'),
   (TID:0;TType:0;ICode: 2;Tag: $920D;  Name:'Noise'                   ),
@@ -854,7 +854,7 @@ var
   (TID:0;TType:3;ICode: 2;Tag: $A402;  Name:'ExposureMode'            ;  Desc:'';Code:'0:Auto,1:Manual,2:Auto bracket'),
   (TID:0;TType:3;ICode: 2;Tag: $A403;  Name:'WhiteBalance'            ;  Desc:'';Code:'0:Auto,1:Manual'),
   (TID:0;TType:5;ICode: 2;Tag: $A404;  Name:'DigitalZoomRatio'        ),        {240}
-  (TID:0;TType:3;ICode: 2;Tag: $A405;  Name:'FocalLengthIn35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; PRaw:0; FormatS:'%5.2f mm'),
+  (TID:0;TType:3;ICode: 2;Tag: $A405;  Name:'FocalLengthIn35mmFilm'   ;  Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; FormatS:'%5.2f mm'),
   (TID:0;TType:3;ICode: 2;Tag: $A406;  Name:'SceneCaptureType'        ;  Desc:'';Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
   (TID:0;TType:3;ICode: 2;Tag: $A407;  Name:'GainControl'             ; Desc:''; Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
   (TID:0;TType:3;ICode: 2;Tag: $A408;  Name:'Contrast'                ; Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
@@ -869,9 +869,9 @@ var
  GPSTable : array [0..GPSCnt-1] of TTagEntry =
  ((TID:0;TType:0;ICode: 2;Tag: $000;   Name:'GPSVersionID'           ),
   (TID:0;TType:2;ICode: 2;Tag: $001;   Name:'GPSLatitudeRef'         ),
-  (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0;TType:0;ICode: 2;Tag: $002;   Name:'GPSLatitude'            ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
   (TID:0;TType:2;ICode: 2;Tag: $003;   Name:'GPSLongitudeRef'        ),
-  (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; PRaw:0; FormatS:''; Size:0; CallBack:GpsPosn),
+  (TID:0;TType:0;ICode: 2;Tag: $004;   Name:'GPSLongitude'           ; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
   (TID:0;TType:0;ICode: 2;Tag: $005;   Name:'GPSAltitudeRef'         ; Desc:''; Code:'0:Above Sealevel,1:Below Sealevel'),
 //  (TID:0;TType:0;ICode: 2;Tag: $006;   Name:'GPSAltitude'            ;   CallBack:GpsAltitude),
 //  (TID:0;TType:0;ICode: 2;Tag: $007;   Name:'GPSTimeStamp'           ;   CallBack:CvtTime),
@@ -1984,7 +1984,6 @@ begin
         NewEntry.Data := fStr;
         NewEntry.Raw := rawStr;
         NewEntry.Size := Length(rawStr);
-        NewEntry.PRaw := ValuePtr;
         NewEntry.TType := tagFormat;
         NewEntry.ParentID := AParentID;
         NewEntry.id := tagID;
@@ -2149,7 +2148,6 @@ begin
       newEntry.Data := ARawStr;
       newEntry.Raw  := ARawStr;
       newEntry.Size := Length(ARawStr);
-      newEntry.PRaw := 0;
       NewEntry.TType:= fType;
       newEntry.parentID := 0;
       newEntry.id := 0;
