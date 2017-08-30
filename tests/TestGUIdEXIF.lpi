@@ -71,9 +71,8 @@
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\dExifWrite.pas"/>
+        <Filename Value="..\dexifwrite.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dexifwrite"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\dGlobal.pas"/>
@@ -113,6 +112,11 @@
       <Debugging>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
     </Linking>
   </CompilerOptions>
   <Debugging>

@@ -1,7 +1,9 @@
 ; IMPORTANT: This file must be stored in ANSI encoding
 ; Use a TAB character between the two columns
 
-ExposureTime	1/120
+GPSLatitude	12° 34' 56" N
+;:quit
+
 Comment	This text is in the COMMENT segment.
 Artist	Ansel Adams
 ImageDescription	A nice image
@@ -27,3 +29,7 @@ ISOSpeedRatings	800
 ExposureProgram	1
 MeteringMode	3
 LightSource	3
+;GPSLatitude	12,3456789
+;GPSLongitude	1,23456789
+GPSLatitude	12° 34' 56" N
+GPSLongitude	1° 23' 45" E

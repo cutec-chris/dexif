@@ -127,7 +127,7 @@ type
     procedure SetArtist(v: String);
 
     function GetExifComment: String;
-    procedure SetExifComment(v: String);
+    procedure SetExifComment(AValue: String);
 
     function GetImageDescription: String;
     procedure SetImageDescription(const AValue: String);
@@ -141,9 +141,17 @@ type
     function GetCopyright: String;
     procedure SetCopyright(const AValue: String);
 
+    function GetGPSCoordinate(ATagName: String;
+      ACoordType: TGpsCoordType): Extended;
+    procedure SetGPSCoordinate(ATagName: String; const AValue: Extended;
+      ACoordType: TGpsCoordType);
+    function GetGPSLatitude: Extended;
+    procedure SetGPSLatitude(const AValue: Extended);
+    function GetGPSLongitude: Extended;
+    procedure SetGPSLongitude(const AValue: Extended);
+
     function GetHeight: Integer;
     procedure Setheight(AValue: Integer);
-
     function GetWidth: Integer;
     procedure SetWidth(AValue: Integer);
 
@@ -167,12 +175,21 @@ type
     function GetThumbTagValue(ATagName: String): Variant;
     procedure SetThumbTagValue(ATagName: String; AValue: variant);
 
+    procedure InternalGetBinaryTagValue(ATag: TTagEntry; var ABuffer: ansistring);
     function InternalGetTagValue(ATag: TTagEntry): Variant;
-    procedure InternalSetTagValue(ATagName: String; AValue: Variant; ATagTypes: TTagTypes);
+    procedure InternalSetTagValue(ATagName: String; AValue: Variant;
+      ATagTypes: TTagTypes; ABinaryData: Pointer = nil; ABinaryDataCount: Word = 0);
+    function NumericTagToVar(ABuffer: Pointer; ATagType: Integer): Variant;
+    procedure VarToNumericTag(AValue:variant; ATag: PTagEntry);
 
     // misc
+    function CreateTagPtr(const ATagDef: TTagEntry; IsThumbTag: Boolean; AParentID: Word = 0): PTagEntry;
+    function FindTagPtr(const ATagDef: TTagEntry; IsThumbTag: Boolean): PTagEntry;
+
+    (*
     function GetTagPtr(ATagTypes: TTagTypes; ATagID: Word; AForceCreate: Boolean=false;
       AParentID: word=0; ATagType: word=65535): PTagEntry;
+      *)
     procedure RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: word=0);
 
     procedure ClearDirStack;
@@ -297,6 +314,10 @@ type
         read GetDateTimeModified write SetDateTimeModified;
     property ExifComment: String
         read GetExifComment write SetExifComment;
+    property GPSLatitude: Extended
+        read GetGPSLatitude write SetGPSLatitude;
+    property GPSLongitude: Extended
+        read GetGPSLongitude write SetGPSLongitude;
     property ImageDescription: String
         read GetImageDescription write SetImageDescription;
     property Height: Integer
@@ -1124,7 +1145,14 @@ begin
     end;
 end;
 
-function EncodeTagValue(ATag: TTagEntry; AValue: String): Integer;
+{ Tries to find the string AValue within TTagEntry.Code and
+  returns the numerical value assigned to the Code (before the colon).
+
+  Example:
+  The codes defined for the Tag "ResolutionUnits" are
+    '1:None Specified,2:Inch,3:Centimeter'.
+  If AValue is 'Inch' then the value 2 is returned. }
+function GetTagCode(ATag: TTagEntry; AValue: String): Integer;
 var
   i: Integer;
 begin
@@ -1480,6 +1508,13 @@ end;
 
 procedure TImageInfo.SetDateTimeOriginal(const AValue: TDateTime);
 var
+  v: Variant;
+begin
+  v := FormatDateTime(ExifDateFormat, AValue);
+  SetTagValue('DateTimeOriginal', v);
+end;
+  (*
+var
   p: PTagEntry;
 begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
@@ -1492,7 +1527,7 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
-
+    *)
 function TImageInfo.GetDateTimeDigitized: TDateTime;
 var
   t: TTagEntry;
@@ -1505,6 +1540,13 @@ end;
 
 procedure TImageInfo.SetDateTimeDigitized(const AValue: TDateTime);
 var
+  v: Variant;
+begin
+  v := FormatDateTime(ExifDateFormat, AValue);
+  SetTagValue('DateTimeDigitized', v);
+end;
+    (*
+var
   p: PTagEntry;
 begin
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
@@ -1516,7 +1558,7 @@ begin
   p^.Raw := FormatDateTime(ExifDateFormat, AValue);
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
-end;
+end;     *)
 
 function TImageInfo.GetDateTimeModified: TDateTime;
 var
@@ -1530,6 +1572,13 @@ end;
 
 procedure TImageInfo.SetDateTimeModified(const AValue: TDateTime);
 var
+  v: Variant;
+begin
+  v := FormatDateTime(ExifDateFormat, AValue);
+  SetTagValue('DateTime', v);
+end;
+(*
+var
   p: PTagEntry;
 begin
   p := GetTagPtr([ttExif], TAG_DATETIME_MODIFY, true, 0, FMT_STRING);
@@ -1541,7 +1590,7 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
-
+  *)
 Procedure TImageInfo.AdjDateTime(ADays, AHours, AMins, ASecs: Integer);
 var
   delta: double;
@@ -1854,6 +1903,8 @@ var
   lookupEntry, newEntry: TTagEntry;
   tmpTR: ansistring;
   tagID: word;
+
+  i: Integer;
 begin
   PushDirStack(DirStart, OffsetBase);
   numDirEntries := Get16u(DirStart);
@@ -1896,10 +1947,9 @@ begin
     end
     else
       valuePtr := dirEntry + 8;
-
     rawStr := Copy(parent.EXIFsegment^.Data, valuePtr, byteCount);
-    fStr := '';
 
+    fStr := '';
     if BuildList in [GenString, GenAll] then
     begin
       lookUpEntry := FetchTagDefByID(tag, ATagType);
@@ -1908,7 +1958,7 @@ begin
       begin
         case tagFormat of
           FMT_UNDEFINED:
-            fStr := '"' + StrBefore(RawStr,#0) + '"';
+            fStr := '"' + StrBefore(rawStr,#0) + '"';
           FMT_STRING:
             begin
               fStr := Copy(parent.EXIFsegment^.Data, valuePtr, byteCount);
@@ -1925,7 +1975,7 @@ begin
         transStr := Desc;
       end;
 
-      Case tag of
+      case tag of
         TAG_USERCOMMENT:
           // strip off comment header
           fStr := trim(Copy(rawStr, 9, byteCount-8));
@@ -1938,10 +1988,10 @@ begin
 
       // Update trace strings
       tmpTR := crlf +
-          siif(ExifTrace > 0, 'tag[$' + IntToHex(tag,4) + ']: ', '') +
-          transStr + dExifDelim + fStr +
-          siif(ExifTrace > 0, ' [size: ' + IntToStr(byteCount) + ']', '') +
-          siif(ExifTrace > 0, ' [start: ' + IntToStr(valuePtr) + ']', '');
+        siif(ExifTrace > 0, 'tag[$' + IntToHex(tag,4) + ']: ', '') +
+        transStr + dExifDelim + fStr +
+        siif(ExifTrace > 0, ' [size: ' + IntToStr(byteCount) + ']', '') +
+        siif(ExifTrace > 0, ' [start: ' + IntToStr(valuePtr) + ']', '');
 
       if ATagType = ttThumb then
         Thumbtrace := ThumbTrace + tmpTR
@@ -2223,20 +2273,7 @@ end;
 function TImageInfo.HasThumbnail: boolean;
 begin
   Result := Length(FThumbnailBuffer) > 0;
-  {
-  // 19 is minimum valid starting position
-  result := (FThumbStart > 21) and (FThumbLength > 256);
-  }
 end;
-
-(*
-Procedure TImageInfo.ProcessThumbnail;
-var
-start: integer;
-begin
-start := ThumbStart+9;
-ProcessExifDir(start, 9, ThumbLength-12,ThumbTag,'Thumbnail', 1);
-end;                   *)
 
 procedure TImageInfo.ProcessThumbnail;
 var
@@ -2428,63 +2465,67 @@ begin
   inherited;
 end;
 
+procedure TImageInfo.InternalGetBinaryTagValue(ATag: TTagEntry;
+  var ABuffer: ansistring);
+begin
+  ABuffer := '';
+
+  if ATag.Tag = 0 then
+    exit;
+
+  if ATag.TType = FMT_BINARY then begin
+    SetLength(ABuffer, Length(ATag.Raw));
+    Move(ATag.Raw[1], ABuffer[1], Length(ATag.Raw));
+  end;
+end;
+
 function TImageInfo.InternalGetTagValue(ATag: TTagEntry): Variant;
 var
   s: String;
   r: TExifRational;
+  i: Integer;
 begin
   Result := Null;
   if ATag.Tag = 0 then
     exit;
 
+  // Handle strings
   case ATag.TType of
     FMT_STRING:
       begin
        {$IFDEF FPC}
         {$IFNDEF FPC3+}
-         s := AnsiToUTF8(ATag.Raw);
+        s := AnsiToUTF8(ATag.Raw);
         {$ELSE}
-         s := ATag.Raw;
+        s := ATag.Raw;
         {$ENDIF}
        {$ELSE}
-         s := ATag.Raw;
+        s := ATag.Raw;
        {$ENDIF}
-         while s[Length(s)] = #0 do
-           Delete(s, Length(s), 1);
-         Result := s;
-      end;
-    FMT_BYTE:
-      Result := PByte(@ATag.Raw[1])^;
-    FMT_USHORT:
-      if MotorolaOrder then
-        Result := BEToN(PWord(@ATag.Raw[1])^) else
-        Result := LEToN(PWord(@ATag.Raw[1])^);
-    FMT_ULONG:
-      if MotorolaOrder then
-        Result := BEToN(PWord(@ATag.Raw[1])^) else
-        Result := LEToN(PDWord(@ATag.Raw[1])^);
-    FMT_URATIONAL,
-    FMT_SRATIONAL:
-      begin
-        r := PExifRational(@ATag.Raw[1])^;
-        if MotorolaOrder then begin
-          r.Numerator := BEToN(DWord(r.Numerator));       // Type cast needed for D7
-          r.Denominator := BEToN(DWord(r.Denominator));
-        end else begin
-          r.Numerator := LEToN(DWord(r.Numerator));
-          r.Denominator := LEtoN(DWord(r.Denominator));
-        end;
-        if ATag.TType = FMT_SRATIONAL then begin
-          r.Numerator := LongInt(r.Numerator);
-          r.Denominator := LongInt(r.Denominator);
-        end;
-        Result := r.Numerator / r.Denominator;
+        while s[Length(s)] = #0 do
+          Delete(s, Length(s), 1);
+        Result := s;
+        exit;
       end;
     FMT_BINARY:
-      if ATag.Size = 1 then
-        Result := PByte(@ATag.Raw[1])^
-      else
+      begin
         Result := '<binary>';
+        exit;
+      end;
+  end;
+
+  // Handle numeric data. Be aware that they may be arrays
+  if ATag.Count = 1 then
+    Result := NumericTagToVar(@ATag.Raw[1], ATag.TType)
+  else begin
+    case ATag.TType of
+      FMT_BYTE, FMT_USHORT, FMT_ULONG:
+        Result := VarArrayCreate([0, ATag.Count-1], vtInteger);
+      FMT_URATIONAL, FMT_SRATIONAL:
+        Result := VarArrayCreate([0, ATag.Count-1], vtExtended);
+    end;
+    for i:=0 to ATag.Count-1 do
+      Result[i] := NumericTagToVar(@ATag.Raw[1 + BYTES_PER_FORMAT[ATag.TType]*i], ATag.TType);
   end;
 
   // Correction for some special cases
@@ -2495,11 +2536,62 @@ begin
   end;
 end;
 
-// WARNING: There are tags which consist of multiple values of the same type.
-// At the moment, there is no way to detect this case here. Writing them here
-// will cause malfunction of the EXIF segment and/or file.
+{ ABuffer points into the raw buffer of a tag. The number pointed to will be
+  converted to a numeric value; its type depends on ATagType. }
+function TImageInfo.NumericTagToVar(ABuffer: Pointer; ATagType: Integer): Variant;
+var
+  r: TExifRational;
+begin
+  case ATagType of
+    FMT_BYTE:
+      Result := PByte(ABuffer)^;
+    FMT_USHORT:
+      if MotorolaOrder then
+        Result := BEToN(PWord(ABuffer)^) else
+        Result := LEToN(PWord(ABuffer)^);
+    FMT_ULONG:
+      if MotorolaOrder then
+        Result := BEToN(PDWord(ABuffer)^) else
+        Result := LEToN(PDWord(ABuffer)^);
+    FMT_URATIONAL,
+    FMT_SRATIONAL:
+      begin
+        r := PExifRational(ABuffer)^;
+        if MotorolaOrder then begin
+          r.Numerator := BEToN(DWord(r.Numerator));       // Type cast needed for D7
+          r.Denominator := BEToN(DWord(r.Denominator));
+        end else begin
+          r.Numerator := LEToN(DWord(r.Numerator));
+          r.Denominator := LEtoN(DWord(r.Denominator));
+        end;
+        if ATagType = FMT_SRATIONAL then begin
+          r.Numerator := LongInt(r.Numerator);
+          r.Denominator := LongInt(r.Denominator);
+        end;
+        Result := r.Numerator / r.Denominator;
+      end;
+    {
+    FMT_BINARY:
+      if ATag.Size = 1 then
+        Result := PByte(@ATag.Raw[1])^
+      else
+        Result := '<binary>';
+    }
+    else
+      raise Exception.CreateFmt('NumericTagToVar does not handle Tag type %d', [ord(ATagType)]);
+  end;
+end;
+
+{ Central routine for writing data to a tag.
+  ATagName ........... Name of the tag
+  AValue ............. Value to be written to the tag if the tag is not binary
+  ABinaryData ........ Data to be written to the tag if it is binary
+  ABinaryDataCount ... Number of bytes to be written to a binary tag.
+  ATagTypes .......... Determines in which list the tag definition is found
+                       (Exif&Thumb, or GPS), and which list will get the new tag
+                       (Exif&GPS, or thumb }
 procedure TImageInfo.InternalSetTagValue(ATagName: String; AValue: Variant;
-  ATagTypes: TTagTypes);
+  ATagTypes: TTagTypes; ABinaryData: Pointer = nil; ABinaryDataCount: Word = 0);
 const
   IGNORE_PARENT = $FFFF;
 var
@@ -2508,9 +2600,7 @@ var
   tagID: Word;
   parentID: Word;
   strValue: String;
-  intValue: Integer;
-  fracValue: TExifRational;
-  tagComponents: Word;
+  i: Integer;
 begin
   // Find the tag's ID from the lists of tag definitions.
   // Note: Normal ("Exif") and thumbnail tags share the same list, gps tags
@@ -2525,23 +2615,21 @@ begin
   tagID := tagDef.Tag;
 
   // Delete this tag if the provided value is varNull or varEmpty
-  if VarIsNull(AValue) or VarIsEmpty(AValue) then begin
-    RemoveTag(ATagTypes, tagID);
-    exit;
-  end;
-
-  // Check for out-of-range conditions
-  if not VarIsStr(AValue) then begin
-    intValue := VarAsType(AValue, vtInteger);
-    if ((tagDef.TType = FMT_BYTE)   and ((AValue < 0) or (AValue > 255))) or
-       ((tagDef.TType = FMT_USHORT) and ((AValue < 0) or (AValue > 65535))) or
-       ((tagDef.TType = FMT_ULONG)  and ((AValue < 0) or (AValue > 4294967295)))
-    then
-      raise Exception.CreateFmt('Out-of-range privided for tag "%s"', [ATagName]);
+  if tagDef.TType = FMT_BINARY then begin
+    if ABinaryData = nil then begin
+      RemoveTag(ATagTypes, tagID);
+      exit;
+    end;
+  end else begin
+    if VarIsNull(AValue) or VarIsEmpty(AValue) then begin
+      RemoveTag(ATagTypes, tagID);
+      exit;
+    end;
   end;
 
   // Find the pointer to the tag
-  P := GetTagPtr(ATagTypes, tagID, false, IGNORE_PARENT);
+  P := FindTagPtr(tagDef^, (ttThumb in ATagTypes));
+//  P := GetTagPtr(ATagTypes, tagID, false, IGNORE_PARENT);
   if P = nil then begin
     // The tag does not yet exist --> create a new one.
     // BUT: The TagTable does not show the ParentIDs...
@@ -2549,7 +2637,8 @@ begin
     // (IFD0). Since this may not be allowed there's a risk that the EXIF in the
     // modified file cannot be read correctly...
     parentID := 0;
-    P := GetTagPtr(ATagTypes, tagID, true, parentID, tagDef.TType);
+//    P := GetTagPtr(ATagTypes, tagID, true, parentID, tagDef.TType);
+    P := CreateTagPtr(tagDef^, (ttThumb in ATagTypes), parentID);
   end;
   if P = nil then
     raise Exception.CreateFmt('Failure to create tag "%s"', [ATagName]);
@@ -2567,10 +2656,17 @@ begin
     exit;
   end;
 
+  // Handle binary data
+  if P^.TType = FMT_BINARY then begin
+    SetLength(P^.Raw, ABinaryDataCount);
+    Move(ABinaryData^, P^.Raw[1], ABinaryDataCount);
+    P^.Size := ABinaryDataCount;
+    P^.Data := '<binary>';
+    exit;
+  end;
+
   // NOTE: Since hardware-specific data are not yet decoded the element Raw
   // is still in the endianness of the source!
-
-  tagComponents := P^.Count;
 
   // Handle some special cases
   case tagID of
@@ -2590,57 +2686,94 @@ begin
       end;
   end;
 
-  case P^.TType of
+  p^.Raw := '';
+  p^.Data := '';
+  p^.Size := 0;
+  if VarIsArray(AValue) then
+    for i:=VarArrayLowBound(AValue, 1) to VarArrayHighBound(AValue, 1) do
+      VarToNumericTag(AValue[i], p)
+  else
+    VarToNumericTag(AValue, p);
+end;
+
+procedure TImageInfo.VarToNumericTag(AValue:variant; ATag: PTagEntry);
+var
+  intValue: Integer;
+  fracvalue: TExifRational;
+  len: Integer;
+  s: String;
+  w: Word;
+  dw: DWord;
+  ok: Boolean;
+begin
+  if VarIsArray(AValue) then
+    raise Exception.Create('No variant arrays allowed in VarToTag');
+
+  // fractional data
+  if (ATag^.TType in [FMT_URATIONAL, FMT_SRATIONAL]) then
+  begin
+    fracvalue := DoubleToRational(AValue);
+    if MotorolaOrder then begin
+      fracvalue.Numerator := NToBE(DWord(fracValue.Numerator));       // Type-cast needed for D7
+      fracValue.Denominator := NToBE(DWord(fracValue.Denominator));
+    end else begin
+      fracValue.Numerator := NtoLE(DWord(fracValue.Numerator));
+      fracValue.Denominator := NtoLE(DWord(fracValue.Denominator));
+    end;
+    len := Length(ATag^.Raw);
+    SetLength(ATag^.Raw, len + 8);
+    Move(fracValue, ATag^.Raw[len + 1], 8);
+    ATag^.Size := Length(ATag^.Raw);
+    s := FormatNumber(ATag^.Raw, ATag^.TType, ATag^.FormatS, ATag^.Code);
+    ATag^.Data := s; //siif(len = 0, s, ATag^.Data + dExifDataSep + s);
+    exit;
+  end;
+
+  // integer data
+  if VarIsType(AValue, vtInteger) then begin
+    case ATag^.TType of
+      FMT_BYTE   : ok := (AValue >= 0) and (AValue <= 255);
+      FMT_USHORT : ok := (AValue >= 0) and (AValue <= Word($FFFF));
+      FMT_ULONG  : ok := (AValue >= 0) and (AValue <= DWord($FFFFFFFF));
+      FMT_SBYTE  : ok := (AValue >= -128) and (AValue <= 127);
+      FMT_SSHORT : ok := (AValue >= -32768) and (AValue <= 32767);
+      FMT_SLONG  : ok := (AValue >= -2147483647) and (AValue <= 2147483647);
+        { NOTE: D7 does not run with the correct lower limit -2147483648 }
+    end;
+    if not ok then
+      raise Exception.CreateFmt('Tag "%s": Value "%s" is out of range.', [ATag^.Name, VarToStr(AValue)]);
+  end;
+
+  if not TryStrToInt(VarToStr(AValue), intValue) then begin
+    intValue := GetTagCode(ATag^, VarToStr(AValue));
+    if (intValue = -1) then
+      raise Exception.CreateFmt('Lookup value "%s" of tag "%s" not found', [VarToStr(AValue), ATag^.Name]);
+  end;
+
+  len := Length(ATag^.Raw);
+  SetLength(ATag^.Raw, len + BYTES_PER_FORMAT[ATag^.TType]);
+  case ATag^.TType of
     FMT_BYTE:
-      begin
-        intValue := EncodeTagValue(p^, VarToStr(AValue));
-        if (intValue = -1) and not (not TryStrToInt(VarToStr(AValue), intValue)) then
-          raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
-        Move(PByte(@intValue)^, p^.Raw[1], 1);
-        p^.Size := Length(p^.Raw);
-        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
-      end;
+      Move(intValue, ATag^.Raw[1+len], 1);
     FMT_USHORT:
       begin
-        intValue := EncodeTagValue(p^, VarToStr(AValue));
-        if (intValue = -1) then
-          if (not TryStrToInt(VarToStr(AValue), intValue)) then
-            raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
-        SetLength(p^.Raw, 2);
-        if MotorolaOrder then intValue := NToBE(intValue) else intValue := NToLE(intValue);
-        Move(PWord(@intValue)^, p^.Raw[1], 2);
-        p^.Size := Length(p^.Raw);
-        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+        if MotorolaOrder then w := NtoBE(word(intValue)) else w := NtoLE(word(intvalue));
+        Move(w, ATag^.Raw[1+len], 2);
       end;
     FMT_ULONG:
       begin
-        intValue := EncodeTagValue(p^, VarToStr(AValue));
-        if (intValue = -1) and not (not TryStrToInt(VarToStr(AValue), intValue)) then
-          raise Exception.CreateFmt('Value "%s" of tag "%s" not found', [VarToStr(AValue), ATagName]);
-        SetLength(p^.Raw, 4);
-        if MotorolaOrder then intValue := NToBE(DWord(intValue)) else intValue := NToLE(DWord(intValue));
-        Move(PDWord(@intValue)^ , p^.Raw[1], 4);
-        p^.Size := Length(p^.Raw);
-        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
+        if MotorolaOrder then
+          dw := NtoBE(DWord(intValue)) else
+          dw := NtoLE(DWord(intValue));
+        Move(dw, ATag^.Raw[1+len], 4);
       end;
-    FMT_URATIONAL, FMT_SRATIONAL:
-      begin
-        SetLength(p^.Raw, 8);
-        fracvalue := DoubleToRational(AValue);
-        if MotorolaOrder then begin
-          fracvalue.Numerator := NToBE(DWord(fracValue.Numerator));       // Type-cast needed for D7
-          fracValue.Denominator := NToBE(DWord(fracValue.Denominator));
-        end else begin
-          fracValue.Numerator := NtoLE(DWord(fracValue.Numerator));
-          fracValue.Denominator := NtoLE(DWord(fracValue.Denominator));
-        end;
-        Move(fracValue, p^.Raw[1], 8);
-        p^.Size := Length(p^.Raw);
-        P^.Data := FormatNumber(p^.Raw, p^.TType, p^.FormatS, p^.Code);
-      end;
+    else
+      raise Exception.Create('Unhandled data format in VarToNumericTag');
   end;
+  ATag^.Size := Length(ATag^.Raw);
+  s := FormatNumber(ATag^.Raw, ATag^.TType, ATag^.FormatS, ATag^.Code);
+  ATag^.Data := siif(len = 0, s, ATag^.Data + dExifDataSep + s);
 end;
-
 
 function TImageInfo.GetTagByID(ATagID: Word): TTagEntry;
 var
@@ -2924,6 +3057,52 @@ begin
   end;
 end;
 
+function TImageInfo.CreateTagPtr(const ATagDef: TTagEntry; IsThumbTag: Boolean;
+  AParentID: Word = 0): PTagEntry;
+var
+  tag: TTagEntry;
+  idx: Integer;
+begin
+  tag := ATagDef;
+  if tag.Size > 0 then
+    tag.Raw := StringOfChar(#0, tag.Size);
+  if IsThumbTag then
+  begin
+    tag.ParentID := 1;
+    idx := AddTagToThumbArray(tag);
+    Result := @fiThumbArray[idx];
+  end else
+  begin
+    tag.ParentID := AParentID;
+    idx := AddTagToArray(tag);
+    Result := @fiTagArray[idx];
+  end;
+end;
+
+function TImageInfo.FindTagPtr(const ATagDef: TTagEntry; IsThumbTag: Boolean): PTagEntry;
+var
+  i: Integer;
+begin
+  if IsThumbTag then
+  begin
+    for i:=0 to fiThumbCount-1 do
+      if (fiThumbArray[i].Tag = ATagDef.Tag) and (fiThumbArray[i].Name = ATagDef.Name) then
+      begin
+        Result := @fiThumbArray[i];
+        exit;
+      end;
+  end else
+  begin
+    for i:=0 to fiTagCount-1 do
+      if (fiTagArray[i].Tag = ATagDef.Tag) and (fiTagArray[i].Name = ATagDef.Name) then
+      begin
+        Result := @fiTagArray[i];
+        exit;
+      end;
+  end;
+  Result := nil;
+end;
+                    (*
 function TImageInfo.GetTagPtr(ATagTypes: TTagTypes; ATagID: word;
   AForceCreate: Boolean=false; AParentID:word=0; ATagType: word=65535): PTagEntry;
 var
@@ -2980,13 +3159,18 @@ begin
     end;
   end;
 end;
-
+            *)
 function TImageInfo.GetArtist: String;
 begin
   Result := GetTagValueAsString('Artist');
 end;
 
 procedure TImageInfo.SetArtist(v: String);
+begin
+  SetTagValue('Artist', v);
+end;
+(*
+
 var
   p : PTagEntry;
 begin
@@ -3003,7 +3187,55 @@ begin
   p^.Data := p^.Raw;
   p^.Size := Length(p^.Raw);
 end;
+  *)
+function TImageInfo.GetExifComment: String;
+var
+  buf: ansistring;
+  w: WideString;
+  a: ansistring;
+  n: Integer;
+  tag: TTagEntry;
+begin
+  Result := '';
 
+  tag := GetTagByName('UserComment');
+  if tag.Tag = 0 then
+    exit;
+
+  InternalGetBinaryTagValue(tag, buf);
+  if buf = '' then
+    exit;
+
+  if pos('UNICODE', buf) = 1 then begin
+    SetLength(w, (Length(buf) - 8) div SizeOf(WideChar));
+    Move(buf[9], w[1], Length(w) * Sizeof(WideChar));
+    {$IFDEF FPC}
+    Result := UTF8Encode(w);
+    {$ELSE}
+    Result := w;
+    {$ENDIF}
+  end else
+  if pos('ASCII', buf) = 1 then begin
+    a := Copy(buf, 9, MaxInt);
+    Result := a;
+  end else
+  if pos(#0#0#0#0#0#0#0#0, buf) = 1 then begin
+    a := Copy(buf, 9, MaxInt);
+    {$IFDEF FPC}
+    {$IFNDEF FPC3+}
+    Result := SysToUTF8(a);
+    {$ELSE}
+    Result := WinCPToUTF8(a);
+    {$ENDIF}
+    {$ELSE}
+    Result := a;
+    {$ENDIF}
+  end else
+  if Pos('JIS', buf) = 1 then
+    raise Exception.Create('JIS-encoded user comment is not supported.');
+end;
+
+(*
 function TImageInfo.GetExifComment: String;
 var
   p : PTagEntry;
@@ -3051,15 +3283,51 @@ begin
   if Pos('JIS', p^.Raw) = 1 then
     raise Exception.Create('JIS-encoded user comment is not supported.');
 end;
+*)
 
-procedure TImageInfo.SetExifComment(v: String);
+procedure TImageInfo.SetExifComment(AValue: String);
 var
   p: PTagEntry;
   i: integer;
   w: WideString;
   a: AnsiString;
   u: Boolean;
+  buf: array of byte;
+  len: Integer;
 begin
+  if AValue = '' then
+    SetLength(buf, 0)
+  else
+  begin
+    u := false;
+    for i:=1 to Length(AValue) do
+      if byte(AValue[i]) > 127 then begin
+        u := true;
+        break;
+      end;
+
+    if u then begin
+      {$IFDEF FPC}
+      w := UTF8Decode(AValue);
+      {$ELSE}
+      w := AValue;
+      {$ENDIF}
+      SetLength(buf, 8 + Length(w) * SizeOf(WideChar));  // +8 for header
+      a := 'UNICODE'#0;
+      Move(a[1], buf[0], 8);
+      Move(w[1], buf[8], Length(w) * Sizeof(WideChar));
+    end else
+    begin
+      SetLength(buf, 8 + Length(AValue));
+      a := 'ASCII'#0#0#0;
+      Move(a[1], buf[0], 8);
+      a := ansistring(AValue);
+      Move(a[1], buf[8], Length(a));
+    end;
+  end;
+  InternalSetTagValue('UserComment', NULL, [ttExif, ttGps], @buf[0], Length(buf));
+
+(*
   p := GetTagPtr([ttExif], TAG_EXIF_OFFSET, true, 0, FMT_ULONG{, true});
   if (v = '') then begin
     RemoveTag([ttExif], TAG_USERCOMMENT, TAG_EXIF_OFFSET);
@@ -3094,6 +3362,7 @@ begin
   end;
   p^.Size := Length(p^.Raw);
   p^.Data := v;
+  *)
 end;
 
 function TImageInfo.GetImageDescription: String;
@@ -3134,6 +3403,70 @@ end;
 procedure TImageInfo.SetCopyright(const AValue: String);
 begin
   SetTagValue('Copyright', AValue);
+end;
+
+function TImageInfo.GetGPSCoordinate(ATagName: String;
+  ACoordType: TGPSCoordType): Extended;
+var
+  vDeg, vSgn: Variant;
+begin
+  Result := 0.0;
+  vDeg := GetTagValue(ATagName);
+  if VarIsNull(vDeg) then
+    exit;
+  if not VarIsArray(vDeg) then
+    exit;
+  Result := vDeg[0] + vDeg[1]/60 + vDeg[2]/3600;
+  vSgn := GetTagValue(ATagName + 'Ref');
+  if VarIsNull(vSgn) then
+    exit;
+  case ACoordType of
+    ctLatitude  : if VarToStr(vSgn)[1] in ['S', 's'] then Result := -Result;
+    ctLongitude : if VarToStr(vSgn)[1] in ['W', 'w'] then Result := -Result;
+  end;
+end;
+
+procedure TImageInfo.SetGPSCoordinate(ATagName: String; const AValue: Extended;
+  ACoordType: TGPSCoordType);
+const
+  Ref: array[TGPSCoordType] of string[2] = ('NS', 'EW');
+var
+  v: Variant;
+  degs, mins, secs: double;
+begin
+  degs := abs(trunc(AValue));
+  mins := trunc(frac(AValue) * 60);
+  secs := (frac(AValue) * 60 - mins) * 60;
+//  secs := trunc(frac(AValue) * 3600) - mins*60;
+//  secs := trunc(mins*60 - frac(frac(AValue) * 60));
+  v := VarArrayOf([degs, mins, secs]);
+  InternalSetTagValue(ATagName, v, [ttGps]);
+  if degs > 0 then
+    InternalSetTagValue(ATagName + 'Ref', Ref[ACoordType, 1], [ttGps])
+  else
+    InternalSetTagValue(ATagName + 'Ref', Ref[ACoordType, 2], [ttGps]);
+  VarClear(v);
+end;
+
+
+function TImageInfo.GetGPSLatitude: Extended;
+begin
+  Result := GetGPSCoordinate('GPSLatitude', ctLatitude);
+end;
+
+procedure TImageInfo.SetGPSLatitude(const AValue: Extended);
+begin
+  SetGPSCoordinate('GPSLatitude', AValue, ctLatitude);
+end;
+
+function TImageInfo.GetGPSLongitude: Extended;
+begin
+  Result := GetGPSCoordinate('GPSLongitude', ctLongitude);
+end;
+
+procedure TImageInfo.SetGPSLongitude(const AValue: Extended);
+begin
+  SetGPSCoordinate('GPSLongitude', AValue, ctLongitude);
 end;
 
 function TImageInfo.IterateFoundTags(TagId: integer; var RetVal: TTagEntry): boolean;

@@ -57,6 +57,10 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
+function GPSToStr(ACoord: Extended; ACoordType: TGpsCoordType;
+  AGpsFormat: TGpsFormat = gf_DMS_Short; ADecs: Integer = 0): String;
+function StrToGPS(s: String): Extended;
+
 procedure InitTagEntry(out ATagEntry: TTagEntry);
 function InsertSpaces(InStr: String): String;
 
@@ -367,15 +371,20 @@ var
   num, denom: Integer;
   gcdval: Integer;
 begin
-  if (abs(AValue) > 1) then
-    DoubleToRationalHelper(abs(AValue), num, denom, EPS)
-  else
-    DoubleToRationalHelper(abs(1.0/AValue), denom, num, EPS);
-  gcdVal := GCD(num, denom);
-  Result.Numerator := num div gcdVal;
-  Result.Denominator := denom div gcdVal;
-  if AValue < 0 then
-    Result.Numerator := -Result.Numerator;
+  if AValue = 0 then begin
+    Result.Numerator := 0;
+    Result.Denominator := 1;
+  end else begin
+    if (abs(AValue) > 1) then
+      DoubleToRationalHelper(abs(AValue), num, denom, EPS)
+    else
+      DoubleToRationalHelper(abs(1.0/AValue), denom, num, EPS);
+    gcdVal := GCD(num, denom);
+    Result.Numerator := num div gcdVal;
+    Result.Denominator := denom div gcdVal;
+    if AValue < 0 then
+      Result.Numerator := -Result.Numerator;
+  end;
 end;
 
 { A simple Delphi-7 compatible way of reading a byte from a stream }
@@ -403,6 +412,124 @@ var
 begin
   AStream.Read(c, 4);
   Result := c;
+end;
+
+{ Converts a GPS coordinate (extended data type) to a string }
+function GPSToStr(ACoord: Extended; ACoordType: TGpsCoordType;
+  AGpsFormat: TGpsFormat = gf_DMS_Short; ADecs: Integer = 0): String;
+const
+  {$IFDEF FPC}
+  DEG_SYMBOL: string = '°';
+  {$ELSE}
+  DEG_SYMBOL: ansistring = #176;  // Delphi 7 wants the degree symbol in ANSI
+  {$ENDIF}
+  RefStr: array[TGpsCoordType] of String[2] = ('NS', 'EW');
+var
+  idegs, imins: Integer;
+  floatval: Extended;
+  sgn: String;
+begin
+  sgn := RefStr[ACoordType][1 + ord(ACoord < 0)];
+  ACoord := abs(ACoord);
+  case AGpsFormat of
+    gf_DD, gf_DD_Short :
+      case AGpsFormat of
+        gf_DD       : Result := Format('%.*f degrees', [ADecs, ACoord]);
+        gf_DD_Short : Result := Format('%.*f%s', [ADecs, ACoord, DEG_SYMBOL]);
+      end;
+    gf_DM, gf_DM_Short:
+      begin
+        idegs := trunc(ACoord);
+        floatVal := frac(ACoord) * 60;
+        case AGpsFormat of
+          gf_DM:
+            Result := Format('%d degrees %.*f minutes', [idegs, ADecs, floatVal]);
+          gf_DM_Short:
+            Result := Format('%d%s %.*f''', [idegs, DEG_SYMBOL, ADecs, floatVal]);
+        end;
+      end;
+    gf_DMS, gf_DMS_Short:
+      begin
+        idegs := trunc(ACoord);
+        imins := trunc(frac(ACoord)*60);
+        floatVal := frac(frac(ACoord)*60)*60;  // seconds
+        case AGpsFormat of
+          gf_DMS:
+            Result := Format('%df degrees %d minutes %.*f seconds', [idegs, imins, ADecs, floatval]);
+          gf_DMS_Short:
+            Result := Format('%d%s %d'' %.*f"', [idegs, DEG_SYMBOL, imins, ADecs, floatVal]);
+        end;
+      end;
+  end;
+
+  Result := Result + ' ' + sgn;
+end;
+
+{ Converts a string to a GPS extended number. The input string s must be
+  formatted as  dd° mm' ss[.zzz]" E|W. Decimal places of seconds are optional.
+  E|W means: either E or W. }
+function StrToGPS(s: String): Extended;
+var
+  ds, ms, ss: String;
+  i: Integer;
+  tmp: String;
+  degs, mins, secs: Extended;
+  res: Integer;
+  scannedPart: Integer;  // 0=degrees, 1=minutes, 2=seconds
+  isFloat: Array[-1..2] of Boolean;
+begin
+  Result := 0;
+  if s = '' then
+    exit;
+  i := 1;
+  tmp := '';
+  scannedPart := 0;
+  isFloat[0] := false;
+  isFloat[1] := false;
+  isFloat[2] := false;
+  degs := 0;
+  mins := 0;
+  secs := 0;
+  while i <= Length(s) do begin
+    case s[i] of
+      '0'..'9':
+        tmp := tmp + s[i];
+      '.', ',':
+        begin
+          tmp := tmp + '.';
+          isFloat[scannedPart] := true;
+        end;
+      ' ':
+        if scannedPart = 0 then begin   // in degrees par
+          val(tmp, degs, res);
+          if res > 0 then
+            raise Exception.Create('No numeric data in gps coordinate.');
+          tmp := '';
+          scannedPart := 1;
+        end;
+      '''':
+        if not isFloat[0] then begin // ignore minutes and seconds if degrees are floats
+          val(tmp, mins, res);
+          if res > 0 then
+            raise Exception.Create('No numeric data in gps coordinate.');
+          tmp := '';
+          scannedPart := 2;
+        end;
+      '"':
+        // ignore seconds of degrees or minutes are floating point values
+        if not (isFloat[0] or isFloat[1]) then begin
+          val(tmp, secs, res);
+          if res > 0 then
+            raise Exception.Create('No numerica data in gps coordinate.');
+          tmp := '';
+          scannedPart := -1;
+        end;
+      'W', 'w', 'S', 's':
+        degs := -degs;
+    end;
+    inc(i);
+  end;
+  Result := degs + mins/60 + secs/3600;
 end;
 
 { Extracts the width and height of a JPEG image from its data without loading

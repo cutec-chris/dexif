@@ -185,6 +185,15 @@ var
 begin
   Listview.Items.Clear;
 
+  if not FileExists(AParamsFile) then begin
+    showMessage('Parameter file "' + AParamsFile + '" not found.');
+    exit;
+  end;
+  if not FileExists(EdTestFile.Text) then begin
+    ShowMessage('Test picture file "' + EdTestFile.Text + '" not found.');
+    exit;
+  end;
+
   // Read test parameters
   testCases := TStringList.Create;
   try
@@ -238,20 +247,7 @@ begin
     end;
 
     // Write new tags to file
-//    {$IFDEF FPC}
-    ImgData.WriteEXIFJpegTo(OutFile); //, false);
-    // Parameter false needed to avoid overwriting Exif's image size with the file values.
-    (*
-    {$ELSE}
-    jpeg := TJpegImage.Create;
-    try
-      jpeg.LoadFromFile(EdTestFile.Text);
-      ImgData.WriteEXIFJpeg(jpeg, OutFile);
-    finally
-      jpeg.Free;
-    end;
-    {$ENDIF}
-    *)
+    ImgData.WriteEXIFJpegTo(OutFile);
 
     // read back
     ImgData.ProcessFile(OutFile);
@@ -367,6 +363,7 @@ var
   dt: TDateTime;
   tt: Integer;
   v: variant;
+  e: Extended;
 begin
   if ATagName = 'Comment' then
     Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
@@ -391,6 +388,16 @@ begin
   else if ATagName = 'DateTime' then begin
     dt := ImgData.ExifObj.DateTimeModified;
     Result := FormatDateTime(ISODateFormat, dt);
+  end
+  else if ATagName = 'GPSLatitude' then begin
+    e := ImgData.ExifObj.GPSLatitude;
+//    Result := FloatToStr(e);
+    Result := GPSToStr(e, ctLatitude);
+  end
+  else if ATagName = 'GPSLongitude' then begin
+    e := ImgData.ExifObj.GPSLongitude;
+  //  Result := FloatToStr(e);
+    Result := GPSToStr(e, ctLongitude);
   end
   else begin
     v := ImgData.ExifObj.TagValue[ATagName];
@@ -444,6 +451,12 @@ begin
     ImgData.ExifObj.DateTimeDigitized := ExtractDateTime(ATagValue)
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
+  else if ATagName = 'GPSLatitude' then
+//    ImgData.ExifObj.GPSLatitude := StrToFloat(ATagValue)
+    ImgData.ExifObj.GPSLatitude := StrToGPS(ATagValue)
+  else if ATagName = 'GPSLongitude' then
+//    ImgData.ExifObj.GPSLongitude := StrToFloat(ATagvalue)
+    ImgData.ExifObj.GPSLongitude := StrToGPS(ATagValue)
   else
     ImgData.ExifObj.TagValue[ATagName] := ATagValue;
 end;

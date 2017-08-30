@@ -76,17 +76,13 @@ type
   end;
   PExifRational = ^TExifRational;
 
+  TGpsCoordType = (ctLatitude, ctLongitude);
+
   TGpsFormat = (gf_DD, gf_DM, gf_DMS, gf_DD_Short, gf_DM_Short, gf_DMS_Short);
 
 
 const
   // Format of data in an IFD record
-  NUM_FORMATS   = 12;
-
-  BYTES_PER_FORMAT: array[0..NUM_FORMATS] of integer = (
-    0,   // dummy for dEXIF --- to be removed
-    1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8
-  );
   FMT_BYTE       =  1;
   FMT_STRING     =  2;
   FMT_USHORT     =  3;
@@ -100,6 +96,13 @@ const
   FMT_SRATIONAL  = 10;
   FMT_SINGLE     = 11;
   FMT_DOUBLE     = 12;
+
+  NUM_FORMATS    = 12;
+
+  BYTES_PER_FORMAT: array[0..NUM_FORMATS] of integer = (
+    0,   // dummy for dEXIF --- to be removed
+    1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8
+  );
 
   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';

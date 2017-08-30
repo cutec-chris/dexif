@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="9"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -9,7 +9,6 @@
       <Title Value="ReadWriteTest"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
-      <Icon Value="0"/>
     </General>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -46,27 +45,31 @@
       <Unit3>
         <Filename Value="..\..\..\dEXIF.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dEXIF"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\..\dExif.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\..\..\dGlobal.pas"/>
+        <Filename Value="..\..\..\dglobal.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dGlobal"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\dUtils.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dUtils"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\..\..\dExifWrite.pas"/>
+        <Filename Value="..\..\..\dexifwrite.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dexifwrite"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\dIPTC.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dIPTC"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\..\dTags.pas"/>
@@ -79,6 +82,7 @@
       <Unit11>
         <Filename Value="..\..\..\msData.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="msData"/>
       </Unit11>
     </Units>
   </ProjectOptions>
@@ -97,12 +101,10 @@
       <Debugging>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
-      <Options>
-        <Win32>
-          <GraphicApplication Value="True"/>
-        </Win32>
-      </Options>
     </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

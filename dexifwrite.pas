@@ -390,6 +390,8 @@ begin
     case ATag.TType of
       FMT_URATIONAL, FMT_SRATIONAL:
         begin
+          AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
+          {
           // Note: ATag.Raw already has the correct endianness!
           rat := PExifRational(@ATag.Raw[1])^;
 //          rat.Numerator := FixEndian32(rat.Numerator);
@@ -397,10 +399,11 @@ begin
           rat.Numerator := rat.Numerator;
           rat.Denominator := rat.Denominator;
           AValueStream.WriteBuffer(rat, SizeOf(TExifRational));
+          }
         end;
       FMT_DOUBLE:
         begin
-          AValueStream.WriteBuffer(ATag.Raw[1], SizeOf(Double));
+          AValueStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
         end;
     end;
   end else
@@ -409,6 +412,10 @@ begin
     // then the data value is written to the rec.DataValue field directly.
     // Note: ATag.Raw already has the correct endianness
     rec.DataCount := FixEndian32(Length(ATag.Raw) div BYTES_PER_FORMAT[ATag.TType]);
+    rec.DataValue := 0;
+    Move(ATag.Raw[1], rec.DataValue, Length(ATag.Raw));
+    {
+    rec.DataValue :
     case ATag.TType of
       FMT_BYTE, FMT_SBYTE:
         rec.DataValue := byte(ATag.Raw[1]);
@@ -421,6 +428,7 @@ begin
       FMT_SINGLE:
         Move(ATag.Raw[1], rec.DataValue, SizeOf(Single));
     end;
+    }
   end;
 
   // Write out
