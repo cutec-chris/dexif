@@ -171,6 +171,7 @@ procedure TForm1.btnCreateThumbClick(Sender: TObject);
 var
   ms: TMemoryStream;
   fn: String;
+  jpeg: TJpegImage;
 begin
   if not ImgData.HasExif then
     exit;
@@ -184,13 +185,29 @@ begin
     ms.LoadfromFile(ImgData.FileName);
     // and merge with current exif data (i.e. new thumbnail image)
     ImgData.WriteEXIFJpeg(ms, fn);
-    Image1.Picture.LoadFromFile(fn);
-    btnRemoveThumb.Enabled := true;
-    btnSaveThumb.Enabled := true;
-    btnCreateThumb.Enabled := true;
   finally
     ms.Free;
   end;
+
+  ms := TMemoryStream.Create;
+  try
+    ImgData.ExifObj.SaveThumbnailToStream(ms);
+    ms.Position := 0;
+    jpeg := TJPegImage.Create;
+    try
+      jpeg.LoadFromStream(ms);
+      Image1.Picture.Bitmap.Assign(jpeg);
+    finally
+      jpeg.Free;
+    end;
+//    Image1.Picture.LoadFromStream(ms);
+  finally
+    ms.Free;
+  end;
+
+  btnRemoveThumb.Enabled := true;
+  btnSaveThumb.Enabled := true;
+  btnCreateThumb.Enabled := true;
 
   Memo('Thumbnail image created. Image saved as "' + fn + '"');
 end;

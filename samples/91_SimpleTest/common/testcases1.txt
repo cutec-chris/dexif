@@ -1,9 +1,6 @@
 ; IMPORTANT: This file must be stored in ANSI encoding
 ; Use a TAB character between the two columns
 
-GPSLatitude	12° 34' 56" N
-;:quit
-
 Comment	This text is in the COMMENT segment.
 Artist	Ansel Adams
 ImageDescription	A nice image
