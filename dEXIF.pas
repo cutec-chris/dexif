@@ -2484,6 +2484,8 @@ var
   s: String;
   r: TExifRational;
   i: Integer;
+  intValue: Integer;
+  floatValue: Extended;
 begin
   Result := Null;
   if ATag.Tag = 0 then
@@ -2516,17 +2518,20 @@ begin
 
   // Handle numeric data. Be aware that they may be arrays
   if ATag.Count = 1 then
+//    Result := NumericTagToInt(@ATag.Raw[1], ATag.TType)
     Result := NumericTagToVar(@ATag.Raw[1], ATag.TType)
   else begin
     case ATag.TType of
       FMT_BYTE, FMT_USHORT, FMT_ULONG:
-        Result := VarArrayCreate([0, ATag.Count-1], vtInteger);
+        Result := VarArrayCreate([0, ATag.Count-1], varInteger);
       FMT_URATIONAL, FMT_SRATIONAL:
-        Result := VarArrayCreate([0, ATag.Count-1], vtExtended);
+        Result := VarArrayCreate([0, ATag.Count-1], varDouble);
     end;
     for i:=0 to ATag.Count-1 do
       Result[i] := NumericTagToVar(@ATag.Raw[1 + BYTES_PER_FORMAT[ATag.TType]*i], ATag.TType);
   end;
+
+
 
   // Correction for some special cases
   case ATag.Tag of
@@ -2568,7 +2573,7 @@ begin
           r.Numerator := LongInt(r.Numerator);
           r.Denominator := LongInt(r.Denominator);
         end;
-        Result := r.Numerator / r.Denominator;
+        Result := Extended(r.Numerator / r.Denominator);
       end;
     {
     FMT_BINARY:
@@ -2581,6 +2586,7 @@ begin
       raise Exception.CreateFmt('NumericTagToVar does not handle Tag type %d', [ord(ATagType)]);
   end;
 end;
+
 
 { Central routine for writing data to a tag.
   ATagName ........... Name of the tag
@@ -3416,6 +3422,7 @@ begin
     exit;
   if not VarIsArray(vDeg) then
     exit;
+
   Result := vDeg[0] + vDeg[1]/60 + vDeg[2]/3600;
   vSgn := GetTagValue(ATagName + 'Ref');
   if VarIsNull(vSgn) then
@@ -3433,15 +3440,17 @@ const
 var
   v: Variant;
   degs, mins, secs: double;
+  val: Extended;
 begin
-  degs := abs(trunc(AValue));
-  mins := trunc(frac(AValue) * 60);
-  secs := (frac(AValue) * 60 - mins) * 60;
+  val := abs(AValue);
+  degs := trunc(val);
+  mins := trunc(frac(val) * 60);
+  secs := (frac(val) * 60 - mins) * 60;
 //  secs := trunc(frac(AValue) * 3600) - mins*60;
 //  secs := trunc(mins*60 - frac(frac(AValue) * 60));
   v := VarArrayOf([degs, mins, secs]);
   InternalSetTagValue(ATagName, v, [ttGps]);
-  if degs > 0 then
+  if AValue > 0 then
     InternalSetTagValue(ATagName + 'Ref', Ref[ACoordType, 1], [ttGps])
   else
     InternalSetTagValue(ATagName + 'Ref', Ref[ACoordType, 2], [ttGps]);

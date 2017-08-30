@@ -30,12 +30,13 @@ type
     procedure TstImgDataCanProcessFile;
     procedure TstImgDataDetectEXIF_True;
     procedure TstImgDataDetectEXIF_False;
+    procedure TstGpsFormat;
   end;
 
 implementation
 
 uses
- dEXIF;
+  dGlobal, dUtils, dEXIF;
 
 procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
@@ -85,6 +86,47 @@ begin
   DUT.Free;
 end;
 
+procedure TTstBasic_dEXIF.TstGPSFormat;
+const
+  Expected: array[0..1] of Extended = (
+     12.345678,      //  12° 20' 44.44404"   =  12° 20.7407441'
+    -23.456789       // -23° 27' 24.440436"  = -23° 27.4073406'
+  );
+  NSEW: array[TGpsCoordType] of String = ('NS', 'EW');
+var
+  gf: TGpsFormat;
+  ct: TGpsCoordType;
+  expStr: String;
+  currstr: String;
+  current: Extended;
+  i: Integer;
+  decs: Integer;
+begin
+  // Format degree-minutes-seconds
+  gf := gf_DMS_Short;
+  decs := 3;
+  for ct in TGpsCoordType do begin
+    for i:=0 to High(Expected) do begin
+      expStr := GpsToStr(Expected[i], ct, gf, decs);
+      current := StrToGps(expStr);
+      currStr := GpsToStr(current, ct, gf, decs);
+      CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
+    end;
+  end;
+
+  // Format degree-minutes
+  gf := gf_DM_Short;
+  decs := 9;
+  for ct in TGpsCoordType do begin
+    for i:=0 to High(Expected) do begin
+      expStr := GpsToStr(Expected[i], ct, gf, decs);
+      current := StrToGps(expStr);
+      currStr := GpsToStr(current, ct, gf, decs);
+      CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
+    end;
+  end;
+end;
+
 procedure TTsTBasic_dEXIF.SetUp;
 begin
   if not FileExists(co_DUTPicName01) then
@@ -102,6 +144,7 @@ begin
   //if FileExists(co_DUTPicName02) then
   //  DeleteFile(co_DUTPicName02);
 end;
+
 
 initialization
 

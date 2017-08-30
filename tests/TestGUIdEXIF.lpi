@@ -75,8 +75,9 @@
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\dGlobal.pas"/>
+        <Filename Value="..\dglobal.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dGlobal"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dTags.pas"/>
@@ -112,11 +113,6 @@
       <Debugging>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
-      <Options>
-        <Win32>
-          <GraphicApplication Value="True"/>
-        </Win32>
-      </Options>
     </Linking>
   </CompilerOptions>
   <Debugging>

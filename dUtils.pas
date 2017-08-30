@@ -52,6 +52,7 @@ function FmtRational(ANum, ADenom: Integer): String;
 function DoubleToRational(AValue: Double): TExifRational;
 
 function FindTextIndexInCode(AText, ACode: String): Integer;
+function Float2Str(AValue: Double; ADecs: Integer = 2): String;
 
 function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
@@ -297,7 +298,7 @@ begin
   result := FloatToStr(inReal);
 end;
 
-function defFracFmt(inNum, inDenom: Integer): String;
+function DefFracFmt(inNum, inDenom: Integer): String;
 begin
   result := Format('%d/%d', [inNum, inDenom]);
  // result := fmtRational(inNum, inDenom);
@@ -428,24 +429,29 @@ var
   idegs, imins: Integer;
   floatval: Extended;
   sgn: String;
+  s: String;
 begin
   sgn := RefStr[ACoordType][1 + ord(ACoord < 0)];
   ACoord := abs(ACoord);
   case AGpsFormat of
     gf_DD, gf_DD_Short :
-      case AGpsFormat of
-        gf_DD       : Result := Format('%.*f degrees', [ADecs, ACoord]);
-        gf_DD_Short : Result := Format('%.*f%s', [ADecs, ACoord, DEG_SYMBOL]);
+      begin
+        s := Float2Str(floatVal, ADecs);
+        case AGpsFormat of
+          gf_DD       : Result := Format('%s degrees', [s]);
+          gf_DD_Short : Result := Format('%s%s', [s, DEG_SYMBOL]);
+        end;
       end;
     gf_DM, gf_DM_Short:
       begin
         idegs := trunc(ACoord);
         floatVal := frac(ACoord) * 60;
+        s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
           gf_DM:
-            Result := Format('%d degrees %.*f minutes', [idegs, ADecs, floatVal]);
+            Result := Format('%d degrees %s minutes', [idegs, s]);
           gf_DM_Short:
-            Result := Format('%d%s %.*f''', [idegs, DEG_SYMBOL, ADecs, floatVal]);
+            Result := Format('%d%s %s''', [idegs, DEG_SYMBOL, s]);
         end;
       end;
     gf_DMS, gf_DMS_Short:
@@ -453,11 +459,12 @@ begin
         idegs := trunc(ACoord);
         imins := trunc(frac(ACoord)*60);
         floatVal := frac(frac(ACoord)*60)*60;  // seconds
+        s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
           gf_DMS:
-            Result := Format('%df degrees %d minutes %.*f seconds', [idegs, imins, ADecs, floatval]);
+            Result := Format('%df degrees %d minutes %s seconds', [idegs, imins, s]);
           gf_DMS_Short:
-            Result := Format('%d%s %d'' %.*f"', [idegs, DEG_SYMBOL, imins, ADecs, floatVal]);
+            Result := Format('%d%s %d'' %s"', [idegs, DEG_SYMBOL, imins, s]);
         end;
       end;
   end;
@@ -477,6 +484,7 @@ var
   res: Integer;
   scannedPart: Integer;  // 0=degrees, 1=minutes, 2=seconds
   isFloat: Array[-1..2] of Boolean;
+  sgn: Integer;
 begin
   Result := 0;
   if s = '' then
@@ -490,6 +498,7 @@ begin
   degs := 0;
   mins := 0;
   secs := 0;
+  sgn := +1;
   while i <= Length(s) do begin
     case s[i] of
       '0'..'9':
@@ -525,11 +534,11 @@ begin
           scannedPart := -1;
         end;
       'W', 'w', 'S', 's':
-        degs := -degs;
+        sgn := -1;
     end;
     inc(i);
   end;
-  Result := degs + mins/60 + secs/3600;
+  Result := (degs + mins/60 + secs/3600) * sgn;
 end;
 
 { Extracts the width and height of a JPEG image from its data without loading
@@ -800,6 +809,11 @@ begin
     end;
     inc(i);
   end;
+end;
+
+function Float2Str(AValue: Double; ADecs: Integer = 2): String;
+begin
+  str(AValue:0:ADecs, Result);
 end;
 
 function SSpeedCallBack(InStr: Ansistring): String;

@@ -2,11 +2,19 @@ unit tstwritereadexif;
 
 {$mode objfpc}{$H+}
 
+// If ERASE_TESTIMAGE is active then the test images are deleted after the test.
+// Deactivate this define for debugging purposes.
 {$DEFINE ERASE_TESTIMAGE}
+
+// If TEST_FILE_INTEGRITY is activated then the written image file is opened
+// by a TJpegImage to make sure that it is a valid jpeg.
+// Slows down the test!
+{.$DEFINE TEST_FILE_INTEGRITY}
+
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, dEXIF;
+  Classes, Graphics, SysUtils, fpcunit, testutils, testregistry, dEXIF;
 
 const
   // Picture with EXIF data taken from CANON camera }
@@ -44,18 +52,19 @@ type
     procedure Test_CameraMake_TooLong;
     procedure Test_CameraModel;
     procedure Test_Copyright;
+    procedure Test_GPSLatitude_DMS;
+    procedure Test_GPSLongitude_DMS;
+    procedure Test_GPSLatitude_DM;
+    procedure Test_GPSLongitude_DM;
   end;
 
 implementation
 
 uses
-  FileUtil, DateUtils, Math, dGlobal;
+  FileUtil, DateUtils, Math, dGlobal, dUtils;
 
 type
-  TWriteReadParamKind = (tkString, tkInteger, tkFloat);
-
   TWriteReadParam = record
-    Kind: TWriteReadParamKind;
     Tag: String;
     Value: String;      // all results will be converted to strings
     Decimals: Integer;  // needed for conversion of floats to string
@@ -63,26 +72,30 @@ type
 
 const
   // !!! INCREMENT WHEN ADDING TESTS !!!
-  TestCount = 14;
+  TestCount = 18;
 
 {$WARN 3177 off : Some fields coming after "$1" were not initialized}
 
   // !!! ADD NEW TESTS HERE !!!
   TestParams: Array[0..TestCount-1] of TWriteReadParam = (
-{0}  (Kind:tkString; Tag:'DateTimeOriginal';   Value:'2017-01-01 12:00:00'),
-     (Kind:tkString; Tag:'DateTimeDigitized';  Value:'2017-01-01 12:00:00'),
-     (Kind:tkString; Tag:'DateTimeModify';     Value:'2017-01-01 12:00:00'),
-     (Kind:tkString; Tag:'Comment section';    Value:'This is a comment.'),
-     (Kind:tkString; Tag:'Comment section';    Value:'This is a comment - äöüß.'),
-{5}  (Kind:tkString; Tag:'Artist';             Value:'Ansel Adams'),
-     (Kind:tkString; Tag:'Artist';             Value:'Hansi Müller'),   // Arist with Umlaut
-     (Kind:tkString; Tag:'ExifComment';        Value:'This is a comment'),
-     (Kind:tkString; Tag:'ExifComment';        Value:'äöü αβγ'),
-     (Kind:tkString; Tag:'ImageDescription';   Value:'My image'),
-{10} (Kind:tkString; Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
-     (Kind:tkString; Tag:'CameraMake';         Value:'Minolta'), // longer than text in file --> fail
-     (Kind:tkString; Tag:'CameraModel';        Value:'My Super Camera'),
-     (Kind:tkString; Tag:'Copyright';          Value:'(c) Team')
+{0}  (Tag:'DateTimeOriginal';   Value:'2017-01-01 12:00:00'),
+     (Tag:'DateTimeDigitized';  Value:'2017-01-01 12:00:00'),
+     (Tag:'DateTimeModify';     Value:'2017-01-01 12:00:00'),
+     (Tag:'Comment section';    Value:'This is a comment.'),
+     (Tag:'Comment section';    Value:'This is a comment - äöüß.'),
+{5}  (Tag:'Artist';             Value:'Ansel Adams'),
+     (Tag:'Artist';             Value:'Hansi Müller'),   // Arist with Umlaut
+     (Tag:'ExifComment';        Value:'This is a comment'),
+     (Tag:'ExifComment';        Value:'äöü αβγ'),
+     (Tag:'ImageDescription';   Value:'My image'),
+{10} (Tag:'CameraMake';         Value:'Kodak'),   // same length as text in file (Canon)  --> pass
+     (Tag:'CameraMake';         Value:'Minolta'), // longer than text in file --> fail
+     (Tag:'CameraModel';        Value:'My Super Camera'),
+     (Tag:'Copyright';          Value:'(c) Team'),
+     (Tag:'GPSLatitude';        Value:'20° 30'' 40.123" N'),
+     (Tag:'GPSLongitude';       Value:'10° 20'' 30.456" W'),
+     (Tag:'GPSLatitude';        Value:'22° 31.1234567'' S'),
+     (Tag:'GPSLongitude';       Value:'11° 21.3456788'' E')
   );
 
 
@@ -128,8 +141,11 @@ var
   oldVal: string;
   msg: String;
   imgStream: TMemoryStream;
+  jpeg: TJpegImage;
 
   function ReadTagValue(ATestID: Integer; DUT: TImgData): string;
+  var
+    f: Extended;
   begin
     Result := '';
     // !!!!!  ADD NEW TESTS HERE !!!!!!
@@ -148,6 +164,22 @@ var
      11: Result := DUT.ExifObj.CameraMake;
      12: Result := DUT.ExifObj.CameraModel;
      13: Result := DUT.ExifObj.TagValueAsString['Copyright'];
+     14: begin
+           f := DUT.ExifObj.GPSLatitude;
+           Result := GpsToStr(f, ctLatitude, gf_DMS_Short, 3);
+         end;
+     15: begin
+           f := DUT.ExifObj.GPSLongitude;
+           Result := GpsToStr(f, ctLongitude, gf_DMS_Short, 3);
+         end;
+     16: begin
+           f := DUT.ExifObj.GPSLatitude;
+           Result := GpsToStr(f, ctLatitude, gf_DM_Short, 7);
+         end;
+     17: begin
+           f := DUT.ExifObj.GPSLongitude;
+           Result := GpsToStr(f, ctLongitude, gf_DM_Short, 7);
+         end;
     end;
   end;
 
@@ -172,6 +204,10 @@ var
      11: DUT.ExifObj.CameraMake := strValue;
      12: DUT.ExifObj.CameraModel := strValue;
      13: DUT.ExifObj.TagValueAsString['Copyright'] := strValue;
+     14: DUT.ExifObj.GpsLatitude := StrToGps(strValue);
+     15: DUT.ExifObj.GPSLongitude := StrToGps(strValue);
+     16: DUT.ExifObj.GpsLatitude := StrToGps(strValue);
+     17: DUT.ExifObj.GPSLongitude := StrToGps(strValue);
     end;
   end;
 
@@ -253,6 +289,20 @@ begin
     finally
       destDUT.Free;
     end;
+
+    {$IFDEF TEST_FILE_INTEGRITY}
+    // -------------------------------------------------------------------------
+    // Forth test
+    // -------------------------------------------------------------------------
+    // Open the written file into a TJpegImage. It must open without an error.
+    //--------------------------------------------------------------------------
+    jpeg := TJpegImage.Create;
+    try
+      jpeg.LoadfromFile(FDestFileName);
+    except
+      fail('Incorrectly written file "' + FDestFileName + '"');
+    end;
+    {$ENDIF}
 
   finally
     srcDUT.Free;
@@ -341,6 +391,31 @@ procedure TTstWriteReadFile_dEXIF.Test_Copyright;
 begin
   GenericTest(13);
 end;
+
+{ GPS Latitude - DMS format }
+procedure TTstWriteReadFile_dEXIF.Test_GPSLatitude_DMS;
+begin
+  GenericTest(14);
+end;
+
+{ GPS Longitude - DMS format }
+procedure TTstWriteReadFile_dEXIF.Test_GPSLongitude_DMS;
+begin
+  GenericTest(15);
+end;
+
+{ GPS Latitude - DM format }
+procedure TTstWriteReadFile_dEXIF.Test_GPSLatitude_DM;
+begin
+  GenericTest(16);
+end;
+
+{ GPS Longitude - DM format }
+procedure TTstWriteReadFile_dEXIF.Test_GPSLongitude_DM;
+begin
+  GenericTest(17);
+end;
+
 
 initialization
   RegisterTest(TTstWriteReadFile_dEXIF);
