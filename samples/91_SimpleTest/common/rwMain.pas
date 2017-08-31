@@ -169,7 +169,7 @@ end;
 procedure TMainForm.ExecTest(const AParamsFile: String);
 var
   testCases: TStringList;
-  i, j: Integer;
+  i, j, n: Integer;
   s: String;
   testdata: TStringArray;
   listitem: TListItem;
@@ -181,6 +181,8 @@ var
   stream: TMemorystream;
   {$ELSE}
   jpeg: TJpegImage;
+  stream: TMemoryStream;
+  a: ansistring;
   {$ENDIF}
 begin
   Listview.Items.Clear;
@@ -197,18 +199,30 @@ begin
   // Read test parameters
   testCases := TStringList.Create;
   try
-    testCases.LoadFromFile(AParamsFile);
-
-    {$IFDEF FPC}
+  {$IFDEF FPC}
     // The testcases text files are encoded in ANSI for Delphi7 compatibility
     // In Lazarus we must convert to UTF8 }
+    testCases.LoadFromFile(AParamsFile);
     s := testCases.Text;
-    {$IFDEF FPC3+}
+   {$IFDEF FPC3+}
     testCases.Text := WinCPToUTF8(s);
-    {$ELSE}
+   {$ELSE}
     testCases.Text := AnsiToUTF8(s);
-    {$ENDIF}
-    {$ENDIF}
+   {$ENDIF}
+  {$ELSE}
+    stream := TMemoryStream.Create;
+    stream.LoadFromFile(AParamsFile);
+    SetLength(a, stream.Size);
+    stream.Read(a[1], Length(a));
+    testcases.Text := a;
+    (*
+   {$IFDEF DELPHI_UNICODE}
+    testcases.LoadFromFile(AParamsFile, TEncoding.ANSI);
+   {$ELSE}
+    testcases.LoadfromFile(AParamsFile);
+   {$ENDIF}
+   *)
+  {$ENDIF}
 
     // Read EXIF tags from image file
     ImgData.ProcessFile(EdTestFile.Text);
@@ -218,7 +232,8 @@ begin
     ListView.Items.BeginUpdate;
     try
       j := 0;
-      for i:=0 to testCases.Count-1 do begin
+      n := testCases.Count;
+      for i:=0 to n-1 do begin
         if (TestCases[i] = ':quit') then
           break;
 

@@ -1,4 +1,4 @@
-﻿unit dEXIF;
+unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -632,7 +632,8 @@ var
   (TID:0; TType:3; ICode:2; Tag:$0102; Count:3; Name:'BitsPerSample'),
   (TID:0; TType:3; ICode:2; Tag:$0103; Count:1; Name:'Compression'            ; Desc:'';
     Code:'6:Jpeg,3:Uncompressed,1:TIFF'),
-  (TID:0; TType:3; ICode:2; Tag:$0106; Count:1; Name:'PhotometricInterpretation';Desc:''; Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
+  (TID:0; TType:3; ICode:2; Tag:$0106; Count:1; Name:'PhotometricInterpretation';Desc:'';
+    Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
   (TID:0; TType:3; ICode:2; Tag:$010A; Count:1; Name:'FillOrder'              ),         {10}
   (TID:0; TType:2; ICode:2; Tag:$010D; Count:1; Name:'DocumentName'           ),
   (TID:0; TType:2; ICode:2; Tag:$010E; Count:1; Name:'ImageDescription'       ),
@@ -708,7 +709,8 @@ var
   (TID:0; TType:0; ICode:2; Tag:$0209; Count:1; Name:'JPEGACTables'           ),
   (TID:0; TType:5; ICode:2; Tag:$0211; Count:3; Name:'YCbCrCoefficients'      ),
   (TID:0; TType:3; ICode:2; Tag:$0212; Count:2; Name:'YCbCrSubSampling'       ),
-  (TID:0; TType:3; ICode:2; Tag:$0213; Count:1; Name:'YCbCrPositioning';        Desc:''; Code:'1:Centered,2:Co-sited'),
+  (TID:0; TType:3; ICode:2; Tag:$0213; Count:1; Name:'YCbCrPositioning';        Desc:'';
+    Code:'1:Centered,2:Co-sited'),
   (TID:0; TType:5; ICode:2; Tag:$0214; Count:6; Name:'ReferenceBlackWhite'    ),
   (TID:0; TType:1; ICode:2; Tag:$02BC; Count:1; Name:'ExtensibleMetadataPlatform' ),     {80}
   (TID:0; TType:0; ICode:2; Tag:$0301; Count:1; Name:'Gamma'                     ),
@@ -1275,11 +1277,16 @@ end;
 function TEndInd.Put32s(data: Longint): AnsiString;
 var
   data2: integer;
-  buffer: string[4] absolute data2;
-  bbuff: AnsiChar;
+ // buffer: string[4] absolute data2;
+ // bbuff: AnsiChar;
 begin
   data2 := data;
   if MotorolaOrder then
+    data2 := NtoBE(data) else
+    data2 := NtoLE(data);
+  SetLength(Result, 4);
+  Move(data2, Result[1], 4);
+    {
   begin
     bbuff     := buffer[1];
     buffer[1] := buffer[4];
@@ -1288,7 +1295,8 @@ begin
     buffer[2] := buffer[3];
     buffer[3] := bbuff;
   end;
-  Result := buffer;
+  }
+//  Result := buffer;
 end;
 
 // Convert a 32 bit unsigned value from file's native byte order
@@ -1377,7 +1385,7 @@ begin
     end;
 end;
 
-//  This function returns the integer data value for a given tag name.
+// This function returns the integer data value for a given tag name.
 function TImageInfo.LookupTagInt(ATagName: String):integer;
 var
   i: integer;
@@ -2529,8 +2537,6 @@ begin
       Result[i] := NumericTagToVar(@ATag.Raw[1 + BYTES_PER_FORMAT[ATag.TType]*i], ATag.TType);
   end;
 
-
-
   // Correction for some special cases
   case ATag.Tag of
     TAG_SHUTTERSPEED:
@@ -2584,7 +2590,6 @@ begin
       raise Exception.CreateFmt('NumericTagToVar does not handle Tag type %d', [ord(ATagType)]);
   end;
 end;
-
 
 { Central routine for writing data to a tag.
   ATagName ........... Name of the tag
