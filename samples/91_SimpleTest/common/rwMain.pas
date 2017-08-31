@@ -316,9 +316,9 @@ begin
   end;
 
   { Check for fractional result, e.g. exposure time }
-  p := pos('/', AExpectedvalue);
+  p := pos('/', AExpectedValue);
   if p > 0 then begin
-    valcurr := StrToFloat(ACurrValue);
+    valcurr := StrToFloat(ACurrValue, PointSeparator);
     expected1 := Copy(AExpectedValue, 1, p-1);
     expected2 := Copy(AExpectedValue, p+1, MaxInt);
     valexp := StrToInt(expected1) / StrToInt(expected2);
@@ -374,9 +374,22 @@ begin
 end;
 
 function TMainForm.ReadTagValue(ATagName: String): String;
+
+  procedure FixDecimalSeparator(var s: String);
+  var
+    i: Integer;
+    decsep: char;
+  begin
+    decsep := FormatSettings.DecimalSeparator;
+    for i:=1 to Length(s) do
+      if not ((s[i] in ['0'..'9']) or (s[i] = decsep)) then
+        exit;
+    for i:=1 to Length(s) do
+      if s[i] = decsep then s[i] := '.';
+  end;
+
 var
   dt: TDateTime;
-  tt: Integer;
   v: variant;
   e: Extended;
 begin
@@ -418,8 +431,10 @@ begin
     v := ImgData.ExifObj.TagValue[ATagName];
     if VarIsNull(v) then
       Result := ''
-    else
+    else begin
       Result := VarToStr(v);
+      FixDecimalSeparator(Result);
+    end;
   end;
 end;
 
@@ -440,6 +455,18 @@ begin
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
+
+  procedure FixDecimalSeparator(var s: String);
+  var
+    i: Integer;
+  begin
+    for i:=1 to Length(s) do
+      if not (s[i] in ['0'..'9', '.']) then
+        exit;
+    for i:=1 to Length(s) do
+      if s[i] = '.' then s[i] := FormatSettings.DecimalSeparator;
+  end;
+
 var
   tt: Integer;
   p: Integer;
@@ -447,6 +474,8 @@ begin
   p := pos('|', ATagValue);
   if p > 0 then
     ATagValue := Copy(ATagValue, 1, p-1);
+
+  FixDecimalSeparator(ATagValue);
 
   if ATagName = 'Comment' then
     ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
@@ -467,10 +496,8 @@ begin
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
   else if ATagName = 'GPSLatitude' then
-//    ImgData.ExifObj.GPSLatitude := StrToFloat(ATagValue)
     ImgData.ExifObj.GPSLatitude := StrToGPS(ATagValue)
   else if ATagName = 'GPSLongitude' then
-//    ImgData.ExifObj.GPSLongitude := StrToFloat(ATagvalue)
     ImgData.ExifObj.GPSLongitude := StrToGPS(ATagValue)
   else
     ImgData.ExifObj.TagValue[ATagName] := ATagValue;

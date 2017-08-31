@@ -1719,10 +1719,10 @@ begin
   if AFmtStr <> '' then
   begin
     if Pos('%s', AFmtStr) > 0 then
-      Result := Format(AFmtStr, [Result])
+      Result := Format(AFmtStr, [Result], PointSeparator)
     else begin
       dv := GetNumber(ABuffer, AFmt);
-      Result := Format(AFmtStr, [dv]);
+      Result := Format(AFmtStr, [dv], PointSeparator);
     end;
   end;
 end;
