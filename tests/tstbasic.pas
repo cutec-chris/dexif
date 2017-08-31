@@ -1,11 +1,19 @@
-unit tstBasic;
+﻿unit tstBasic;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, FileUtil;
+  Classes, SysUtils
+{$ifdef FPC}
+   , fpcunit, testutils, testregistry, FileUtil
+{$else}
+   , TestFrameWork
+{$endif}
+   ;
 
 const
   // Picture with EXIF Data
@@ -36,7 +44,13 @@ type
 implementation
 
 uses
-  dGlobal, dUtils, dEXIF;
+  dGlobal, dUtils, dEXIF
+{$ifdef FPC}
+{$else}
+  , Winapi.Windows
+{$endif}
+  ;
+
 
 procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
@@ -103,6 +117,7 @@ var
   decs: Integer;
 begin
   // Format degree-minutes-seconds
+{$ifdef FPC}
   gf := gf_DMS_Short;
   decs := 3;
   for ct in TGpsCoordType do begin
@@ -125,16 +140,19 @@ begin
       CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
     end;
   end;
+{$else}
+  Fail('not implemented, due an syntax error in Delphi');
+{$endif}
 end;
 
 procedure TTsTBasic_dEXIF.SetUp;
 begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
-      CopyFile(co_TestPic01,co_DUTPicName01);
+      CopyFile(co_TestPic01,co_DUTPicName01{$ifndef FPC},true{$endif});
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
-      CopyFile(co_TestPic02,co_DUTPicName02);
+      CopyFile(co_TestPic02,co_DUTPicName02{$ifndef FPC},true{$endif});
 end;
 
 procedure TTsTBasic_dEXIF.TearDown;
@@ -147,7 +165,6 @@ end;
 
 
 initialization
-
-  RegisterTest(TTsTBasic_dEXIF);
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTsTBasic_dEXIF{$ifndef FPC}.Suite{$endif});
 end.
 
