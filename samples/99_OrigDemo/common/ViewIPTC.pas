@@ -59,7 +59,6 @@ const
     Button2: TButton;
     btnSetDT: TButton;
     lblDateTime: TLabel;
-    procedure FormCreate(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
     procedure btnAboutClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -67,6 +66,7 @@ const
     procedure btnWriteClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure btnSetDTClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
     procedure Memo(s: string);

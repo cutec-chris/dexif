@@ -17,13 +17,12 @@ unit MainView;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtDlgs, StdCtrls,
- {$IFNDEF FPC}
-  Jpeg,
- {$ENDIF}
-  dExif, msData, ComCtrls, ExtCtrls, SHLObj, FileCtrl,
-  dGlobal, dIPTC, mmsystem;
+  {$IFNDEF FPC}
+   Windows, Messages, Jpeg, SHLObj, FileCtrl, mmsystem,
+  {$ENDIF}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  ExtDlgs, StdCtrls, ComCtrls, ExtCtrls,
+  dGlobal, dExif, dIPTC, msData;
 
 type
 
@@ -102,6 +101,9 @@ uses
 
 const
   progName = 'DExView';
+{$IFDEF FPC}
+  EM_LINESCROLL = $00B6;
+{$ENDIF}
 
 var
   DirBrowseName : string;
@@ -165,7 +167,11 @@ var
 
 function clock:longint;
 begin
+  {$IFDEF FPC}
+  Result := GetTickCount64;
+  {$ELSE}
   Clock := TimeGetTime;
+  {$ENDIF}
 end;
 
 

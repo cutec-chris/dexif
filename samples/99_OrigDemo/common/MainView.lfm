@@ -2,10 +2,10 @@ object Form1: TForm1
   Left = 287
   Height = 354
   Top = 191
-  Width = 701
-  Caption = 'Delphi EXIF Jpeg Viewer'
+  Width = 690
+  Caption = 'Lazarus EXIF Jpeg Viewer'
   ClientHeight = 354
-  ClientWidth = 701
+  ClientWidth = 690
   Color = clBtnFace
   Font.Color = clWindowText
   OnCreate = FormCreate
@@ -14,7 +14,7 @@ object Form1: TForm1
   Position = poDefaultPosOnly
   LCLVersion = '1.9.0.0'
   object Image1: TImage
-    Left = 536
+    Left = 525
     Height = 121
     Top = 8
     Width = 151
@@ -33,7 +33,7 @@ object Form1: TForm1
     Left = 120
     Height = 315
     Top = 8
-    Width = 408
+    Width = 397
     Anchors = [akTop, akLeft, akRight, akBottom]
     Font.Color = clWindowText
     Font.Height = -12
@@ -47,7 +47,8 @@ object Form1: TForm1
     Left = 0
     Height = 23
     Top = 331
-    Width = 701
+    Width = 690
+    Anchors = [akRight, akBottom]
     Panels = <>
   end
   object cbClearOnLoad: TCheckBox
@@ -83,7 +84,7 @@ object Form1: TForm1
     Left = 128
     Height = 16
     Top = 307
-    Width = 559
+    Width = 548
     Anchors = [akLeft, akRight, akBottom]
     Step = 1
     TabOrder = 6
@@ -129,37 +130,41 @@ object Form1: TForm1
     TabOrder = 10
   end
   object btnSaveThumb: TButton
-    Left = 552
+    Left = 541
     Height = 25
     Top = 144
     Width = 124
+    Anchors = [akTop, akRight]
     Caption = 'Save thumbnail'
     OnClick = btnSaveThumbClick
     TabOrder = 11
   end
   object btnLoadThumb: TButton
-    Left = 552
+    Left = 541
     Height = 25
     Top = 176
     Width = 124
+    Anchors = [akTop, akRight]
     Caption = 'Replace thumbnail'
     OnClick = btnLoadThumbClick
     TabOrder = 12
   end
   object btnRemoveThumb: TButton
-    Left = 552
+    Left = 541
     Height = 25
     Top = 208
     Width = 124
+    Anchors = [akTop, akRight]
     Caption = 'Remove thumbnail'
     OnClick = btnRemoveThumbClick
     TabOrder = 13
   end
   object btnCreateThumb: TButton
-    Left = 552
+    Left = 541
     Height = 25
     Top = 240
     Width = 124
+    Anchors = [akTop, akRight]
     Caption = 'Create thumbnail'
     OnClick = btnCreateThumbClick
     TabOrder = 14

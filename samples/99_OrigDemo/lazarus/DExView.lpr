@@ -3,14 +3,13 @@ program DExView;
 {$MODE Delphi}
 
 
-
 {%File 'InkNames'}
 
 uses
   Forms, Interfaces,
-  MainView in 'MainView.pas' {Form1},
+  MainView in '..\common\MainView.pas' {Form1},
+  About in '..\common\About.pas' {AboutBox},
   dEXIF in 'dEXIF.pas',
-  About in 'About.pas' {AboutBox},
   dIPTC in 'dIPTC.pas',
   msData in 'msData.pas';
 
