@@ -858,7 +858,6 @@ begin
     FormatS := '';     // Format string
     Size := 0;         // used by ITPC module
     CallBack := nil;   // formatting string
-    id := 0;           // msta - used for exif-parent-child-structure
     parentID := 0;     // msta - used for exif-parent-child-structure
   end;
 end;

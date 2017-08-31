@@ -10,6 +10,13 @@ uses
   Classes, SysUtils;
 
 type
+  TMetaDataKind = (mdkExif, mdkIPTC, mdkComment);
+  TMetaDataKinds = set of TMetaDataKind;
+
+const
+  mdkAll = [mdkExif, mdkIPTC, mdkComment];
+
+type
 {$IFNDEF FPC}
   DWord = Cardinal;
   PDWord = ^DWord;
@@ -43,7 +50,7 @@ type
     FormatS: string;     // Format string
     Size: integer;       // used by ITPC module
     CallBack: TStrFunc;  // formatting string
-    id: word;            // msta - used for exif-parent-child-structure
+//    id: word;            // msta - used for exif-parent-child-structure
     parentID: word;      // msta - used for exif-parent-child-structure
   end;
   PTagEntry = ^TTagEntry; // msta
@@ -75,6 +82,19 @@ type
     Numerator, Denominator: LongInt;
   end;
   PExifRational = ^TExifRational;
+
+  TJFIFSegment = packed record
+    //Marker: Array[0..1] of byte;      // $FF$E0
+    Length: Word;                     // Length of segment without marker
+    Identifier: packed array[0..4] of AnsiChar;    // 'JFIF'#0
+    JFIFVersion: packed array[0..1] of byte;       // 01 02
+    DensityUnits: byte;              // 0: aspect ration, 1: inches, 2: cm
+    XDensity: Word;
+    YDensity: Word;
+    ThumbnailWidth: Byte;            // Pixelcount of thumbnail width
+    ThumbnailHeight: Byte;           // and height
+  end;
+  PJFIFSegment = ^TJFIFSegment;
 
   TGpsCoordType = (ctLatitude, ctLongitude);
 
@@ -109,7 +129,7 @@ const
 
   EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Count:1;
     Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0;
-    CallBack: nil; id:0; parentID:0);
+    CallBack: nil; parentID:0);
 
   GpsFormat = gf_DMS_Short;
 

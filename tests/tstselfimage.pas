@@ -21,6 +21,7 @@ type
   published
     procedure CheckForNoPicture;
     procedure CreateImageJpg;
+    procedure CreateImageJpgWithoutEXIF;
     procedure CreateImageJpgWithEmptyEXIF;
     procedure CreateImageJpgWithMiniEXIF;
   end;
@@ -83,7 +84,7 @@ begin
   DUT.Free;
 end;
 
-procedure TTstSelfImage.CreateImageJpgWithEmptyEXIF;
+procedure TTstSelfImage.CreateImageJpgWithoutEXIF;
 var
   DUT: TImgData;
 begin
@@ -99,9 +100,31 @@ begin
     FreeAndNil(DUT);
     // Reread the file
     DUT:= TImgData.Create(GenAll);
-    CheckTrue(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData cannot process file:'+co_DUTPicSelfImage01);
-    CheckTrue(DUT.HasEXIF,'TImgData should have EXIF now '+co_DUTPicSelfImage01);
-    CheckTrue(DUT.ExifObj.TagCount=0,'TImgData of '+co_DUTPicSelfImage01+' should not have any tags');
+    DUT.ProcessFile(co_DUTPicSelfImage01);
+    CheckFalse(DUT.HasEXIF, 'TImgData still should not have an EXIF: '+co_DUTPicSelfImage01);
+  end;
+  DUT.Free;
+end;
+
+procedure TTstSelfImage.CreateImageJpgWithEmptyEXIF;
+var
+  DUT: TImgData;
+begin
+  CreateGreenJpg(co_DUTPicSelfImage01);
+  CheckTrue(FileExists(co_DUTPicSelfImage01),'Internal error: File:'+ co_DUTPicSelfImage01+' is missing');
+  DUT:= TImgData.Create(GenAll);
+  // Lazarus generated files have no EXIF information
+  CheckFalse(DUT.ProcessFile(co_DUTPicSelfImage01),'TImgData can process file, but shouldnt:'+co_DUTPicSelfImage01);
+  CheckFalse(DUT.HasEXIF,'TImgData should not have EXIF'+co_DUTPicSelfImage01);
+  if not DUT.HasEXIF then begin
+    DUT.CreateExifObj;  // Create a new EXIF object, but don't add any tags.
+    // Write file with the empty exif
+    DUT.WriteEXIFJpegTo(co_DUTPicSelfImage01);
+    FreeAndNil(DUT);
+    // Reread the file
+    DUT:= TImgData.Create(GenAll);
+    DUT.ProcessFile(co_DUTPicSelfImage01);
+    CheckTrue(DUT.HasEXIF,'TImgData should have an EXIF now: '+co_DUTPicSelfImage01);
   end;
   DUT.Free;
 end;
@@ -122,6 +145,8 @@ begin
 
   DUT:= TImgData.Create(GenAll);
   with DUT.CreateEXIFObj do begin
+    CheckTrue(DUT.HasExif, 'TImgData should have an EXIF: ' + co_DUTPICSElfImage01);
+
     TagValue['Artist'] := EXPECTED_ARTIST;
     s := TagValueAsString['Artist'];
     CheckEquals(EXPECTED_ARTIST, s, 'Tag "Artist" mismatch');

@@ -1,4 +1,4 @@
-unit dEXIF;
+﻿unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -199,7 +199,6 @@ type
   protected
     function AddTagToArray(ANewTag: iTag): integer;
     function AddTagToThumbArray(ANewTag: iTag): integer;
-    function CreateExifBuf(parentID: word=0; offsetBase: integer=0): AnsiString;
     function CvtInt(ABuffer: Ansistring): Longint;
     function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
     procedure ExtractThumbnail;
@@ -364,12 +363,13 @@ type
     ExifSegment: pSection;
     function ExtractThumbnailBuffer: TBytes;
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
-      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
+      AWriteMetadata: TMetadataKinds = mdkAll);
+//    procedure MergeToStream(AInputStream, AOutputStream: TStream;
+//      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
     procedure ProcessEXIF;
     function ReadJpegSections(AStream: TStream):boolean;
     function ReadTiffSections(AStream: TStream):boolean;
-    function SaveExif(jfs2: TStream; EnabledMeta: Byte=$FF;
-      FreshExifBlock: Boolean=false): longint;
+    function SaveExif(AStream: TStream; AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
 
   public
     Sections: array[1..21] of TSection;
@@ -1773,7 +1773,7 @@ end;
 
 //{$DEFINE CreateExifBufDebug}  // uncomment to see written Exif data
 {$ifdef CreateExifBufDebug}var CreateExifBufDebug : String;{$endif}
-
+                           (*
 function TImageInfo.CreateExifBuf(ParentID:word=0; OffsetBase:integer=0): AnsiString;
   {offsetBase required, because the pointers of subIFD are referenced from parent IFD (WTF!!)}
   // msta Creates APP1 block with IFD0 only
@@ -1886,7 +1886,7 @@ begin
     n := n+1;
   end;
   {$ifdef CreateExifBufDebug}if (parentID = 0) then ShowMessage(CreateExifBufDebug);{$endif}
-end;
+end;                         *)
 
 //--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
@@ -2073,7 +2073,6 @@ begin
         NewEntry.TType := tagFormat;
         NewEntry.Count := tagComponents;
         NewEntry.ParentID := AParentID;
-        NewEntry.id := tagID;
         if ATagType = ttThumb then
           AddTagToThumbArray(newEntry)
         else
@@ -2239,7 +2238,6 @@ begin
       NewEntry.TType:= fType;
       NewEntry.Count := 1;
       newEntry.parentID := 0;
-      newEntry.id := 0;
       newEntry.TID  := 1; // MsSpecific
       AddTagToArray(newEntry);
     except
@@ -3743,88 +3741,70 @@ begin
 end;
 *)
 
-function TImgData.SaveExif(jfs2: TStream; EnabledMeta: Byte = $FF;
-  FreshExifBlock: Boolean = false): LongInt;
+function TImgData.SaveExif(AStream: TStream;
+  AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
+const
+  SOI_MARKER: array[0..1] of byte = ($FF, $D8);
+  JFIF_MARKER: array[0..1] of byte = ($FF, $E0);
+  JFIF: ansistring = 'JFIF'#0;
 var
-  cnt: Longint;
+  APP0Segment: TJFIFSegment;
   buff: AnsiString;
   writer: TExifWriter;
 begin
-  cnt := 0;
-  buff := #$FF#$D8;
-  jfs2.Write(pointer(buff)^, Length(buff));
-  if (EnabledMeta and 1 <> 0) then
-  begin
-    if FreshExifBlock then
-    begin
-      // af begin
-      if not Assigned(ExifObj) then begin
-        EXIFsegment := @sections[SectionCnt+1];
-        EXIFobj := TImageInfo.Create(self,BuildList);
-        //ExifObj.SetTagElement();
-        //EXIFobj.TraceLevel := TraceLevel;
-        //ExifObj.CameraModel:= 'Lazarus';
-        //ExifObj.CameraMake:= 'dExif V' + DexifVersion;
-        //SetDataBuff(EXIFsegment^.data);
-      end;
-      // af end
-      buff := #$FF + Chr(M_EXIF);
-      cnt := cnt + jfs2.Write(buff[1], Length(buff));
-      buff := ExifObj.CreateExifBuf;
-      cnt := cnt + jfs2.Write(buff[1], Length(buff));
-      buff := '';
+  // Write Start-Of-Image segment (SOI)
+  AStream.WriteBuffer(SOI_MARKER, SizeOf(SOI_MARKER));
+
+  // No Exif --> write an APP0 segment
+  if not (mdkExif in AWriteMetadata) or (not HasExif) then begin
+    if HeaderSegment = nil then begin
+      APP0Segment.Length := NtoBE(SizeOf(APP0Segment) - 2);
+      Move(JFIF[1], APP0Segment.Identifier[0], Length(JFIF));
+      APP0Segment.JFIFVersion[0] := 1;
+      APP0Segment.JFIFVersion[1] := 2;
+      APP0Segment.DensityUnits := 1;         // inch
+      APP0Segment.XDensity := NtoBE(72);     // 72 ppi
+      APP0Segment.YDensity := NtoBE(72);
+      APP0Segment.ThumbnailWidth := 0;
+      APP0Segment.ThumbnailHeight := 0;
+      AStream.WriteBuffer(JFIF_MARKER, SizeOf(JFIF_MARKER));
+      AStream.WriteBuffer(APP0Segment, SizeOf(APP0Segment));
     end else
-    if HasExif then begin
-      writer := TExifWriter.Create(self);
-      try
-        writer.BigEndian := MotorolaOrder;
-        writer.WriteExifHeader(jfs2);
-        writer.WriteToStream(jfs2);
-        cnt := jfs2.Position;
-      finally
-        writer.Free;
-      end;
-    end else
-    (*
-    if (ExifSegment <> nil) then
-      with ExifSegment^ do
-      begin
-        buff := #$FF + chr(Dtype) + data;
-        cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
-      end
-    else
-    *)
-    if (HeaderSegment <> nil) then
       with HeaderSegment^ do
       begin
-        buff := chr($FF) + chr(Dtype) + data;
-     // buff := #$FF+chr(Dtype)+#$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
-        cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
-      end
-    else
-    if (cnt = 0) then
-    begin
-      // buff := chr($FF)+chr(Dtype)+data;
-      buff := #$FF + chr(M_JFIF) + #$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;       // To do:  contains wrong resolution!!!
-      cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
+        buff := chr($FF) + chr(Dtype) + Data;
+        AStream.WriteBuffer(buff[1], Length(buff));
+      end;
+  end else
+  begin
+    // EXIF --> Write APP1 segment
+    writer := TExifWriter.Create(self);
+    try
+      writer.BigEndian := MotorolaOrder;
+      writer.WriteExifHeader(AStream);
+      writer.WriteToStream(AStream);
+    finally
+      writer.Free;
     end;
   end;
 
-  if (EnabledMeta and 2 <> 0) and (IPTCSegment <> nil) then
+  // Write IPTCSegment
+  if (mdkIPTC in AWriteMetadata) and HasIPTC then
     with IPTCSegment^ do
     begin
       buff := chr($FF) + chr(Dtype) + data;
-      cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
+      AStream.Write(pointer(buff)^, Length(buff));
     end;
 
-  if (EnabledMeta and 4 <> 0) and (CommentSegment <> nil) then
+  // Write comment segment
+  if (mdkComment in AWriteMetadata) and HasComment then
     with CommentSegment^ do
     begin
       buff := chr($FF) + chr(Dtype) + data;
-      cnt := cnt + jfs2.Write(pointer(buff)^, Length(buff));
+      AStream.Write(pointer(buff)^, Length(buff));
     end;
 
-  Result := cnt;
+  Result := AStream.Position;
 end;
 
 function TImgData.ExtractThumbnailBuffer: TBytes;
@@ -3916,7 +3896,7 @@ begin
     jms := TMemoryStream.Create;
     try
       jms.CopyFrom(AJpeg, AJpeg.Size);
-      MergeToStream(jms, jfs, 255, NewExifBlock);
+      MergeToStream(jms, jfs);
     finally
       jms.Free;
     end;
@@ -4050,7 +4030,7 @@ begin
     j.SaveToStream(jms);
     jfs := TFileStream.Create(fname, fmCreate or fmShareExclusive);
     try
-      MergeToStream(jms, jfs, 255, NewExifBlock); // msta
+      MergeToStream(jms, jfs);
     finally
       jfs.Free;
     end
@@ -4060,8 +4040,10 @@ begin
 end;
 {$ENDIF}
 
+//procedure TImgData.MergeToStream(AInputStream, AOutputStream: TStream;
+//  AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
 procedure TImgData.MergeToStream(AInputStream, AOutputStream: TStream;
-  AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
+  AWriteMetadata: TMetadataKinds = mdkAll);
 type
   TSegmentHeader = packed record
     Key: byte;
@@ -4073,10 +4055,10 @@ var
   n, count: Integer;
   savedPos: Int64;
 begin
-  // Write the header segment and all segments modified by dEXIF to  the
-  // beginning of the stream
+  // Write the header segment and all segments modified by dEXIF
+  // to the beginning of the stream
   AOutputStream.Position := 0;
-  SaveExif(AOutputStream, AEnabledMeta, AFreshExifBlock);
+  SaveExif(AOutputStream, AWriteMetaData);
 
   // Now write copy all segments which were not modified by dEXIF.
   AInputStream.Position := 0;
