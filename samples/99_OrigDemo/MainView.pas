@@ -30,6 +30,7 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    btnComment: TButton;
     pdlg: TOpenPictureDialog;
     Memo1: TMemo;
     StatusBar1: TStatusBar;
@@ -44,7 +45,7 @@ type
     btnLoad: TButton;
     btnWriteSame: TButton;
     btnWriteSmall: TButton;
-    btnComment: TButton;
+    btnExifComment: TButton;
     btnSaveThumb: TButton;
     btnLoadThumb: TButton;
     btnRemoveThumb: TButton;
@@ -52,6 +53,7 @@ type
     procedure btnAboutClick(Sender: TObject);
     procedure btnCommentClick(Sender: TObject);
     procedure btnCreateThumbClick(Sender: TObject);
+    procedure btnExifCommentClick(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
     procedure btnLoadThumbClick(Sender: TObject);
     procedure btnRemoveThumbClick(Sender: TObject);
@@ -225,6 +227,7 @@ var
 begin
   btnWriteSame.Enabled := false;
   btnWriteSmall.Enabled := false;
+  btnExifComment.Enabled := false;
   btnComment.Enabled := false;
   if pdlg.Execute then
   begin
@@ -294,12 +297,14 @@ begin
     btnRemoveThumb.Enabled := ImgData.HasThumbnail;
     btnLoadThumb.Enabled := ImgData.HasExif;
     btnCreateThumb.Enabled := ImgData.HasExif;
+    btnExifComment.Enabled := ImgData.HasExif;
+    btnComment.Enabled := true;
 
-    if ImgData.commentSegment <> nil then
+    if ImgData.HasComment then
     begin
       Memo(' ');
       Memo(' Comment Segment Available');
-      Memo(ImgData.GetCommentStr());
+      Memo(ImgData.Comment);
     end;
 
     if ImgData.IPTCSegment <> nil then
@@ -356,8 +361,7 @@ begin
         btnWriteSmall.Enabled := true;
         btnWriteSame.Enabled := true;
       end;
-      if ImgData.ExifObj.ExifComment <> '' then
-        btnComment.Enabled := true;
+
       Memo('');
     // An example of pulling some specific tags out of
     // the found items list.  I'll change the names
@@ -732,6 +736,35 @@ begin
   end;
 end;
 
+procedure TForm1.btnCommentClick(Sender: TObject);
+var
+  cmt:string;
+  fn: String;
+  jpeg: TJpegImage;
+  ms: TMemoryStream;
+begin
+  if ImgData.Comment = '' then
+    ShowMessage('No comment segment detected')
+  else
+  begin
+    // Input (new) comment
+    cmt := InputBox('Enter comment:', 'Enter a new comment', ImgData.Comment);
+    if ImgData.Comment <> cmt then
+    begin
+      // Change comment in EXIF
+      ImgData.Comment := cmt;
+      Memo1.Lines.Add('');
+      Memo1.Lines.Add('Comment set to: '+cmt);
+
+      // Save to file ("_comment" appended to filename)
+      fn := ChangeFileExt(ImgData.FileName, '') + '_comment.jpg';
+      ImgData.WriteEXIFJpegTo(fn);
+      Memo1.Lines.Add('');
+      Memo1.Lines.Add('Image saved in: ' + fn );
+    end;
+  end;
+end;
+
 procedure TForm1.btnWriteSameClick(Sender: TObject);
 var
   fn: String;
@@ -768,7 +801,7 @@ begin
   DexifDecode := cbDecode.Checked;
 end;
 
-procedure TForm1.btnCommentClick(Sender: TObject);
+procedure TForm1.btnExifCommentClick(Sender: TObject);
 var
   cmt:string;
   fn: String;
@@ -787,10 +820,10 @@ begin
       // Change comment in EXIF
       ImgData.ExifObj.ExifComment := cmt;
       Memo1.Lines.Add('');
-      Memo1.Lines.Add('Comment set to: '+cmt);
+      Memo1.Lines.Add('Exif comment set to: '+cmt);
 
-      // Save to file ("_comment" appended to filename)
-      fn := ChangeFileExt(ImgData.FileName, '') + '_comment.jpg';
+      // Save to file ("_exifcomment" appended to filename)
+      fn := ChangeFileExt(ImgData.FileName, '') + '_exifcomment.jpg';
       ImgData.WriteEXIFJpegTo(fn);
       Memo1.Lines.Add('');
       Memo1.Lines.Add('Image saved in: ' + fn );

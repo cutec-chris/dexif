@@ -1,10 +1,10 @@
 object Form1: TForm1
   Left = 287
-  Height = 330
+  Height = 354
   Top = 191
   Width = 701
   Caption = 'Delphi EXIF Jpeg Viewer'
-  ClientHeight = 330
+  ClientHeight = 354
   ClientWidth = 701
   Color = clBtnFace
   Font.Color = clWindowText
@@ -21,17 +21,17 @@ object Form1: TForm1
     Anchors = [akTop, akRight]
   end
   object btnLoad: TButton
-    Left = 24
+    Left = 16
     Height = 25
     Top = 8
-    Width = 75
+    Width = 96
     Caption = 'One File'
     OnClick = btnLoadClick
     TabOrder = 0
   end
   object Memo1: TMemo
     Left = 120
-    Height = 291
+    Height = 315
     Top = 8
     Width = 408
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -46,7 +46,7 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 307
+    Top = 331
     Width = 701
     Panels = <>
   end
@@ -61,20 +61,20 @@ object Form1: TForm1
     TabOrder = 3
   end
   object btnAbout: TButton
-    Left = 24
+    Left = 16
     Height = 25
-    Top = 274
-    Width = 75
+    Top = 296
+    Width = 94
     Anchors = [akLeft, akBottom]
     Caption = 'About...'
     OnClick = btnAboutClick
     TabOrder = 4
   end
   object btnTree: TButton
-    Left = 24
+    Left = 16
     Height = 25
     Top = 40
-    Width = 75
+    Width = 96
     Caption = 'Directory...'
     OnClick = btnTreeClick
     TabOrder = 5
@@ -82,7 +82,7 @@ object Form1: TForm1
   object PBar: TProgressBar
     Left = 128
     Height = 16
-    Top = 265
+    Top = 307
     Width = 559
     Anchors = [akLeft, akRight, akBottom]
     Step = 1
@@ -98,10 +98,10 @@ object Form1: TForm1
     TabOrder = 7
   end
   object btnWriteSmall: TButton
-    Left = 24
+    Left = 16
     Height = 25
-    Top = 176
-    Width = 75
+    Top = 208
+    Width = 96
     Caption = 'Write Small'
     Enabled = False
     OnClick = btnWriteSmallClick
@@ -118,14 +118,14 @@ object Form1: TForm1
     State = cbChecked
     TabOrder = 9
   end
-  object btnComment: TButton
-    Left = 24
+  object btnExifComment: TButton
+    Left = 16
     Height = 25
     Top = 144
-    Width = 75
-    Caption = 'Comment...'
+    Width = 96
+    Caption = 'Exif Comment...'
     Enabled = False
-    OnClick = btnCommentClick
+    OnClick = btnExifCommentClick
     TabOrder = 10
   end
   object btnSaveThumb: TButton
@@ -165,13 +165,24 @@ object Form1: TForm1
     TabOrder = 14
   end
   object btnWriteSame: TButton
-    Left = 24
+    Left = 16
     Height = 25
-    Top = 207
-    Width = 75
+    Top = 239
+    Width = 96
     Caption = 'Write same'
+    Enabled = False
     OnClick = btnWriteSameClick
     TabOrder = 15
+  end
+  object btnComment: TButton
+    Left = 16
+    Height = 25
+    Top = 176
+    Width = 96
+    Caption = 'Std Comment...'
+    Enabled = False
+    OnClick = btnCommentClick
+    TabOrder = 16
   end
   object pdlg: TOpenPictureDialog
     Filter = 'All (*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef)|*.gif;*.ani;*.pcx;*.jpg;*.jpeg;*.bmp;*.ico;*.emf;*.wmf;*.tif;*.nef|CompuServe GIF Image (*.gif)|*.gif|ANI Image (*.ani)|*.ani|PCX Image (*.pcx)|*.pcx|JPEG Image File (*.jpg)|*.jpg|JPEG Image File (*.jpeg)|*.jpeg|Bitmaps (*.bmp)|*.bmp|Icons (*.ico)|*.ico|Enhanced Metafiles (*.emf)|*.emf|Metafiles (*.wmf)|*.wmf|TIFF Image File (*.tif)|*.tif|Nikon Image File (*.nef)|*.nef'
