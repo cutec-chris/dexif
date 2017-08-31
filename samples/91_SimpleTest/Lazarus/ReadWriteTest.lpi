@@ -51,9 +51,8 @@
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\..\..\dglobal.pas"/>
+        <Filename Value="..\..\..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dGlobal"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\dUtils.pas"/>

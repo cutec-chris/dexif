@@ -143,6 +143,19 @@ begin
   Result := EncodeDate(yr, mn, dy) + EncodeTime(h, m, s, 0);
 end;
 
+function DecimalSep: Char;
+begin
+ {$IFDEF FPC}
+   Result := FormatSettings.DecimalSeparator;
+ {$ELSE}
+  {$IFDEF VER150}  // Delphi 7
+   Result := DecimalSeparator;
+  {$ELSE}
+   Result := FormatSettings.DecimalSeparator;
+  {$ENDIF}
+ {$ENDIF}
+end;
+
 
 { TMainForm }
 
@@ -199,6 +212,7 @@ begin
   // Read test parameters
   testCases := TStringList.Create;
   try
+
   {$IFDEF FPC}
     // The testcases text files are encoded in ANSI for Delphi7 compatibility
     // In Lazarus we must convert to UTF8 }
@@ -215,13 +229,6 @@ begin
     SetLength(a, stream.Size);
     stream.Read(a[1], Length(a));
     testcases.Text := a;
-    (*
-   {$IFDEF DELPHI_UNICODE}
-    testcases.LoadFromFile(AParamsFile, TEncoding.ANSI);
-   {$ELSE}
-    testcases.LoadfromFile(AParamsFile);
-   {$ENDIF}
-   *)
   {$ENDIF}
 
     // Read EXIF tags from image file
@@ -380,7 +387,7 @@ function TMainForm.ReadTagValue(ATagName: String): String;
     i: Integer;
     decsep: char;
   begin
-    decsep := FormatSettings.DecimalSeparator;
+    decsep := DecimalSep;
     for i:=1 to Length(s) do
       if not ((s[i] in ['0'..'9']) or (s[i] = decsep)) then
         exit;
@@ -464,7 +471,7 @@ procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
       if not (s[i] in ['0'..'9', '.']) then
         exit;
     for i:=1 to Length(s) do
-      if s[i] = '.' then s[i] := FormatSettings.DecimalSeparator;
+      if s[i] = '.' then s[i] := DecimalSep;
   end;
 
 var

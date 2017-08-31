@@ -155,7 +155,7 @@ var
 implementation
 
 initialization
-  PointSeparator := DefaultFormatSettings;
+//  PointSeparator := FormatSettings;
   PointSeparator.DecimalSeparator := '.';
 
 end.
