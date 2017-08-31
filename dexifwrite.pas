@@ -135,17 +135,17 @@ end;
 //------------------------------------------------------------------------------
 procedure TExifWriter.WriteExifHeader(AStream: TStream);
 const
-  SEGMENT_MARKER = #$FF#$E1;
-  EXIF_SIGNATURE = 'Exif'#0#0;
-var
-  header: ansistring;
+  SEGMENT_MARKER: array[0..1] of byte = ($FF, $E1);
+  EXIF_SIGNATURE: array[0..5] of ansichar = ('E', 'x', 'i', 'f', #0, #0);
+  SIZE: Word = 0;
 begin
-  header := SEGMENT_MARKER + #$0 + #$0 + EXIF_SIGNATURE;
-  // The two zero bytes are the size of the entire Exif segiment, they will be
+  FExifSegmentStartPos := AStream.Position;
+  AStream.WriteBuffer(SEGMENT_MARKER[0], 2);
+  // Next two zero bytes are the size of the entire Exif segiment, they will be
   // replaced when the segment is completely written. For this, we store the
   // offset to the begin of the EXIF segment in FExifSegmentStartPos.
-  FExifSegmentStartPos := AStream.Position;
-  AStream.WriteBuffer(header[1], Length(header));
+  AStream.WriteBuffer(SIZE, 2);
+  AStream.WriteBuffer(EXIF_SIGNATURE[0], 6);
 end;
 
 //------------------------------------------------------------------------------

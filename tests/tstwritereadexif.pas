@@ -9,7 +9,7 @@ unit tstwritereadexif;
 // If TEST_FILE_INTEGRITY is activated then the written image file is opened
 // by a TJpegImage to make sure that it is a valid jpeg.
 // Slows down the test!
-{.$DEFINE TEST_FILE_INTEGRITY}
+{$DEFINE TEST_FILE_INTEGRITY}
 
 interface
 

@@ -44,7 +44,7 @@ end;
 
 procedure TTstSelfImage.CheckForNoPicture;
 begin
-  CheckFalse(FileExists(co_DUTPicSelfImage01),'Internal error: The file is prsent (should not !!!!)');
+  CheckFalse(FileExists(co_DUTPicSelfImage01),'Internal error: The file is present (should not !!!!)');
 end;
 
 procedure CreateGreenJpg(aFilename: String);
