@@ -141,7 +141,7 @@ var
   header: ansistring;
 begin
   header := SEGMENT_MARKER + #$0 + #$0 + EXIF_SIGNATURE;
-  // The two zero bytes are the size of the entire Exif segiment, They will be
+  // The two zero bytes are the size of the entire Exif segiment, they will be
   // replaced when the segment is completely written. For this, we store the
   // offset to the begin of the EXIF segment in FExifSegmentStartPos.
   FExifSegmentStartPos := AStream.Position;
