@@ -1,6 +1,8 @@
 unit tstwritereadexif;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
 
 // If ERASE_TESTIMAGE is active then the test images are deleted after the test.
 // Deactivate this define for debugging purposes.
@@ -14,7 +16,13 @@ unit tstwritereadexif;
 interface
 
 uses
-  Classes, Graphics, SysUtils, fpcunit, testutils, testregistry, dEXIF;
+  Classes
+  {$ifdef FPC}
+     , Graphics, SysUtils, fpcunit, testutils, testregistry
+  {$else}
+     , TestFrameWork
+  {$endif}
+     , dEXIF;
 
 const
   // Picture with EXIF data taken from CANON camera }
@@ -25,18 +33,20 @@ type
   { TTsWriteReadFile_dEXIF }
 
   TTstWriteReadFile_dEXIF= class(TTestCase)
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
+    procedure TearDown; override;
   protected
     FSourceFilename: String;
     FDestFileName: String;
-    procedure SetUp; override;
-    procedure TearDown; override;
-
     procedure GenericTest(ATestID: Integer);
-
   public
     constructor Create; override;
     destructor Destroy; override;
-
   published
     procedure Test_DateTimeOriginal;
     procedure Test_DateTimeDigitized;
@@ -61,7 +71,13 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math, dGlobal, dUtils;
+  FileUtil, DateUtils, Math, dGlobal, dUtils
+{$ifdef FPC}
+{$else}
+  , Winapi.Windows
+{$endif}
+  ;
+
 
 type
   TWriteReadParam = record
