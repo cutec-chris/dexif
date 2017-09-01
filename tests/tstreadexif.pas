@@ -1627,7 +1627,7 @@ end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
 begin
-  Test_Resolution(FImgFileName, 180, 180, 'inch');
+  Test_Resolution(FImgFileName, 180, 180, 'inches');
 end;
 
 

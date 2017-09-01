@@ -363,6 +363,7 @@ type
 
   protected
     ExifSegment: pSection;
+    HeaderSegment: pSection;
     function ExtractThumbnailBuffer: TBytes;
 //    function GetCommentSegment: ansistring;
 //    function GetCommentStr: ansistring;
@@ -382,8 +383,6 @@ type
     BuildList: integer;
     SectionCnt : integer;
     IPTCSegment: pSection;
-//    CommentSegment: pSection;
-    HeaderSegment : pSection;
     ExifObj: TImageInfo;
     IptcObj: TIPTCData;
     TraceLevel: integer;
@@ -667,7 +666,7 @@ var
   (TID:0; TType:0; ICode:2; Tag:$0124; Count:1; Name:'T4Options'              ),
   (TID:0; TType:0; ICode:2; Tag:$0125; Count:1; Name:'T6Options'              ),
   (TID:0; TType:3; ICode:2; Tag:$0128; Count:1; Name:'ResolutionUnit'         ; Desc:'';
-    Code:'1:None Specified,2:Inch,3:Centimeter'),
+    Code:'1:None specified,2:inches,3:cm'),
   (TID:0; TType:3; ICode:2; Tag:$0129; Count:2; Name:'PageNumber'             ),
   (TID:0; TType:3; ICode:2; Tag:$012D; Count:768; Name:'TransferFunction'     ),
   (TID:0; TType:2; ICode:2; Tag:$0131; Count:1; Name:'Software'               ),
@@ -1411,7 +1410,7 @@ begin
          {$IFDEF FPC}
           fs := FormatSettings;
           if fs.DecimalSeparator = '.' then fs.DecimalSeparator := ',' else
-             fs.DecimalSeparator := ',';
+             fs.DecimalSeparator := '.';
           if TryStrToFloat(fiTagArray[i].Data, x, fs) then
             Result := Round(x)
           else
@@ -4558,18 +4557,22 @@ begin
 end;
 
 function TImgData.GetResolutionUnit: String;
+const
+  RESOLUTION_UNIT: array[0..2] of string = ('none', 'inches', 'cm');
 var
+  v: variant;
   b: Byte;
 begin
   Result := '';
-  if ExifObj <> nil then
-    Result := ExifObj.LookupTagVal('ResolutionUnit');
+  if ExifObj <> nil then begin
+    v := ExifObj.GetTagValue('ResolutionUnit');   // 1=none, 2=Inch, 3=cm
+    if not VarIsNull(v) and (v >= 1) and (v <= 3) then
+      Result := RESOLUTION_UNIT[byte(v)-1];
+  end;
   if (Result = '') and (HeaderSegment <> nil) then begin
-    b := byte(HeaderSegment^.Data[10]);
-    case b of
-      1: Result := 'Inches';
-      2: Result := 'mm';
-    end;
+    b := byte(HeaderSegment^.Data[10]);           // 0=none, 1=Inch, 2=cm
+    if (b <= 2) then
+      Result := RESOLUTION_UNIT[b];
   end;
 end;
 
@@ -4583,12 +4586,16 @@ end;
 
 function TImgData.GetXResolution: Integer;
 var
+  v: variant;
   pw: PWord;
 begin
   Result := 0;
-  if (ExifObj <> nil) then
-    Result := ExifObj.LookupTagInt('XResolution');
-  if (Result < 0) and (HeaderSegment <> nil) then begin
+  if (ExifObj <> nil) then begin
+    v := ExifObj.GetTagValue('XResolution');
+    if not VarIsNull(v) then
+      Result := v;
+  end;
+  if (Result <= 0) and (HeaderSegment <> nil) then begin
     pw := @HeaderSegment^.Data[11];
     Result := BEToN(pw^);
   end;
@@ -4596,12 +4603,16 @@ end;
 
 function TImgData.GetYResolution: Integer;
 var
+  v: variant;
   pw: PWord;
 begin
   Result := 0;
-  if ExifObj <> nil then
-    Result := ExifObj.LookupTagInt('YResolution');
-  if (Result < 0) and (HeaderSegment <> nil) then begin
+  if ExifObj <> nil then begin
+    v := ExifObj.GetTagValue('YResolution');
+    if not VarIsNull(v) then
+      Result := v;
+  end;
+  if (Result <= 0) and (HeaderSegment <> nil) then begin
     pw := @HeaderSegment^.Data[13];
     Result := BEToN(pw^);
   end;
