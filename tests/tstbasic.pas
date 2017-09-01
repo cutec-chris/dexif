@@ -29,7 +29,11 @@ type
 
   TTsTBasic_dEXIF= class(TTestCase)
   private
+{$ifdef FPC}
   protected
+{$else}
+  public
+{$endif}
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -146,13 +150,28 @@ begin
 end;
 
 procedure TTsTBasic_dEXIF.SetUp;
+{$ifndef FPC}
+var
+  f1, f2 : string;
+{$endif}
 begin
+{$ifdef FPC}
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
-      CopyFile(co_TestPic01,co_DUTPicName01{$ifndef FPC},true{$endif});
+      CopyFile(co_TestPic01,co_DUTPicName01);
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
-      CopyFile(co_TestPic02,co_DUTPicName02{$ifndef FPC},true{$endif});
+      CopyFile(co_TestPic02,co_DUTPicName02);
+{$else}
+  f1 := ExpandFileName(co_DUTPicName01);
+  f2 := ExpandFileName(co_TestPic01);
+  if not FileExists(f1) then
+    if FileExists(f2) then
+      CopyFile(PChar(f2),PChar(f1),true);
+  if not FileExists(ExpandFileName(co_DUTPicName02)) then
+    if FileExists(ExpandFileName(co_TestPic02)) then
+      CopyFile(PChar(ExpandFileName(co_TestPic02)),PChar(ExpandFileName(co_DUTPicName02)),true);
+{$endif}
 end;
 
 procedure TTsTBasic_dEXIF.TearDown;
