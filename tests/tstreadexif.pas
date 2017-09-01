@@ -1030,21 +1030,21 @@ end;
 {   wp: not found
 
 { Compression }
-(*
-procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
-    // Tag not specified --> -1
-end;
 
-procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
-    // "JPEG (old style)" --> 6.
-    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
-end;
-  }
-*)
+//procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
+//    // Tag not specified --> -1
+//end;
+//
+//procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
+//    // "JPEG (old style)" --> 6.
+//    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
+//end;
+//  }
+
 
 { CustomRendered }
 procedure TTstReadFile_dEXIF_01.TstReadFile_CustomRendered;
