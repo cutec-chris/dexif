@@ -245,6 +245,8 @@ begin
   srcDUT := TImgData.Create;
   try
     srcDUT.ProcessFile(FSourceFileName);
+    CheckTrue(srcDUT.HasEXIF,'TImgData cannot detect EXIF in file: '+FSourceFilename);
+
     // -------------------------------------------------------------------------
     // First test
     // -------------------------------------------------------------------------
@@ -267,6 +269,7 @@ begin
       destDUT := TImgData.Create;
       try
         destDUT.ProcessFile(FDestFileName);
+        CheckTrue(destDUT.HasEXIF,'TImgData cannot detect EXIF in file: ' + FDestFileName);
         currVal := ReadTagValue(ATestID, destDUT);
         msg := 'Unintended change of tag ' + TestParams[ATestID].Tag;
         CheckEquals(oldval, currVal, msg);
@@ -310,6 +313,7 @@ begin
     destDUT := TImgData.Create;
     try
       destDUT.ProcessFile(FDestFileName);
+      CheckTrue(destDUT.HasEXIF,'TImgData cannot detect EXIF in file: ' + FDestFilename);
       currVal := ReadTagValue(ATestID, destDUT);
       msg := TestParams[ATestID].Tag + ' readback mismatch.';
       CheckEquals(TestParams[ATestID].Value, currVal, msg);

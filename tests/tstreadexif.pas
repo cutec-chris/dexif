@@ -953,6 +953,7 @@ begin
   DUT := TImgData.Create;
   try
     DUT.ProcessFile(AFileName);
+    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.ExifComment;
     CheckEquals(AExpected, currStrValue, 'User comment mismatch');
   finally

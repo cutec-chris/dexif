@@ -1,4 +1,4 @@
-unit dEXIF;
+﻿unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -2290,7 +2290,7 @@ begin
   FiThumbCount := 0;
   start := FThumbStart + 9;
   ProcessExifDir(start, 9, FThumbLength - 12, ttThumb, 'Thumbnail', 1);
-  ExtractThumbnail;
+    ExtractThumbnail;
 end;
 
 procedure TImageInfo.ExtractThumbnail;
