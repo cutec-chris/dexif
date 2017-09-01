@@ -12,7 +12,10 @@ uses
   dIPTC in '..\dIPTC.pas',
   dtags in '..\dtags.pas',
   dUtils in '..\dUtils.pas',
-  msData in '..\msData.pas';
+  msData in '..\msData.pas',
+  tstreadexif in 'tstreadexif.pas',
+  tstselfimage in 'tstselfimage.pas',
+  tstwritereadexif in 'tstwritereadexif.pas';
 
 //  tstreadexif in 'tstreadexif.pas',
 //  tstselfimage in 'tstselfimage.pas',

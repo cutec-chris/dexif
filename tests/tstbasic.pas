@@ -147,27 +147,18 @@ end;
 
 procedure TTsTBasic_dEXIF.SetUp;
 {$ifndef FPC}
-var
-  f1, f2 : string;
+  function CopyFile(f1,f2:string):boolean;
+  begin
+    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+  end;
 {$endif}
 begin
-{$ifdef FPC}
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
       CopyFile(co_TestPic01,co_DUTPicName01);
   if not FileExists(co_DUTPicName02) then
     if FileExists(co_TestPic02) then
       CopyFile(co_TestPic02,co_DUTPicName02);
-{$else}
-  f1 := ExpandFileName(co_DUTPicName01);
-  f2 := ExpandFileName(co_TestPic01);
-  if not FileExists(f1) then
-    if FileExists(f2) then
-      CopyFile(PChar(f2),PChar(f1),true);
-  if not FileExists(ExpandFileName(co_DUTPicName02)) then
-    if FileExists(ExpandFileName(co_TestPic02)) then
-      CopyFile(PChar(ExpandFileName(co_TestPic02)),PChar(ExpandFileName(co_DUTPicName02)),true);
-{$endif}
 end;
 
 procedure TTsTBasic_dEXIF.TearDown;
