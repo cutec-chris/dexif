@@ -117,14 +117,13 @@ var
   expStr: String;
   currstr: String;
   current: Extended;
-  i: Integer;
+  i, j: Integer;
   decs: Integer;
 begin
   // Format degree-minutes-seconds
-{$ifdef FPC}
   gf := gf_DMS_Short;
   decs := 3;
-  for ct in TGpsCoordType do begin
+  for ct := Low(TGpsCoordtype) to High(TGpsCoordType) do begin
     for i:=0 to High(Expected) do begin
       expStr := GpsToStr(Expected[i], ct, gf, decs);
       current := StrToGps(expStr);
@@ -136,7 +135,7 @@ begin
   // Format degree-minutes
   gf := gf_DM_Short;
   decs := 9;
-  for ct in TGpsCoordType do begin
+  for ct := Low(TGpsCoordtype) to High(TGpsCoordType) do begin
     for i:=0 to High(Expected) do begin
       expStr := GpsToStr(Expected[i], ct, gf, decs);
       current := StrToGps(expStr);
@@ -144,9 +143,6 @@ begin
       CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
     end;
   end;
-{$else}
-  Fail('not implemented, due an syntax error in Delphi');
-{$endif}
 end;
 
 procedure TTsTBasic_dEXIF.SetUp;

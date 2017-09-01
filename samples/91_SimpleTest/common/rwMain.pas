@@ -12,7 +12,7 @@ uses
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
   StdCtrls, Buttons, ComCtrls, ExtCtrls, Variants,
-  dGlobal, dExif, ImgList, System.ImageList;
+  dGlobal, dExif, ImgList;
 
 type
 
