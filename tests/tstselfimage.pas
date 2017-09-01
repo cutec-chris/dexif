@@ -45,6 +45,7 @@ uses
 {$ifdef FPC}
 {$else}
   , Winapi.Windows
+  , jpeg
 {$endif}
   ;
 
@@ -70,25 +71,29 @@ const
   co_BMPWidht = 400;
   co_BMPHeigh = 250;
 var
-  bmp : TBitmap;
+  bmp : {$ifndef FPC}Graphics.{$endif}TBitmap;
   jpg : TJPEGImage;
 begin
   // Bitmap in green
-   bmp:=TBitmap.Create;
+   bmp:= {$ifndef FPC}Graphics.{$endif}TBitmap.Create;
    jpg:= TJPEGImage.Create;
    try
      bmp.PixelFormat:=pf32bit;
      bmp.SetSize(co_BMPWidht, co_BMPHeigh);
      bmp.Canvas.Brush.Color:=clgreen;
+  {$ifdef FPC}
      bmp.Canvas.FillRect(0, 0, co_BMPWidht, co_BMPHeigh);
+   {$else}
+     bmp.Canvas.FloodFill(0, 0, clgreen, TFillStyle.fsSurface);
+   {$endif}
      jpg.Assign(bmp);
      jpg.SaveToFile(aFilename);
    finally
      bmp.Free;
      jpg.free;
    end;
-end;
 
+end;
 
 procedure TTstSelfImage.CreateImageJpg;
 var
@@ -206,7 +211,7 @@ end;
 
 
 initialization
-  RegisterTest(TTstSelfImage);
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstSelfImage{$ifndef FPC}.Suite{$endif});
 
 end.
 

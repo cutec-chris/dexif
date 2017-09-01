@@ -1,4 +1,4 @@
-{ Important note:
+﻿{ Important note:
   - Never trust a single exif extraction tool. It may just re-use other tags.
 }
 
@@ -43,7 +43,11 @@ type
   {$endif}
     procedure SetUp; override;
     procedure TearDown; override;
-  protected
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
     FImgFileName: String;
     procedure StdFloatTest(const AFileName, ATestTag: String;
       const AExpectedResult: Double; ADecimals: Integer; const AMismatchMsg: String);
@@ -70,7 +74,7 @@ type
   { Tests for image DUTPic01, taken by SAMSUNG camera }
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
   public
-    constructor Create; override;
+    constructor Create; {$ifdef FPC}override;{$endif}
   published
     procedure TstReadFile_ApertureValue;
     procedure TstReadFile_Artist;
@@ -134,7 +138,7 @@ type
   { Tests for image DUTPic02, taken by CANON camera }
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
   public
-    constructor Create; override;
+    constructor Create; {$ifdef FPC}override;{$endif}
   published
     procedure TstReadFile_Artist;
     procedure TstReadFile_ApertureValue;
@@ -198,7 +202,7 @@ type
   { Tests for image DUTPic03, taken by Casio camera, contains comment etc }
   TTstReadFile_dEXIF_03 = class(TTstReadFile_dEXIF)
   public
-    constructor Create; override;
+    constructor Create; {$ifdef FPC}override;{$endif}
   published
     procedure TstReadFile_Artist;
     procedure TstReadFile_CommentExif;
@@ -209,8 +213,9 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math
+   DateUtils, Math
 {$ifdef FPC}
+  , FileUtil
 {$else}
   , Winapi.Windows
 {$endif}
@@ -627,21 +632,21 @@ end;
 { Test ...01 will operate on image co_DUTPicName01 }
 constructor TTstReadFile_dEXIF_01.Create;
 begin
-  inherited;
+ {$ifdef FPC}inherited; {$endif}
   FImgFileName := co_DUTPicName01;
 end;
 
 { Test ...02 will operate on image co_DUTPicName02 }
 constructor TTstReadFile_dEXIF_02.Create;
 begin
-  inherited;
+ {$ifdef FPC}inherited; {$endif}
   FImgFileName := co_DUTPicName02;
 end;
 
 { Test ...03 will operate on image co_DUTPicName03 }
 constructor TTstReadFile_dEXIF_03.Create;
 begin
-  inherited;
+  {$ifdef FPC}inherited; {$endif}
   FImgFileName := co_DUTPicName03;
 end;
 
@@ -649,6 +654,12 @@ end;
 { Test methods }
 
 procedure TTstReadFile_dEXIF.SetUp;
+{$ifndef FPC}
+  function CopyFile(f1,f2:string):boolean;
+  begin
+    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+  end;
+{$endif}
 begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
@@ -1020,19 +1031,19 @@ end;
 
 { Compression }
 
-procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
-    // Tag not specified --> -1
-end;
-
-procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
-    // "JPEG (old style)" --> 6.
-    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
-end;
-  }
+//procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
+//    // Tag not specified --> -1
+//end;
+//
+//procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
+//    // "JPEG (old style)" --> 6.
+//    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
+//end;
+//  }
 
 
 { CustomRendered }
@@ -1768,9 +1779,9 @@ end;
 
 
 initialization
-  RegisterTest(TTstReadFile_dEXIF_01);
-  RegisterTest(TTstReadFile_dEXIF_02);
-  RegisterTest(TTstReadFile_dEXIF_03);
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_01{$ifndef FPC}.Suite{$endif});
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_02{$ifndef FPC}.Suite{$endif});
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_03{$ifndef FPC}.Suite{$endif});
 
 end.
 

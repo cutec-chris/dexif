@@ -87,6 +87,9 @@
         <DCCReference Include="..\dtags.pas"/>
         <DCCReference Include="..\dUtils.pas"/>
         <DCCReference Include="..\msData.pas"/>
+        <DCCReference Include="tstreadexif.pas"/>
+        <DCCReference Include="tstselfimage.pas"/>
+        <DCCReference Include="tstwritereadexif.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

@@ -1,4 +1,4 @@
-unit tstwritereadexif;
+﻿unit tstwritereadexif;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
@@ -45,8 +45,8 @@ type
     FDestFileName: String;
     procedure GenericTest(ATestID: Integer);
   public
-    constructor Create; override;
-    destructor Destroy; override;
+    constructor Create; {$ifdef FPC}override;{$endif}
+    destructor Destroy; {$ifdef FPC}override;{$endif}
   published
     procedure Test_DateTimeOriginal;
     procedure Test_DateTimeDigitized;
@@ -71,10 +71,13 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math, dGlobal, dUtils
+  DateUtils, Math, dGlobal, dUtils
 {$ifdef FPC}
+   , FileUtil
 {$else}
   , Winapi.Windows
+  , sysutils
+  , jpeg
 {$endif}
   ;
 
@@ -90,7 +93,9 @@ const
   // !!! INCREMENT WHEN ADDING TESTS !!!
   TestCount = 18;
 
+{$ifdef FPC}
 {$WARN 3177 off : Some fields coming after "$1" were not initialized}
+{$endif}
 
   // !!! ADD NEW TESTS HERE !!!
   TestParams: Array[0..TestCount-1] of TWriteReadParam = (
@@ -119,7 +124,7 @@ const
 
 constructor TTstWriteReadFile_dEXIF.Create;
 begin
-  inherited;
+  {$ifdef FPC}inherited; {$endif}
   FSourceFileName := co_SrcPic;
   FDestFileName := co_DestPic;
 end;
@@ -134,6 +139,12 @@ begin
 end;
 
 procedure TTstWriteReadFile_dEXIF.SetUp;
+{$ifndef FPC}
+  function CopyFile(f1,f2:string):boolean;
+  begin
+    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+  end;
+{$endif}
 begin
   if not FileExists(co_DestPic) then
     if FileExists(co_SrcPic) then
@@ -206,9 +217,9 @@ var
     strValue := TestParams[ATestID].Value;
     // !!!!!  ADD NEW TESTS HERE !!!!!!
     case ATestID of
-      0: DUT.ExifObj.DatetimeOriginal := ScanDatetime(ISODateFormat, strValue);
-      1: DUT.ExifObj.DatetimeDigitized := ScanDatetime(ISODateFormat, strValue);
-      2: DUT.ExifObj.DatetimeModified := ScanDatetime(ISODateFormat, strValue);
+      0: DUT.ExifObj.DatetimeOriginal := {$ifdef FPC}ScanDatetime(ISODateFormat, strValue){$else}StrToDateTime(strValue){$endif}; // af: Delphi ????
+      1: DUT.ExifObj.DatetimeDigitized := {$ifdef FPC}ScanDatetime(ISODateFormat, strValue){$else}StrToDateTime(strValue){$endif}; // af: Delphi ????
+      2: DUT.ExifObj.DatetimeModified := {$ifdef FPC}ScanDatetime(ISODateFormat, strValue){$else}StrToDateTime(strValue){$endif}; // af: Delphi ????
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
@@ -434,7 +445,7 @@ end;
 
 
 initialization
-  RegisterTest(TTstWriteReadFile_dEXIF);
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstWriteReadFile_dEXIF{$ifndef FPC}.Suite{$endif});
 
 end.
 
