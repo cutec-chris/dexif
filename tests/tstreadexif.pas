@@ -4,12 +4,20 @@
 
 unit tstreadexif;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, dEXIF;
+  Classes, SysUtils
+  {$ifdef FPC}
+     , fpcunit, testutils, testregistry
+  {$else}
+     , TestFrameWork
+  {$endif}
+  , dEXIF;
 
 const
   // Picture with EXIF data taken from SAMSUNG camera
@@ -28,11 +36,15 @@ type
   { TTsTBasic_dEXIF }
 
   TTstReadFile_dEXIF= class(TTestCase)
-  protected
-    FImgFileName: String;
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
     procedure SetUp; override;
     procedure TearDown; override;
-
+  protected
+    FImgFileName: String;
     procedure StdFloatTest(const AFileName, ATestTag: String;
       const AExpectedResult: Double; ADecimals: Integer; const AMismatchMsg: String);
     procedure StdFloatFromStringTest(const AFilename, ATestTag: String;
@@ -197,7 +209,13 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math;
+  FileUtil, DateUtils, Math
+{$ifdef FPC}
+{$else}
+  , Winapi.Windows
+{$endif}
+  ;
+
 
 { Output of ExifTool for DUTPic01.jpeg:
 

@@ -1,11 +1,19 @@
 unit tstselfimage;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry;
+  Classes, SysUtils
+  {$ifdef FPC}
+     , fpcunit, testutils, testregistry
+  {$else}
+     , TestFrameWork
+  {$endif}
+     ;
 
 const
   co_DUTPicSelfImage01 = './testpictures/DUTPicSelfImage01.jpg';
@@ -15,7 +23,11 @@ type
   { TTstSelfImage }
 
   TTstSelfImage= class(TTestCase)
-  protected
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -29,7 +41,13 @@ type
 implementation
 uses
   Graphics, Variants,
-  dExif;
+  dExif
+{$ifdef FPC}
+{$else}
+  , Winapi.Windows
+{$endif}
+  ;
+
 
 procedure TTstSelfImage.SetUp;
 begin
