@@ -12,7 +12,7 @@ uses
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
   StdCtrls, Buttons, ComCtrls, ExtCtrls, Variants,
-  dGlobal, dExif, ImgList;
+  dGlobal, dExif, ImgList, System.ImageList;
 
 type
 
@@ -241,14 +241,14 @@ begin
       j := 0;
       n := testCases.Count;
       for i:=0 to n-1 do begin
-        if (TestCases[i] = ':quit') then
+        if (testCases[i] = ':quit') then
           break;
 
         if (testCases[i] = '') or (testCases[i][1] = ';') then
           Continue;
 
         // Extract test parameters
-        testdata := Split(TestCases[i]);
+        testdata := Split(testCases[i]);
         tagName := testdata[0];
         newTagValue := testdata[1];
 

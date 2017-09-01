@@ -1,4 +1,4 @@
-unit dEXIF;
+﻿unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -2900,7 +2900,7 @@ begin
    {$ELSE}
     s := tag.Raw;
    {$ENDIF}
-    while s[Length(s)] = #0 do
+    while (s <> '') and (s[Length(s)] = #0) do
       Delete(s, Length(s), 1);
     Result := s;
   end
