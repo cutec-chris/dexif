@@ -2569,11 +2569,11 @@ begin
       begin
         r := PExifRational(ABuffer)^;
         if MotorolaOrder then begin
-          r.Numerator := BEToN(DWord(r.Numerator));       // Type cast needed for D7
-          r.Denominator := BEToN(DWord(r.Denominator));
+          r.Numerator := LongInt(BEToN(DWord(r.Numerator)));       // Type cast needed for D7
+          r.Denominator := LongInt(BEToN(DWord(r.Denominator)));
         end else begin
-          r.Numerator := LEToN(DWord(r.Numerator));
-          r.Denominator := LEtoN(DWord(r.Denominator));
+          r.Numerator := LongInt(LEToN(DWord(r.Numerator)));
+          r.Denominator := LongInt(LEtoN(DWord(r.Denominator)));
         end;
         if ATagType = FMT_SRATIONAL then begin
           r.Numerator := LongInt(r.Numerator);
@@ -2725,11 +2725,11 @@ begin
   begin
     fracvalue := DoubleToRational(AValue);
     if MotorolaOrder then begin
-      fracvalue.Numerator := NToBE(DWord(fracValue.Numerator));       // Type-cast needed for D7
-      fracValue.Denominator := NToBE(DWord(fracValue.Denominator));
+      fracvalue.Numerator := LongInt(NToBE(DWord(fracValue.Numerator)));       // Type-cast needed for D7
+      fracValue.Denominator := LongInt(NToBE(DWord(fracValue.Denominator)));
     end else begin
-      fracValue.Numerator := NtoLE(DWord(fracValue.Numerator));
-      fracValue.Denominator := NtoLE(DWord(fracValue.Denominator));
+      fracValue.Numerator := LongInt(NtoLE(DWord(fracValue.Numerator)));
+      fracValue.Denominator := LongInt(NtoLE(DWord(fracValue.Denominator)));
     end;
     len := Length(ATag^.Raw);
     SetLength(ATag^.Raw, len + 8);

@@ -190,6 +190,7 @@ var
   currTagValue: String;
   newTagValue: String;
   altTagValue: String;
+  jpeg: TJpegImage;
   {$IFDEF FPC}
   stream: TMemorystream;
   {$ELSE}
@@ -233,6 +234,8 @@ begin
 
     // Read EXIF tags from image file
     ImgData.ProcessFile(EdTestFile.Text);
+    if not ImgData.HasExif then
+      raise Exception.Create('No exif structure detected in "' + EdTestFile.Text + '"');
 
     OutFile := 'test-image.jpg';   // File name of the modified test image
 
@@ -273,6 +276,9 @@ begin
 
     // read back
     ImgData.ProcessFile(OutFile);
+    if not ImgData.HasExif then
+      raise Exception.Create('No exif structure detected in "' + Outfile + '"');
+
     j := 0;
     for i:=0 to testCases.Count-1 do begin
       if (testcases[i] = ':quit') then
@@ -290,6 +296,19 @@ begin
         listItem.ImageIndex := IMGINDEX_FAIL;
       inc(j);
     end;
+
+    jpeg := TJpegImage.Create;
+    try
+      jpeg.LoadFromFile(OutFile);
+      listitem := ListView.Items.Add;
+      listItem.Caption := 'Successfully loaded';
+      listItem.ImageIndex := IMGINDEX_SUCCESS;
+    except
+      listitem := ListView.Items.Add;
+      listItem.Caption := 'Loading failed.';
+      listItem.ImageIndex := IMGINDEX_FAIL;
+    end;
+
   finally
     testCases.Free;
   end;
