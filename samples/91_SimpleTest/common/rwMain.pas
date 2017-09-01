@@ -143,6 +143,19 @@ begin
   Result := EncodeDate(yr, mn, dy) + EncodeTime(h, m, s, 0);
 end;
 
+function DecimalSep: Char;
+begin
+ {$IFDEF FPC}
+   Result := FormatSettings.DecimalSeparator;
+ {$ELSE}
+  {$IFDEF VER150}  // Delphi 7
+   Result := DecimalSeparator;
+  {$ELSE}
+   Result := FormatSettings.DecimalSeparator;
+  {$ENDIF}
+ {$ENDIF}
+end;
+
 
 { TMainForm }
 
@@ -169,7 +182,7 @@ end;
 procedure TMainForm.ExecTest(const AParamsFile: String);
 var
   testCases: TStringList;
-  i, j: Integer;
+  i, j, n: Integer;
   s: String;
   testdata: TStringArray;
   listitem: TListItem;
@@ -181,6 +194,8 @@ var
   stream: TMemorystream;
   {$ELSE}
   jpeg: TJpegImage;
+  stream: TMemoryStream;
+  a: ansistring;
   {$ENDIF}
 begin
   Listview.Items.Clear;
@@ -197,18 +212,24 @@ begin
   // Read test parameters
   testCases := TStringList.Create;
   try
-    testCases.LoadFromFile(AParamsFile);
 
-    {$IFDEF FPC}
+  {$IFDEF FPC}
     // The testcases text files are encoded in ANSI for Delphi7 compatibility
     // In Lazarus we must convert to UTF8 }
+    testCases.LoadFromFile(AParamsFile);
     s := testCases.Text;
-    {$IFDEF FPC3+}
+   {$IFDEF FPC3+}
     testCases.Text := WinCPToUTF8(s);
-    {$ELSE}
+   {$ELSE}
     testCases.Text := AnsiToUTF8(s);
-    {$ENDIF}
-    {$ENDIF}
+   {$ENDIF}
+  {$ELSE}
+    stream := TMemoryStream.Create;
+    stream.LoadFromFile(AParamsFile);
+    SetLength(a, stream.Size);
+    stream.Read(a[1], Length(a));
+    testcases.Text := a;
+  {$ENDIF}
 
     // Read EXIF tags from image file
     ImgData.ProcessFile(EdTestFile.Text);
@@ -218,7 +239,8 @@ begin
     ListView.Items.BeginUpdate;
     try
       j := 0;
-      for i:=0 to testCases.Count-1 do begin
+      n := testCases.Count;
+      for i:=0 to n-1 do begin
         if (TestCases[i] = ':quit') then
           break;
 
@@ -301,9 +323,9 @@ begin
   end;
 
   { Check for fractional result, e.g. exposure time }
-  p := pos('/', AExpectedvalue);
+  p := pos('/', AExpectedValue);
   if p > 0 then begin
-    valcurr := StrToFloat(ACurrValue);
+    valcurr := StrToFloat(ACurrValue, PointSeparator);
     expected1 := Copy(AExpectedValue, 1, p-1);
     expected2 := Copy(AExpectedValue, p+1, MaxInt);
     valexp := StrToInt(expected1) / StrToInt(expected2);
@@ -359,9 +381,22 @@ begin
 end;
 
 function TMainForm.ReadTagValue(ATagName: String): String;
+
+  procedure FixDecimalSeparator(var s: String);
+  var
+    i: Integer;
+    decsep: char;
+  begin
+    decsep := DecimalSep;
+    for i:=1 to Length(s) do
+      if not ((s[i] in ['0'..'9']) or (s[i] = decsep)) then
+        exit;
+    for i:=1 to Length(s) do
+      if s[i] = decsep then s[i] := '.';
+  end;
+
 var
   dt: TDateTime;
-  tt: Integer;
   v: variant;
   e: Extended;
 begin
@@ -403,8 +438,10 @@ begin
     v := ImgData.ExifObj.TagValue[ATagName];
     if VarIsNull(v) then
       Result := ''
-    else
+    else begin
       Result := VarToStr(v);
+      FixDecimalSeparator(Result);
+    end;
   end;
 end;
 
@@ -425,6 +462,18 @@ begin
 end;
 
 procedure TMainForm.WriteTagValue(ATagName, ATagValue: String);
+
+  procedure FixDecimalSeparator(var s: String);
+  var
+    i: Integer;
+  begin
+    for i:=1 to Length(s) do
+      if not (s[i] in ['0'..'9', '.']) then
+        exit;
+    for i:=1 to Length(s) do
+      if s[i] = '.' then s[i] := DecimalSep;
+  end;
+
 var
   tt: Integer;
   p: Integer;
@@ -432,6 +481,8 @@ begin
   p := pos('|', ATagValue);
   if p > 0 then
     ATagValue := Copy(ATagValue, 1, p-1);
+
+  FixDecimalSeparator(ATagValue);
 
   if ATagName = 'Comment' then
     ImgData.Comment := ATagValue    // This is no EXIF tag - it's the COM segment
@@ -452,10 +503,8 @@ begin
   else if ATagName = 'DateTime' then
     ImgData.ExifObj.DateTimeModified := ExtractDateTime(ATagValue)
   else if ATagName = 'GPSLatitude' then
-//    ImgData.ExifObj.GPSLatitude := StrToFloat(ATagValue)
     ImgData.ExifObj.GPSLatitude := StrToGPS(ATagValue)
   else if ATagName = 'GPSLongitude' then
-//    ImgData.ExifObj.GPSLongitude := StrToFloat(ATagvalue)
     ImgData.ExifObj.GPSLongitude := StrToGPS(ATagValue)
   else
     ImgData.ExifObj.TagValue[ATagName] := ATagValue;

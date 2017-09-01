@@ -150,8 +150,13 @@ var
   dExifDecode    : boolean = true;
   EstimateValues : boolean = false;
   TiffReadLimit  : longint = 256000;
+  PointSeparator : TFormatSettings;
 
 implementation
+
+initialization
+//  PointSeparator := FormatSettings;
+  PointSeparator.DecimalSeparator := '.';
 
 end.
 

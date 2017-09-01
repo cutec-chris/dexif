@@ -1,72 +1,74 @@
 object IPTCform: TIPTCform
-  Left = 279
-  Height = 391
-  Top = 238
-  Width = 388
-  Caption = 'IPTCform'
-  ClientHeight = 391
-  ClientWidth = 388
+  Left = 122
+  Top = 231
+  Caption = 'IPTC Viewer'
+  ClientHeight = 352
+  ClientWidth = 372
   Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  OldCreateOrder = False
   OnCreate = FormCreate
-  OnDestroy = FormDestroy
-  Position = poDefaultPosOnly
-  LCLVersion = '1.9.0.0'
+  PixelsPerInch = 96
+  TextHeight = 13
   object Splitter1: TSplitter
-    Cursor = crVSplit
     Left = 0
-    Height = 3
     Top = 135
-    Width = 388
+    Width = 372
+    Height = 3
+    Cursor = crVSplit
     Align = alTop
-    ResizeAnchor = akTop
   end
   object ScrollBox1: TScrollBox
     Left = 0
-    Height = 230
     Top = 138
-    Width = 388
-    HorzScrollBar.Page = 1
-    VertScrollBar.Page = 1
+    Width = 372
+    Height = 195
+    VertScrollBar.Style = ssHotTrack
     VertScrollBar.Tracking = True
     Align = alClient
     TabOrder = 2
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Height = 23
-    Top = 368
-    Width = 388
+    Top = 333
+    Width = 372
+    Height = 19
     Panels = <>
+    SimplePanel = True
   end
   object Panel1: TPanel
     Left = 0
-    Height = 135
     Top = 0
-    Width = 388
+    Width = 372
+    Height = 135
     Align = alTop
-    ClientHeight = 135
-    ClientWidth = 388
     TabOrder = 0
+    DesignSize = (
+      372
+      135)
     object lblDateTime: TLabel
-      Left = 108
-      Height = 1
-      Top = 8
-      Width = 18
-      Anchors = [akTop, akLeft, akRight]
+      Left = 112
+      Top = 12
+      Width = 10
+      Height = 16
+      Anchors = [akLeft, akTop, akRight]
+      Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
       Font.Height = -13
       Font.Name = 'MS Sans Serif'
       Font.Style = [fsItalic]
-      ParentColor = False
       ParentFont = False
     end
     object Memo1: TMemo
-      Left = 108
+      Left = 112
+      Top = 40
+      Width = 252
       Height = 87
-      Top = 36
-      Width = 260
-      Anchors = [akTop, akLeft, akRight, akBottom]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       Color = clBtnFace
       ReadOnly = True
       ScrollBars = ssVertical
@@ -74,81 +76,81 @@ object IPTCform: TIPTCform
       WantReturns = False
     end
     object btnAbout: TButton
-      Left = 54
-      Height = 25
-      Top = 95
+      Left = 58
+      Top = 99
       Width = 41
+      Height = 25
       Caption = 'About'
-      OnClick = btnAboutClick
       TabOrder = 1
+      OnClick = btnAboutClick
     end
     object btnLoad: TButton
-      Left = 6
-      Height = 25
-      Top = 2
+      Left = 10
+      Top = 6
       Width = 89
+      Height = 25
       Caption = 'Read IPTC File'
       Default = True
-      OnClick = btnLoadClick
       TabOrder = 2
+      OnClick = btnLoadClick
     end
     object Button1: TButton
-      Left = 6
-      Height = 25
-      Top = 95
+      Left = 10
+      Top = 99
       Width = 41
+      Height = 25
       Cancel = True
       Caption = 'Close'
       ModalResult = 2
-      OnClick = Button1Click
       TabOrder = 3
+      OnClick = Button1Click
     end
     object btnTags: TButton
-      Left = 6
-      Height = 25
-      Top = 63
+      Left = 10
+      Top = 67
       Width = 41
+      Height = 25
       Caption = 'Tags'
-      OnClick = btnTagsClick
       TabOrder = 4
+      OnClick = btnTagsClick
     end
     object btnWrite: TButton
-      Left = 6
-      Height = 25
-      Top = 32
+      Left = 10
+      Top = 36
       Width = 89
+      Height = 25
       Caption = 'Write...'
       Enabled = False
-      OnClick = btnWriteClick
       TabOrder = 5
+      OnClick = btnWriteClick
     end
     object Button2: TButton
-      Left = 54
-      Height = 25
-      Top = 63
+      Left = 58
+      Top = 67
       Width = 41
+      Height = 25
       Caption = 'XML'
-      OnClick = Button2Click
       TabOrder = 6
+      OnClick = Button2Click
     end
     object btnSetDT: TButton
-      Left = 292
-      Height = 25
-      Top = 4
+      Left = 288
+      Top = 8
       Width = 75
+      Height = 25
       Anchors = [akTop, akRight]
       Caption = 'Release'
-      OnClick = btnSetDTClick
       TabOrder = 7
+      OnClick = btnSetDTClick
     end
   end
   object pdlg: TOpenPictureDialog
     InitialDir = '.'
-    left = 224
-    top = 8
+    Left = 200
+    Top = 8
   end
   object WriteDlg: TSavePictureDialog
-    left = 256
-    top = 8
+    Left = 256
+    Top = 8
   end
 end

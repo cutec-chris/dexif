@@ -84,7 +84,17 @@ http://www.pima.net/standards/iso/tc42/wg18/WG18_POW.htm )
      
      The old methods WriteThruInt and WriteThruString were removed.
 
+     
+Incompatible changes to the original version
+     
+     TImgData.CreateCommentSegment, .GetCommentSegment and .GetCommentStr are
+     protected now. Use the property TImgData.Comment to read and write 
+     a comment.
+     
+     TImageInfo.WriteThruInt and .WriteThruString were removed. Changing of
+     tags is done more naturally by using the properties of TImageInfo.
 
+     
 Sample Code:
 
 dEXIF handles the major sections by parsing the initial image header and

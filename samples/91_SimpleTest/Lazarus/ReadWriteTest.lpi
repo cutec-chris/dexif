@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -45,31 +45,26 @@
       <Unit3>
         <Filename Value="..\..\..\dEXIF.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dEXIF"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\..\dExif.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\..\..\dglobal.pas"/>
+        <Filename Value="..\..\..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dGlobal"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\dUtils.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dUtils"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\dexifwrite.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dexifwrite"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\dIPTC.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dIPTC"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\..\dTags.pas"/>
@@ -82,7 +77,6 @@
       <Unit11>
         <Filename Value="..\..\..\msData.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="msData"/>
       </Unit11>
     </Units>
   </ProjectOptions>
@@ -102,9 +96,6 @@
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
     </Linking>
-    <Other>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

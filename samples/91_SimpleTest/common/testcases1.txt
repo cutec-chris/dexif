@@ -16,9 +16,9 @@ ImageLength	1000
 ExifImageWidth	2000
 ExifImageLength	1000
 Orientation	2
-FNumber	16
+FNumber	5.6
 ApertureValue	11
-MaxApertureValue	1,8
+MaxApertureValue	1.8
 ExposureBiasValue	-1
 ShutterSpeedValue	1/60
 ExposureTime	1/120
@@ -26,7 +26,5 @@ ISOSpeedRatings	800
 ExposureProgram	1
 MeteringMode	3
 LightSource	3
-;GPSLatitude	12,3456789
-;GPSLongitude	1,23456789
 GPSLatitude	12° 34' 56" N
 GPSLongitude	1° 23' 45" E

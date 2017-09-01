@@ -2,13 +2,13 @@ program IPTCView;
 
 uses
   Forms, Interfaces,
-  ViewIPTC in 'ViewIPTC.pas' {IPTCform},
-  About in 'About.pas' {AboutBox},
+  ViewIPTC in '../common/ViewIPTC.pas' {IPTCform},
+  About in '../common/About.pas' {AboutBox},
+  TagPickU in '../common/TagPickU.pas' {TagPickDlg},
   dEXIF in 'dEXIF.pas',
   dIPTC in 'dIPTC.pas',
-  msData in 'msData.pas',
-  TagPickU in 'TagPickU.pas' {TagPickDlg};
-
+  msData in 'msData.pas';
+  
 {.$R *.RES}
 
 {$R *.res}

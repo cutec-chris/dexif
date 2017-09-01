@@ -1,4 +1,4 @@
-﻿unit dEXIF;
+unit dEXIF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // unit dEXIF - Copyright 2001-2006, Gerry McGuire
@@ -338,6 +338,7 @@ type
   end;
   PSection = ^TSection;
 
+
   { TImgData }
 
   TImgData = class(TEndInd) // One per image object
@@ -348,13 +349,14 @@ type
     FHeight: Integer;
     FWidth: Integer;
     FErrStr: String;
+    FComment: String;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetResolutionUnit: String;
     function GetXResolution: Integer;
     function GetYResolution: Integer;
-    function GetComment: String;
-    procedure SetComment(v: String);
+//    function GetComment: String;
+    procedure SetComment(const AValue: String);
     procedure SetFileInfo(const AFilename: string);
     procedure SetHeight(AValue: Integer);
     procedure SetWidth(AValue: Integer);
@@ -362,6 +364,9 @@ type
   protected
     ExifSegment: pSection;
     function ExtractThumbnailBuffer: TBytes;
+//    function GetCommentSegment: ansistring;
+//    function GetCommentStr: ansistring;
+//    procedure MakeCommentSegment(ABuffer: AnsiString);
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AWriteMetadata: TMetadataKinds = mdkAll);
 //    procedure MergeToStream(AInputStream, AOutputStream: TStream;
@@ -377,7 +382,7 @@ type
     BuildList: integer;
     SectionCnt : integer;
     IPTCSegment: pSection;
-    CommentSegment: pSection;
+//    CommentSegment: pSection;
     HeaderSegment : pSection;
     ExifObj: TImageInfo;
     IptcObj: TIPTCData;
@@ -385,9 +390,6 @@ type
 
     procedure Reset;
     procedure MakeIPTCSegment(buff:ansistring);
-    procedure MakeCommentSegment(buff:ansistring);
-    function GetCommentStr:ansistring;
-    function GetCommentSegment:ansistring;
     procedure ClearSections;
     procedure ClearEXIF;
     procedure ClearIPTC;
@@ -452,7 +454,7 @@ type
     property XResolution: Integer read GetXResolution;
     property YResolution: Integer read GetYResolution;
     property ResolutionUnit: String read GetResolutionUnit;
-    property Comment: String read GetComment write SetComment;  // Comment from COM segment
+    property Comment: String read FComment write SetComment;  // Comment from COM segment
   end; // TImgData
 
 const
@@ -632,7 +634,8 @@ var
   (TID:0; TType:3; ICode:2; Tag:$0102; Count:3; Name:'BitsPerSample'),
   (TID:0; TType:3; ICode:2; Tag:$0103; Count:1; Name:'Compression'            ; Desc:'';
     Code:'6:Jpeg,3:Uncompressed,1:TIFF'),
-  (TID:0; TType:3; ICode:2; Tag:$0106; Count:1; Name:'PhotometricInterpretation';Desc:''; Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
+  (TID:0; TType:3; ICode:2; Tag:$0106; Count:1; Name:'PhotometricInterpretation';Desc:'';
+    Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
   (TID:0; TType:3; ICode:2; Tag:$010A; Count:1; Name:'FillOrder'              ),         {10}
   (TID:0; TType:2; ICode:2; Tag:$010D; Count:1; Name:'DocumentName'           ),
   (TID:0; TType:2; ICode:2; Tag:$010E; Count:1; Name:'ImageDescription'       ),
@@ -708,7 +711,8 @@ var
   (TID:0; TType:0; ICode:2; Tag:$0209; Count:1; Name:'JPEGACTables'           ),
   (TID:0; TType:5; ICode:2; Tag:$0211; Count:3; Name:'YCbCrCoefficients'      ),
   (TID:0; TType:3; ICode:2; Tag:$0212; Count:2; Name:'YCbCrSubSampling'       ),
-  (TID:0; TType:3; ICode:2; Tag:$0213; Count:1; Name:'YCbCrPositioning';        Desc:''; Code:'1:Centered,2:Co-sited'),
+  (TID:0; TType:3; ICode:2; Tag:$0213; Count:1; Name:'YCbCrPositioning';        Desc:'';
+    Code:'1:Centered,2:Co-sited'),
   (TID:0; TType:5; ICode:2; Tag:$0214; Count:6; Name:'ReferenceBlackWhite'    ),
   (TID:0; TType:1; ICode:2; Tag:$02BC; Count:1; Name:'ExtensibleMetadataPlatform' ),     {80}
   (TID:0; TType:0; ICode:2; Tag:$0301; Count:1; Name:'Gamma'                     ),
@@ -1275,11 +1279,16 @@ end;
 function TEndInd.Put32s(data: Longint): AnsiString;
 var
   data2: integer;
-  buffer: string[4] absolute data2;
-  bbuff: AnsiChar;
+ // buffer: string[4] absolute data2;
+ // bbuff: AnsiChar;
 begin
   data2 := data;
   if MotorolaOrder then
+    data2 := NtoBE(data) else
+    data2 := NtoLE(data);
+  SetLength(Result, 4);
+  Move(data2, Result[1], 4);
+    {
   begin
     bbuff     := buffer[1];
     buffer[1] := buffer[4];
@@ -1288,7 +1297,8 @@ begin
     buffer[2] := buffer[3];
     buffer[3] := bbuff;
   end;
-  Result := buffer;
+  }
+//  Result := buffer;
 end;
 
 // Convert a 32 bit unsigned value from file's native byte order
@@ -1377,7 +1387,7 @@ begin
     end;
 end;
 
-//  This function returns the integer data value for a given tag name.
+// This function returns the integer data value for a given tag name.
 function TImageInfo.LookupTagInt(ATagName: String):integer;
 var
   i: integer;
@@ -1709,10 +1719,10 @@ begin
   if AFmtStr <> '' then
   begin
     if Pos('%s', AFmtStr) > 0 then
-      Result := Format(AFmtStr, [Result])
+      Result := Format(AFmtStr, [Result], PointSeparator)
     else begin
       dv := GetNumber(ABuffer, AFmt);
-      Result := Format(AFmtStr, [dv]);
+      Result := Format(AFmtStr, [dv], PointSeparator);
     end;
   end;
 end;
@@ -2529,8 +2539,6 @@ begin
       Result[i] := NumericTagToVar(@ATag.Raw[1 + BYTES_PER_FORMAT[ATag.TType]*i], ATag.TType);
   end;
 
-
-
   // Correction for some special cases
   case ATag.Tag of
     TAG_SHUTTERSPEED:
@@ -2584,7 +2592,6 @@ begin
       raise Exception.CreateFmt('NumericTagToVar does not handle Tag type %d', [ord(ATagType)]);
   end;
 end;
-
 
 { Central routine for writing data to a tag.
   ATagName ........... Name of the tag
@@ -3675,19 +3682,23 @@ begin
   IPTCSegment^.size := bl;
   IPTCSegment^.dtype := M_IPTC;
 end;
-
-Procedure TImgData.MakeCommentSegment(buff:ansistring);
-var bl:integer;
+           (*
+Procedure TImgData.MakeCommentSegment(ABuffer: ansistring);
+var
+  w: word;
 begin
-  bl := length(buff)+2;
   if CommentSegment = nil then
   begin
     inc(SectionCnt);
-    CommentSegment := @(sections[SectionCnt]);
+    CommentSegment := @(Sections[SectionCnt]);
   end;
-  CommentSegment^.data := ansichar(bl div 256)+ansichar(bl mod 256)+buff;
-  CommentSegment^.size := bl;
-  CommentSegment^.dtype := M_COM;
+
+  CommentSegment^.DType := M_COM;
+  CommentSegment^.Size := Length(ABuffer) + 2;
+  w := NtoBE(word(CommentSegment^.Size));
+  Move(w, CommentSegment^.Data[1], 2);
+  Move(ABuffer[1], CommentSegment^.Data[3], Length(ABuffer));
+//  CommentSegment^.Data := AnsiChar(bl div 256)+ansichar(bl mod 256)+buff;
 end;
 
 Function TImgData.GetCommentSegment:ansistring;
@@ -3696,7 +3707,7 @@ begin
   if CommentSegment <> nil then
     result := copy(CommentSegment^.data,2,maxint);
 end;
-
+               *)
 (*
 function TImgData.SaveExif(var jfs2:tstream):longint;
 var cnt:longint;
@@ -3751,6 +3762,8 @@ var
   APP0Segment: TJFIFSegment;
   buff: AnsiString;
   writer: TExifWriter;
+  a: Ansistring;
+  w: Word;
 begin
   // Write Start-Of-Image segment (SOI)
   AStream.WriteBuffer(SOI_MARKER, SizeOf(SOI_MARKER));
@@ -3797,12 +3810,24 @@ begin
     end;
 
   // Write comment segment
-  if (mdkComment in AWriteMetadata) and HasComment then
-    with CommentSegment^ do
-    begin
-      buff := chr($FF) + chr(Dtype) + data;
-      AStream.Write(pointer(buff)^, Length(buff));
-    end;
+  if (mdkComment in AWriteMetadata) and HasComment then begin
+   {$IFDEF FPC}
+    {$IFDEF FPC+}
+    a := FComment;
+   {$ELSE}
+     a := UTF8ToAnsi(FComment);
+    {$ENDIF}
+   {$ELSE}
+    a := FComment;
+   {$ENDIF}
+    SetLength(buff, 2 + 2 + Length(a));
+    buff[1] := ansichar($FF);
+    buff[2] := ansichar(M_COM);
+    w := NToBE(word(Length(a) + 2));  // Length of the segment, in Big Endian
+    Move(w, buff[3], SizeOf(w));
+    Move(a[1], buff[5], Length(a));
+    AStream.Write(buff[1], Length(buff));
+  end;
 
   Result := AStream.Position;
 end;
@@ -4128,16 +4153,18 @@ end;
 procedure TImgData.ClearIPTC;
 begin
   IPTCSegment := nil;
-  HeaderSegment := nil;
+//  HeaderSegment := nil;
   FreeAndNil(IptcObj);
 end;
 
 procedure TImgData.ClearComments;
 begin
-  CommentSegment := nil;
-  HeaderSegment := nil;
+  FComment := '';
+//  CommentSegment := nil;
+//  HeaderSegment := nil;
 end;
 
+(*
 function TImgData.GetCommentStr:ansistring;
 begin
   Result := GetComment;
@@ -4160,14 +4187,23 @@ begin
     {$ENDIF}
   end;
 end;
-
-procedure TImgData.SetComment(v: String);
+ *)
+procedure TImgData.SetComment(const AValue: String);
+var
+  a: ansistring;
 begin
-  {$IFDEF FPC}
-  MakeCommentSegment(UTF8ToAnsi(v));
+ {$IFDEF FPC}
+  {$IFDEF FPC3+}
+  a := AValue;
   {$ELSE}
-  MakeCommentSegment(ansistring(v));
+  a := UTF8ToWinCP(AValue);
   {$ENDIF}
+ {$ELSE}
+  a := AValue;
+ {$ENDIF}
+  if Length(a) > Word($FFFF) - 4 then
+    raise Exception.CreateFmt('Comment too long, max %d characters', [Word($FFFF) - 4]);
+  FComment := AValue;
 end;
 
 function TImgData.ReadExifInfo(AFilename: String): boolean;
@@ -4256,13 +4292,14 @@ begin
 end;
 
 //--------------------------------------------------------------------------
-// Parse the marker stream until SOS or EOI is seen;
+// Parse the marker stream until SOS or EOI is seen
 //--------------------------------------------------------------------------
 function TImgData.ReadJpegSections(AStream: TStream): boolean;
 var
   a, b: byte;
   ll, lh, itemLen, marker: integer;
   pw: PWord;
+  sa: ansistring;
 begin
   a := GetByte(AStream);
   b := GetByte(AStream);
@@ -4306,7 +4343,20 @@ begin
       M_EOI:
         break;  // in case it's a tables-only JPEG stream
       M_COM:
-        CommentSegment := @sections[SectionCnt];   // Comment section
+        begin
+          SetLength(sa, Sections[SectionCnt].Size - 2);
+          Move(Sections[SectionCnt].Data[3], sa[1], Length(sa));
+         {$IFDEF FPC}
+          {$IFDEF FPC3+}
+          FComment := sa;
+          {$ELSE}
+          FComment := WinCPToUTF8(sa);
+          {$ENDIF}
+         {$ELSE}
+          FComment := sa;
+         {$ENDIF}
+          dec(SectionCnt);  // No need to store the Comment segment any more
+        end;
       M_IPTC:
         begin // IPTC section
           if (IPTCSegment = nil) then
@@ -4487,7 +4537,8 @@ begin
   SectionCnt := 0;
   ExifSegment := nil;
   IPTCSegment := nil;
-  CommentSegment := nil;
+  FComment := '';
+//  CommentSegment := nil;
   HeaderSegment := nil;
   FFilename := '';
   FFileDateTime := 0;
@@ -4578,7 +4629,7 @@ end;
 
 function TImgData.HasComment: boolean;
 begin
-  result := (CommentSegment <> nil);
+  result := FComment <> '';
 end;
 
 // WARNING: The calling routine must destroy the returned stringlist!
@@ -4639,6 +4690,7 @@ initialization
 finalization
   ImgData.Free;
 {$ENDIF}
+
 end.
 
 

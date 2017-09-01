@@ -52,6 +52,7 @@
         <VerInfo_Locale>1031</VerInfo_Locale>
         <DCC_UnitSearchPath>..\..;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_E>false</DCC_E>
+        <DCC_DcuOutput>D:\Prog_Lazarus\git\dexif-afriess-master\samples\99_OrigDemo\delphi\dcu\</DCC_DcuOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -84,22 +85,23 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="MainView.pas">
+        <DCCReference Include="..\common\MainView.pas">
             <Form>Form1</Form>
         </DCCReference>
-        <DCCReference Include="..\..\dEXIF.pas"/>
-        <DCCReference Include="..\..\dIPTC.pas"/>
-        <DCCReference Include="..\..\msData.pas"/>
-        <DCCReference Include="..\..\dExifWrite.pas"/>
-        <DCCReference Include="..\..\dGlobal.pas"/>
-        <DCCReference Include="..\..\dTags.pas"/>
-        <DCCReference Include="..\..\dUtils.pas"/>
-        <DCCReference Include="About.pas">
+        <DCCReference Include="..\..\..\dEXIF.pas"/>
+        <DCCReference Include="..\..\..\dIPTC.pas"/>
+        <DCCReference Include="..\..\..\msData.pas"/>
+        <DCCReference Include="..\..\..\dExifWrite.pas"/>
+        <DCCReference Include="..\..\..\dGlobal.pas"/>
+        <DCCReference Include="..\..\..\dTags.pas"/>
+        <DCCReference Include="..\..\..\dUtils.pas"/>
+        <DCCReference Include="..\common\About.pas">
             <Form>AboutBox</Form>
         </DCCReference>
         <None Include="InkNames">

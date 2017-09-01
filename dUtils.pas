@@ -295,7 +295,7 @@ end;
 
 function DefRealFmt(inReal: Double): String;
 begin
-  result := FloatToStr(inReal);
+  result := FloatToStr(inReal, PointSeparator);
 end;
 
 function DefFracFmt(inNum, inDenom: Integer): String;
@@ -438,8 +438,10 @@ begin
       begin
         s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
-          gf_DD       : Result := Format('%s degrees', [s]);
-          gf_DD_Short : Result := Format('%s%s', [s, DEG_SYMBOL]);
+          gf_DD:
+            Result := Format('%s degrees', [s]);
+          gf_DD_Short:
+            Result := Format('%s%s', [s, DEG_SYMBOL]);
         end;
       end;
     gf_DM, gf_DM_Short:
@@ -462,7 +464,7 @@ begin
         s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
           gf_DMS:
-            Result := Format('%df degrees %d minutes %s seconds', [idegs, imins, s]);
+            Result := Format('%d degrees %d minutes %s seconds', [idegs, imins, s]);
           gf_DMS_Short:
             Result := Format('%d%s %d'' %s"', [idegs, DEG_SYMBOL, imins, s]);
         end;
