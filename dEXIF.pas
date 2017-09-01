@@ -1363,13 +1363,13 @@ var
   i: integer;
 begin
   ATagName := UpperCase(ATagName);
-  result := -1;
   for i := 0 to fiTagCount-1 do
     if UpperCase(fiTagArray[i].Name) = ATagName then
     begin
-      result := i;
-      break;
+      Result := i;
+      Exit;
     end;
+  Result := -1;
 end;
 
 // This function returns the data value for a given tag name.
@@ -1377,14 +1377,14 @@ function TImageInfo.LookupTagVal(ATagName: String): String;
 var
   i: integer;
 begin
-  Result := '';
   ATagName := UpperCase(ATagName);
   for i := 0 to fiTagCount-1 do
     if UpperCase(fiTagArray[i].Name) = ATagName then
     begin
       Result := fiTagArray[i].Data;
-      break;
+      Exit;
     end;
+  Result := '';
 end;
 
 // This function returns the integer data value for a given tag name.
@@ -1399,7 +1399,6 @@ var
   {$ENDIF}
 begin
   ATagName := UpperCase(ATagName);
-  Result := -1;
   for i := 0 to fiTagCount-1 do
     if UpperCase(fiTagArray[i].Name) = ATagName then
     begin
@@ -1426,8 +1425,9 @@ begin
          {$ENDIF}
         end;
       end;
-      break;
+      Exit;
     end;
+  Result := -1;
 end;
 
 //  This function returns the index of a tag in the tag buffer.
@@ -1437,13 +1437,13 @@ var
   i: integer;
 begin
   ADesc := UpperCase(ADesc);
-  Result := -1;
   for i := 0 to FITagCount-1 do
     if UpperCase(fiTagArray[i].Desc) = ADesc then
     begin
       Result := i;
-      break;
+      Exit;
     end;
+  Result := -1;
 end;
 
 //  This function returns the index of a tag definition for a given tag name.
@@ -1451,15 +1451,15 @@ function TImageInfo.LookupTagDefn(ATagName: String): integer;
 var
   i: integer;
 begin
-  Result := -1;
   for i := 0 to ExifTagCnt-1 do
   begin
     if LowerCase(ATagName) = LowerCase(TagTable[i].Name) then
     begin
       Result := i;
-      break;
+      Exit;
     end;
   end;
+  Result := -1;
 end;
 
 function TImageInfo.ExifDateToDateTime(ARawStr: ansistring): TDateTime;
