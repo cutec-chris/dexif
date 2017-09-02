@@ -168,6 +168,7 @@ const
   EXPECTED_ARTIST = 'dExif';
   EXPECTED_WIDTH = 1000;
   EXPECTED_EXPOSURETIME = 1/100;
+  EPS = 1E-8;
 var
   DUT: TImgData;
   s: String;
@@ -179,7 +180,7 @@ begin
 
   DUT:= TImgData.Create(GenAll);
   with DUT.CreateEXIFObj do begin
-    CheckTrue(DUT.HasExif, 'TImgData should have an EXIF: ' + co_DUTPICSElfImage01);
+    CheckTrue(DUT.HasExif, 'TImgData should have an EXIF: ' + co_DUTPicSelfImage01);
 
     TagValue['Artist'] := EXPECTED_ARTIST;
     s := TagValueAsString['Artist'];
@@ -193,7 +194,7 @@ begin
     TagValue['ExposureTime'] := EXPECTED_EXPOSURETIME;
     v := TagValue['ExposureTime'];
     CheckFalse(VarIsNull(v), 'Tag "ExposureTime" not found.');
-    CheckEquals(EXPECTED_EXPOSURETIME, Double(v), 'Tag "ExposureTime" mismatch');
+    CheckEquals(EXPECTED_EXPOSURETIME, Double(v), EPS, 'Tag "ExposureTime" mismatch');
   end;
 
   // Merge these exif data with the image file
@@ -216,7 +217,7 @@ begin
   CheckEquals(EXPECTED_WIDTH, Integer(v), 'Tag "ImageWidth" mismatch');
   v := DUT.ExifObj.TagValue['ExposureTime'];
   CheckFalse(VarIsNull(v), 'Tag "ExposureTime" not found.');
-  CheckEquals(EXPECTED_EXPOSURETIME, Double(v), 'Tag "ExposureTime" mismatch');
+  CheckEquals(EXPECTED_EXPOSURETIME, Double(v), EPS, 'Tag "ExposureTime" mismatch');
   DUT.Free;
 end;
 

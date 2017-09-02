@@ -148,6 +148,7 @@ object MainForm: TMainForm
     Height = 22
     Top = 8
     Width = 23
+    Anchors = [akTop, akRight]
     Caption = '...'
     OnClick = BtnBrowseClick
   end
