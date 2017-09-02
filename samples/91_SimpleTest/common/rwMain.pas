@@ -93,8 +93,6 @@ var
   i, j, n, L: Integer;
   part: String;
 begin
-  WriteLn('s = "', s , '"');
-
   if s = '' then begin
     SetLength(Result, 0);
     exit;
@@ -108,10 +106,7 @@ begin
   n := 0;
   while (i <= L) do begin
     if (s[i] = Separator) or (i = L)  then begin
-      //if i=L then inc(i);
-
       Result[n] := Copy(s, j, i-j);
-      WriteLn('  ', n, ': "', Result[n], '"', ' i: ', i, ' j: ', j);
       inc(n);
       if n mod BLOCK_SIZE = 0 then
         SetLength(Result, Length(Result) + BLOCK_SIZE);
