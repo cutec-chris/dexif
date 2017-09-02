@@ -406,7 +406,7 @@ begin
   { Check for fractional result, e.g. exposure time }
   p := pos('/', AExpectedValue);
   if p > 0 then begin
-    valcurr := StrToFloat(ACurrValue, PointSeparator);
+    valcurr := StrToFloat(ACurrValue, dExifFmtSettings);
     expected1 := Copy(AExpectedValue, 1, p-1);
     expected2 := Copy(AExpectedValue, p+1, MaxInt);
     valexp := StrToInt(expected1) / StrToInt(expected2);

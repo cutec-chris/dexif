@@ -5,7 +5,6 @@ uses
   Forms,
   GUITestRunner,
   TextTestRunner,
-  tstbasic in 'tstbasic.pas' {/  tstreadexif in 'tstreadexif.pas',},
   dEXIF in '..\dEXIF.pas',
   dexifwrite in '..\dexifwrite.pas',
   dglobal in '..\dglobal.pas',
@@ -13,14 +12,10 @@ uses
   dtags in '..\dtags.pas',
   dUtils in '..\dUtils.pas',
   msData in '..\msData.pas',
+  tstbasic in 'tstbasic.pas', 
   tstreadexif in 'tstreadexif.pas',
   tstselfimage in 'tstselfimage.pas',
   tstwritereadexif in 'tstwritereadexif.pas';
-
-//  tstreadexif in 'tstreadexif.pas',
-//  tstselfimage in 'tstselfimage.pas',
-//  tstthumbnail in 'tstthumbnail.pas',
-//  tstwritereadexif in 'tstwritereadexif.pas';
 
 {$R *.RES}
 

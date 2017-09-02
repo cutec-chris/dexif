@@ -1,10 +1,10 @@
-﻿unit tstBasic;
+unit tstBasic;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
 {$endif FPC}
 
-{ $ i dExifTest.inc}
+{$I dExifTest.inc}
 
 
 interface

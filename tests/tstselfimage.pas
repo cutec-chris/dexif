@@ -4,7 +4,7 @@ unit tstselfimage;
   {$mode objfpc}{$H+}
 {$endif FPC}
 
-{ $ i dExifTest.inc}
+{$i dExifTest.inc}
 
 interface
 

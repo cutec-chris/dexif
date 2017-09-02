@@ -1,4 +1,4 @@
-﻿{ Important note:
+{ Important note:
   - Never trust a single exif extraction tool. It may just re-use other tags.
 }
 
@@ -8,7 +8,7 @@ unit tstreadexif;
   {$mode objfpc}{$H+}
 {$endif FPC}
 
-{ $ i dExifTest.inc}
+{$i dExifTest.inc}
 
 
 interface

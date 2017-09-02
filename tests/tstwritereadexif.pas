@@ -1,10 +1,10 @@
-﻿unit tstwritereadexif;
+unit tstwritereadexif;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
 {$endif FPC}
 
-{ $ i dExifTest.inc}
+{$i dExifTest.inc}
 
 // If ERASE_TESTIMAGE is active then the test images are deleted after the test.
 // Deactivate this define for debugging purposes.

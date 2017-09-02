@@ -1,4 +1,4 @@
-﻿unit dUtils;
+unit dUtils;
 
 {$IFDEF FPC}
  {$mode ObjFPC}{$H+}
@@ -52,7 +52,7 @@ function FmtRational(ANum, ADenom: Integer): String;
 function DoubleToRational(AValue: Double): TExifRational;
 
 function FindTextIndexInCode(AText, ACode: String): Integer;
-function Float2Str(AValue: Double; ADecs: Integer = 2): String;
+//function Float2Str(AValue: Double; ADecs: Integer = 2): String;
 
 function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
@@ -296,7 +296,7 @@ end;
 
 function DefRealFmt(inReal: Double): String;
 begin
-  result := FloatToStr(inReal, PointSeparator);
+  result := FloatToStr(inReal, dExifFmtSettings);
 end;
 
 function DefFracFmt(inNum, inDenom: Integer): String;
@@ -497,7 +497,6 @@ var
   idegs, imins: Integer;
   floatval: Extended;
   sgn: String;
-  s: String;
 begin
   if IsNaN(ACoord) then begin
     Result := '';
@@ -507,25 +506,23 @@ begin
   ACoord := abs(ACoord);
   case AGpsFormat of
     gf_DD, gf_DD_Short :
-      begin
-        s := Float2Str(floatVal, ADecs);
-        case AGpsFormat of
-          gf_DD:
-            Result := Format('%s degrees', [s]);
-          gf_DD_Short:
-            Result := Format('%s%s', [s, DEG_SYMBOL]);
-        end;
+      case AGpsFormat of
+        gf_DD:
+          Result := Format('%.*f degrees', [ADecs, ACoord], dExifFmtSettings);
+        gf_DD_Short:
+          Result := Format('%.*f%s', [ADecs, ACoord, DEG_SYMBOL], dExifFmtSettings);
       end;
     gf_DM, gf_DM_Short:
       begin
         idegs := trunc(ACoord);
         floatVal := frac(ACoord) * 60;
-        s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
           gf_DM:
-            Result := Format('%d degrees %s minutes', [idegs, s]);
+            Result := Format('%d degrees %.*f minutes',
+              [idegs, ADecs, floatVal], dExifFmtSettings);
           gf_DM_Short:
-            Result := Format('%d%s %s''', [idegs, DEG_SYMBOL, s]);
+            Result := Format('%d%s %.*f''',
+              [idegs, DEG_SYMBOL, ADecs, floatVal], dExifFmtSettings);
         end;
       end;
     gf_DMS, gf_DMS_Short:
@@ -533,12 +530,13 @@ begin
         idegs := trunc(ACoord);
         imins := trunc(frac(ACoord)*60);
         floatVal := frac(frac(ACoord)*60)*60;  // seconds
-        s := Float2Str(floatVal, ADecs);
         case AGpsFormat of
           gf_DMS:
-            Result := Format('%d degrees %d minutes %s seconds', [idegs, imins, s]);
+            Result := Format('%d degrees %d minutes %.*f seconds',
+              [idegs, imins, ADecs, floatVal], dExifFmtSettings);
           gf_DMS_Short:
-            Result := Format('%d%s %d'' %s"', [idegs, DEG_SYMBOL, imins, s]);
+            Result := Format('%d%s %d'' %.*f"',
+              [idegs, DEG_SYMBOL, imins, ADecs, floatVal], dExifFmtSettings);
         end;
       end;
   end;
@@ -548,6 +546,8 @@ end;
 
 { Converts a string to a GPS extended number. The input string s must be
   formatted as  dd° mm' ss[.zzz]" E|W. Decimal places of seconds are optional.
+  Instead of seconds, the string can also contain a fractional part for minutes,
+  e.g. dd° m.mmmmmm', or for degress: d.ddddd°
   E|W means: either E or W. }
 function StrToGPS(s: String): Extended;
 var
@@ -885,12 +885,12 @@ begin
     inc(i);
   end;
 end;
-
+               {
 function Float2Str(AValue: Double; ADecs: Integer = 2): String;
 begin
-  str(AValue:0:ADecs, Result);
+  Result := Format('%.*f', [ADecs, AValue], PointSeparator);
 end;
-
+                }
 function SSpeedCallBack(InStr: Ansistring): String;
 var
   expoTime: double;

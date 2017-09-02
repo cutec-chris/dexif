@@ -1734,10 +1734,10 @@ begin
   if AFmtStr <> '' then
   begin
     if Pos('%s', AFmtStr) > 0 then
-      Result := Format(AFmtStr, [Result], PointSeparator)
+      Result := Format(AFmtStr, [Result], dExifFmtSettings)
     else begin
       dv := GetNumber(ABuffer, AFmt);
-      Result := Format(AFmtStr, [dv], PointSeparator);
+      Result := Format(AFmtStr, [dv], dExifFmtSettings);
     end;
   end;
 end;
@@ -1775,12 +1775,12 @@ end;
 
 var dirStack:ansistring = '';
 
-procedure TImageInfo.clearDirStack;
+procedure TImageInfo.ClearDirStack;
 begin
   dirStack := '';
 end;
 
-procedure TImageInfo.pushDirStack(dirStart, offsetbase:longint);
+procedure TImageInfo.PushDirStack(dirStart, offsetbase:longint);
 var
   ts: Ansistring;
 begin
@@ -1795,10 +1795,10 @@ begin
   ts := '[' + AnsiString(IntToStr(offsetbase)) + ':' + AnsiString(IntToStr(dirStart))+']';
   result := Pos(ts,dirStack) > 0;
 end;
-
+                           (*
 //{$DEFINE CreateExifBufDebug}  // uncomment to see written Exif data
 {$ifdef CreateExifBufDebug}var CreateExifBufDebug : String;{$endif}
-                           (*
+
 function TImageInfo.CreateExifBuf(ParentID:word=0; OffsetBase:integer=0): AnsiString;
   {offsetBase required, because the pointers of subIFD are referenced from parent IFD (WTF!!)}
   // msta Creates APP1 block with IFD0 only
@@ -1983,7 +1983,7 @@ begin
       begin
         case tagFormat of
           FMT_UNDEFINED:
-            fStr := '"' + StrBefore(rawStr,#0) + '"';
+            fStr := '"' + StrBefore(rawStr, #0) + '"';
           FMT_STRING:
             begin
               fStr := Copy(parent.EXIFsegment^.Data, valuePtr, byteCount);

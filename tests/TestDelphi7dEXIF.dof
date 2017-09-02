@@ -94,7 +94,7 @@ OutputDir=
 UnitOutputDir=
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=X:\GIT\komponenten\dexif\tests\DUnit
+SearchPath=D:\Prog_Lazarus\git\dexif-afriess-master\tests\dunit
 Packages=vcl;rtl;vclx;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;dbexpress;dbxcds;bdertl;vcldbx;adortl;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;dclOfficeXP;ip4000v7;VclSmp;inetdb;webdsnap;websnap;ibxpress;ip4000clientvcl7;qrpt
 Conditionals=
 DebugSourceDirs=
@@ -134,9 +134,12 @@ OriginalFilename=
 ProductName=
 ProductVersion=1.0.0.0
 Comments=
+[Excluded Packages]
+D:\Programme\Borland\Delphi7\Lib\HelpCtxD7.bpl=HelpScribble HelpContext Property Editor for Delphi 7
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=1
-Item0=X:\GIT\komponenten\dexif\tests\DUnit
+Count=2
+Item0=D:\Prog_Lazarus\git\dexif-afriess-master\tests\dunit
+Item1=X:\GIT\komponenten\dexif\tests\DUnit

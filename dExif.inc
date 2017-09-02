@@ -22,8 +22,8 @@
     Is active by default for Lazarus/FPC }
   {.$DEFINE dEXIFNoJpeg}
 
-  { Activate the define ENDIAN_BIG if working on a Big-Endian machine
-  [.DEFINE ENDIAN_BIG}
+  { Activate the define ENDIAN_BIG if working on a Big-Endian machine }
+  {.$DEFINE ENDIAN_BIG}
 
 {$ENDIF}
 

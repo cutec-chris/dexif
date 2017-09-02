@@ -144,19 +144,21 @@ const
   {$ENDIF}
 
 var
-  dExifDataSep   : ansistring = ', ';
-  dExifDecodeSep : string = ',';
-  dExifDelim     : string = ' = ';
-  dExifDecode    : boolean = true;
-  EstimateValues : boolean = false;
-  TiffReadLimit  : longint = 256000;
-  PointSeparator : TFormatSettings;
+  dExifDataSep     : ansistring = ', ';
+  dExifDecodeSep   : string = ',';
+  dExifDelim       : string = ' = ';
+  dExifDecode      : boolean = true;
+  EstimateValues   : boolean = false;
+  TiffReadLimit    : longint = 256000;
+
+  // FormatSettings for how to pass floating point values to dExif
+  dExifFmtSettings : TFormatSettings;
 
 implementation
 
 initialization
-//  PointSeparator := FormatSettings;
-  PointSeparator.DecimalSeparator := '.';
+//  dExifFmtSettings := FormatSettings;
+  dExifFmtSettings.DecimalSeparator := '.';
 
 end.
 

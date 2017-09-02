@@ -1,7 +1,7 @@
 // Common include for all tests
 {$ifdef FPC}
-  {$mode objfpc}{$H+}
-{$elseif}
+  // {$mode objfpc}{$H+}
+{$else}
  	{$ifdef VER140}
 		{$define DELPHI6} // Delphi 6
 		{$define DELPHI6OROLDER}
@@ -9,11 +9,11 @@
 	{$ifdef VER150}
 		{$define DELPHI7}
 		{$define ISDELPHI7ANDUP} // Delphi 7 or newer
-	{$IFEND}
+	{$ENDIF}
 	{$ifdef VER160}
 		{$define DELPHI8}
 		{$define ISDELPHI8ANDUP} // Delphi 8 or newer
-	{$IFEND}
+	{$ENDIF}
     {$if CompilerVersion >= 17}
       {$define ISDELPHI2005ANDUP} // Delphi 2005 or newer
     {$ifend}
@@ -72,5 +72,5 @@
       {$define ISDELPHI102}
     {$ifend}
 
-{$IFEND FPC}
+{$ENDIF FPC}
 
