@@ -1,4 +1,4 @@
-unit dUtils;
+﻿unit dUtils;
 
 {$IFDEF FPC}
  {$mode ObjFPC}{$H+}
@@ -58,6 +58,7 @@ function GetByte(var AStream: TStream): byte;
 function GetWord(var AStream: TStream): word;
 function GetCardinal(var AStream: TStream): Cardinal;
 
+procedure ExtractGPSPosition(InStr: String; out ADeg, AMin, ASec: Double);
 function GPSToStr(ACoord: Extended; ACoordType: TGpsCoordType;
   AGpsFormat: TGpsFormat = gf_DMS_Short; ADecs: Integer = 0): String;
 function StrToGPS(s: String): Extended;
@@ -413,6 +414,73 @@ var
 begin
   AStream.Read(c, 4);
   Result := c;
+end;
+
+{ dEXIF exports GPS coordinates as "d degrees m minutes s seconds" }
+procedure ExtractGPSPosition(InStr: String; out ADeg, AMin, ASec: Double);
+const
+   NUMERIC_CHARS = ['0'..'9', '.', ',', '-', '+'];
+var
+  p, p0: PChar;
+  n: Integer;
+  s: String;
+  res: Integer;
+begin
+  ADeg := NaN;
+  AMin := NaN;
+  ASec := NaN;
+
+  if InStr = '' then
+    exit;
+
+  // skip leading non-numeric characters
+  p := @InStr[1];
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract first value: degrees
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n*SizeOf(Char));
+  val(s, ADeg, res);
+
+  // skip non-numeric characters between degrees and minutes
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract second value: minutes
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n*SizeOf(Char));
+  val(s, AMin, res);
+
+  // skip non-numeric characters between minutes and seconds
+  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
+    inc(p);
+
+  // extract third value: seconds
+  p0 := p;
+  n := 0;
+  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
+    if p^ = ',' then p^ := '.';
+    inc(p);
+    inc(n);
+  end;
+  SetLength(s, n);
+  Move(p0^, s[1], n*SizeOf(Char));
+  val(s, ASec, res);
 end;
 
 { Converts a GPS coordinate (extended data type) to a string }
