@@ -1,4 +1,4 @@
-unit tstwritereadexif;
+﻿unit tstwritereadexif;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
@@ -80,7 +80,7 @@ uses
 {$ifdef FPC}
    ,DateUtils, FileUtil
 {$else}
-  , {$ifndef DELPHI7}Winapi.{$endif}Windows
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
   , jpeg
 {$endif}
   ;

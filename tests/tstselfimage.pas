@@ -46,7 +46,7 @@ uses
   dExif
 {$ifdef FPC}
 {$else}
-  , {$ifndef DELPHI7}Winapi.{$endif}Windows
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
   , jpeg
 {$endif}
   ;

@@ -1,4 +1,4 @@
-unit tstBasic;
+﻿unit tstBasic;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
@@ -54,7 +54,7 @@ uses
   dGlobal, dUtils, dEXIF
 {$ifdef FPC}
 {$else}
-  , {$ifndef DELPHI7}Winapi.{$endif}Windows
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
 {$endif}
   ;
 

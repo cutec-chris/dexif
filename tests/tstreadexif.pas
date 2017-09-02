@@ -1,4 +1,4 @@
-{ Important note:
+﻿{ Important note:
   - Never trust a single exif extraction tool. It may just re-use other tags.
 }
 
@@ -241,7 +241,7 @@ uses
 {$ifdef FPC}
   , FileUtil
 {$else}
-  , {$ifndef DELPHI7}Winapi.{$endif}Windows
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
 {$endif}
   ;
 
