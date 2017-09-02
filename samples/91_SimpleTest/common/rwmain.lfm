@@ -142,7 +142,6 @@ object MainForm: TMainForm
     ItemHeight = 15
     OnEditingDone = CbTestfileEditingDone
     TabOrder = 2
-    Text = '..\..\..\tests\testpictures\DUTPic03.jpeg'
   end
   object BtnBrowse: TSpeedButton
     Left = 888
