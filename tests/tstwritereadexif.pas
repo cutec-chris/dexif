@@ -101,7 +101,17 @@ const
 {$WARN 3177 off : Some fields coming after "$1" were not initialized}
 {$endif}
 
-  // !!! ADD NEW TESTS HERE !!!
+const
+  {$IFDEF FPC}
+  DEG_SYMBOL: string = '°';
+  {$ELSE}
+  DEG_SYMBOL: ansistring = #176;
+  // Delphi 7 wants the degree symbol in ANSI, newer versions will convert
+  // it to a widechar automatically.
+{$ENDIF}
+
+var
+// !!! ADD NEW TESTS HERE !!!
   TestParams: Array[0..TestCount-1] of TWriteReadParam = (
 {0}  (Tag:'DateTimeOriginal';   Value:'2017-01-01 12:00:00'),
      (Tag:'DateTimeDigitized';  Value:'2017-01-01 12:00:00'),
@@ -117,10 +127,10 @@ const
      (Tag:'CameraMake';         Value:'Minolta'), // longer than text in file --> fail
      (Tag:'CameraModel';        Value:'My Super Camera'),
      (Tag:'Copyright';          Value:'(c) Team'),
-     (Tag:'GPSLatitude';        Value:'20° 30'' 40.123" N'),
-     (Tag:'GPSLongitude';       Value:'10° 20'' 30.456" W'),
-     (Tag:'GPSLatitude';        Value:'22° 31.1234567'' S'),
-     (Tag:'GPSLongitude';       Value:'11° 21.3456788'' E')
+     (Tag:'GPSLatitude';        Value:'20%s 30'' 40.123" N'),
+     (Tag:'GPSLongitude';       Value:'10%s 20'' 30.456" W'),
+     (Tag:'GPSLatitude';        Value:'22%s 31.1234567'' S'),
+     (Tag:'GPSLongitude';       Value:'11%s 21.3456788'' E')
   );
 
 
@@ -163,6 +173,7 @@ var
   msg: String;
   imgStream: TMemoryStream;
   jpeg: TJpegImage;
+  deg,min,sec: Double;
 
   function ReadTagValue(ATestID: Integer; DUT: TImgData): string;
   var
@@ -419,26 +430,42 @@ end;
 
 { GPS Latitude - DMS format }
 procedure TTstWriteReadFile_dEXIF.Test_GPSLatitude_DMS;
+const
+  idx = 14;
 begin
-  GenericTest(14);
+  if pos('%s', TestParams[idx].Value) > 0 then
+    TestParams[idx].Value := Format(TestParams[idx].Value, [DEG_SYMBOL]);
+  GenericTest(idx);
 end;
 
 { GPS Longitude - DMS format }
 procedure TTstWriteReadFile_dEXIF.Test_GPSLongitude_DMS;
+const
+  idx = 15;
 begin
-  GenericTest(15);
+  if pos('%s', TestParams[idx].Value) > 0 then
+    TestParams[idx].Value := Format(TestParams[idx].Value, [DEG_SYMBOL]);
+  GenericTest(idx);
 end;
 
 { GPS Latitude - DM format }
 procedure TTstWriteReadFile_dEXIF.Test_GPSLatitude_DM;
+const
+  idx = 16;
 begin
-  GenericTest(16);
+  if pos('%s', TestParams[idx].Value) > 0 then
+    TestParams[idx].Value := Format(TestParams[idx].Value, [DEG_SYMBOL]);
+  GenericTest(idx);
 end;
 
 { GPS Longitude - DM format }
 procedure TTstWriteReadFile_dEXIF.Test_GPSLongitude_DM;
+const
+  idx = 17;
 begin
-  GenericTest(17);
+  if pos('%s', TestParams[idx].Value) > 0 then
+    TestParams[idx].Value := Format(TestParams[idx].Value, [DEG_SYMBOL]);
+  GenericTest(idx);
 end;
 
 {$ifndef FPC}

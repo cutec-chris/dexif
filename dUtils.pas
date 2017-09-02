@@ -490,7 +490,9 @@ const
   {$IFDEF FPC}
   DEG_SYMBOL: string = '°';
   {$ELSE}
-  DEG_SYMBOL: ansistring = #176;  // Delphi 7 wants the degree symbol in ANSI
+  DEG_SYMBOL: ansistring = #176;
+  // Delphi 7 wants the degree symbol in ANSI, newer versions will convert
+  // it to a widechar automatically.
   {$ENDIF}
   RefStr: array[TGpsCoordType] of String[2] = ('NS', 'EW');
 var
