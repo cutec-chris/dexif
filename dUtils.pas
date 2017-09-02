@@ -431,6 +431,10 @@ var
   sgn: String;
   s: String;
 begin
+  if IsNaN(ACoord) then begin
+    Result := '';
+    exit;
+  end;
   sgn := RefStr[ACoordType][1 + ord(ACoord < 0)];
   ACoord := abs(ACoord);
   case AGpsFormat of

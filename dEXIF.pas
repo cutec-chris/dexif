@@ -3414,7 +3414,7 @@ function TImageInfo.GetGPSCoordinate(ATagName: String;
 var
   vDeg, vSgn: Variant;
 begin
-  Result := 0.0;
+  Result := NaN;
   vDeg := GetTagValue(ATagName);
   if VarIsNull(vDeg) then
     exit;
