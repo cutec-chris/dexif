@@ -355,7 +355,6 @@ type
     function GetResolutionUnit: String;
     function GetXResolution: Integer;
     function GetYResolution: Integer;
-//    function GetComment: String;
     procedure SetComment(const AValue: String);
     procedure SetFileInfo(const AFilename: string);
     procedure SetHeight(AValue: Integer);
@@ -365,13 +364,8 @@ type
     ExifSegment: pSection;
     HeaderSegment: pSection;
     function ExtractThumbnailBuffer: TBytes;
-//    function GetCommentSegment: ansistring;
-//    function GetCommentStr: ansistring;
-//    procedure MakeCommentSegment(ABuffer: AnsiString);
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AWriteMetadata: TMetadataKinds = mdkAll);
-//    procedure MergeToStream(AInputStream, AOutputStream: TStream;
-//      AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
     procedure ProcessEXIF;
     function ReadJpegSections(AStream: TStream):boolean;
     function ReadTiffSections(AStream: TStream):boolean;
@@ -3812,12 +3806,12 @@ begin
   if (mdkComment in AWriteMetadata) and HasComment then begin
    {$IFDEF FPC}
     {$IFDEF FPC+}
-    a := FComment;
+    a := UTF8ToWinCP(FComment);
    {$ELSE}
      a := UTF8ToAnsi(FComment);
     {$ENDIF}
    {$ELSE}
-    a := FComment;
+    a := AnsiString(FComment);
    {$ENDIF}
     SetLength(buff, 2 + 2 + Length(a));
     buff[1] := ansichar($FF);
@@ -4159,48 +4153,17 @@ end;
 procedure TImgData.ClearComments;
 begin
   FComment := '';
-//  CommentSegment := nil;
-//  HeaderSegment := nil;
 end;
 
-(*
-function TImgData.GetCommentStr:ansistring;
-begin
-  Result := GetComment;
-end;
-
-function TImgData.GetComment: String;
-var
-  buffer: ansistring;
-  bufLen: integer;
-begin
-  if CommentSegment = nil then
-    Result := ''
-  else begin
-    buffer := CommentSegment^.Data;
-    bufLen := (byte(buffer[1]) shl 8) or byte(buffer[2]);
-    {$IFDEF FPC}
-    Result := AnsiToUTF8(copy(buffer, 3, bufLen - 2));
-    {$ELSE}
-    Result := ansistring(Copy(buffer, 3, bufLen - 2));
-    {$ENDIF}
-  end;
-end;
- *)
 procedure TImgData.SetComment(const AValue: String);
 var
-  a: ansistring;
+  w: WideString;
 begin
+  // Check whether the provided string fits into a 64k segment
  {$IFDEF FPC}
-  {$IFDEF FPC3+}
-  a := UTF8ToWinCP(AValue);
-  {$ELSE}
-  a := UTF8ToAnsi(AValue);
-  {$ENDIF}
- {$ELSE}
-  a := AValue;
+  w := UTF8Decode(AValue);
  {$ENDIF}
-  if Length(a) > Word($FFFF) - 4 then
+  if Length(w) > Word($FFFF) - 4 then
     raise Exception.CreateFmt('Comment too long, max %d characters', [Word($FFFF) - 4]);
   FComment := AValue;
 end;
