@@ -594,19 +594,36 @@ end;
 procedure TMainForm.ReadFromIni;
 var
   ini: TCustomIniFile;
-  L: TStrings;
+  list: TStrings;
   i: Integer;
+  W, H, L, T: Integer;
+  R: TRect;
 begin
   ini := CreateIni;
   try
-    L := TStringList.Create;
+    list := TStringList.Create;
     try
-      ini.ReadSection('History', L);
-      for i:=L.Count-1 downto 0 do  // count downward because AddToHistory adds to the beginning of the list
-        AddToHistory(ini.ReadString('History', L[i], ''));
+      if WindowState = wsNormal then begin
+        W := ini.ReadInteger('MainForm', 'Width', Width);
+        H := ini.ReadInteger('MainForm', 'Height', Height);
+        L := ini.ReadInteger('MainForm', 'Left', Left);
+        T := ini.ReadInteger('MainForm', 'Top', Top);
+        R := Screen.DesktopRect;
+        if W > R.Right - R.Left then W := R.Right - R.Left;
+        if L+W > R.Right then L := R.Right - W;
+        if L < R.Left then L := R.Left;
+        if H > R.Bottom - R.Top then H := R.Bottom - R.Top;
+        if T+H > R.Bottom then T := R.Bottom - H;
+        if T < R.Top then T := R.Top;
+        SetBounds(L, T, W, H);
+      end;
+
+      ini.ReadSection('History', list);
+      for i:=list.Count-1 downto 0 do  // count downward because AddToHistory adds to the beginning of the list
+        AddToHistory(ini.ReadString('History', list[i], ''));
       CbTestFile.ItemIndex := 0;
     finally
-      L.Free;
+      list.Free;
     end;
   finally
     ini.Free;
@@ -620,6 +637,11 @@ var
 begin
   ini := CreateIni;
   try
+    ini.WriteInteger('MainForm', 'Left', Left);
+    ini.WriteInteger('MainForm', 'Top', Top);
+    ini.WriteInteger('MainForm', 'Width', Width);
+    ini.WriteInteger('MainForm', 'Height', Height);
+
     for i:=0 to CbTestFile.Items.Count-1 do
       if (CbTestFile.Items[i] <> '') and FileExists(CbTestFile.Items[i]) then
         ini.WriteString('History', 'Item'+IntToStr(i+1), CbTestFile.Items[i]);
