@@ -72,9 +72,16 @@ type
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
+
+  { TTstReadFile_dEXIF_01 }
+
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; {$ifdef FPC}override;{$endif}
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_ApertureValue;
     procedure TstReadFile_Artist;
@@ -136,9 +143,16 @@ type
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
+
+  { TTstReadFile_dEXIF_02 }
+
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; {$ifdef FPC}override;{$endif}
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_Artist;
     procedure TstReadFile_ApertureValue;
@@ -200,9 +214,16 @@ type
   end;
 
   { Tests for image DUTPic03, taken by Casio camera, contains comment etc }
+
+  { TTstReadFile_dEXIF_03 }
+
   TTstReadFile_dEXIF_03 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; {$ifdef FPC}override;{$endif}
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_Artist;
     procedure TstReadFile_CommentExif;
@@ -629,24 +650,25 @@ end;
 
 { Preparation }
 
-{ Test ...01 will operate on image co_DUTPicName01 }
-constructor TTstReadFile_dEXIF_01.Create;
+procedure TTstReadFile_dEXIF_01.SetUp;
 begin
- {$ifdef FPC}inherited; {$endif}
+  inherited SetUp;
+  { Test ...01 will operate on image co_DUTPicName01 }
   FImgFileName := co_DUTPicName01;
 end;
 
-{ Test ...02 will operate on image co_DUTPicName02 }
-constructor TTstReadFile_dEXIF_02.Create;
+procedure TTstReadFile_dEXIF_02.SetUp;
 begin
- {$ifdef FPC}inherited; {$endif}
+  inherited SetUp;
+  { Test ...02 will operate on image co_DUTPicName02 }
   FImgFileName := co_DUTPicName02;
 end;
 
-{ Test ...03 will operate on image co_DUTPicName03 }
-constructor TTstReadFile_dEXIF_03.Create;
+
+procedure TTstReadFile_dEXIF_03.SetUp;
 begin
-  {$ifdef FPC}inherited; {$endif}
+  inherited SetUp;
+  { Test ...03 will operate on image co_DUTPicName03 }
   FImgFileName := co_DUTPicName03;
 end;
 
@@ -953,7 +975,6 @@ begin
   DUT := TImgData.Create;
   try
     DUT.ProcessFile(AFileName);
-    CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currStrValue := DUT.ExifObj.ExifComment;
     CheckEquals(AExpected, currStrValue, 'User comment mismatch');
   finally
@@ -1654,7 +1675,7 @@ begin
     // Tag not available --> -1
 end;
 
-procedure TTstReadFile_dEXIF_02.TstReadFile_SceneCaptureType;
+procedure TTstReadFile_dEXIF_02.TstReadfile_SceneCaptureType;
 begin
   StdIntTest(FImgFileName, 'SceneCaptureType', 0, 'Scene capture type mismatch');
     // "Standard"  --> 0
