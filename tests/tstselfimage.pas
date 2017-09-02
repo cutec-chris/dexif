@@ -4,6 +4,8 @@ unit tstselfimage;
   {$mode objfpc}{$H+}
 {$endif FPC}
 
+{ $ i dExifTest.inc}
+
 interface
 
 uses
@@ -44,7 +46,7 @@ uses
   dExif
 {$ifdef FPC}
 {$else}
-  , Winapi.Windows
+  , {$ifndef DELPHI7}Winapi.{$endif}Windows
   , jpeg
 {$endif}
   ;
@@ -79,12 +81,21 @@ begin
    jpg:= TJPEGImage.Create;
    try
      bmp.PixelFormat:=pf32bit;
+   {$ifndef DELPHI7}
      bmp.SetSize(co_BMPWidht, co_BMPHeigh);
+   {$else}
+     bmp.Height:= co_BMPHeigh;
+     bmp.Width:= co_BMPWidht;
+   {$endif}
      bmp.Canvas.Brush.Color:=clgreen;
   {$ifdef FPC}
      bmp.Canvas.FillRect(0, 0, co_BMPWidht, co_BMPHeigh);
    {$else}
+     {$ifndef DELPHI7}
      bmp.Canvas.FloodFill(0, 0, clgreen, TFillStyle.fsSurface);
+     {$else}
+     bmp.Canvas.FloodFill(0,0, clGreen, fsSurface);
+     {$endif}
    {$endif}
      jpg.Assign(bmp);
      jpg.SaveToFile(aFilename);

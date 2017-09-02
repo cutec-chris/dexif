@@ -1,8 +1,11 @@
-﻿unit tstBasic;
+unit tstBasic;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
 {$endif FPC}
+
+{ $ i dExifTest.inc}
+
 
 interface
 
@@ -51,7 +54,7 @@ uses
   dGlobal, dUtils, dEXIF
 {$ifdef FPC}
 {$else}
-  , Winapi.Windows
+  , {$ifndef DELPHI7}Winapi.{$endif}Windows
 {$endif}
   ;
 
@@ -149,7 +152,7 @@ procedure TTsTBasic_dEXIF.SetUp;
 {$ifndef FPC}
   function CopyFile(f1,f2:string):boolean;
   begin
-    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+    Result:=  {$ifndef DELPHI7}Winapi.{$endif}Windows.CopyFile(PChar(f1),PChar(f2),true);
   end;
 {$endif}
 begin

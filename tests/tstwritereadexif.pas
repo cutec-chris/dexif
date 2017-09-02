@@ -1,8 +1,10 @@
-﻿unit tstwritereadexif;
+unit tstwritereadexif;
 
 {$ifdef FPC}
   {$mode objfpc}{$H+}
 {$endif FPC}
+
+{ $ i dExifTest.inc}
 
 // If ERASE_TESTIMAGE is active then the test images are deleted after the test.
 // Deactivate this define for debugging purposes.
@@ -78,7 +80,7 @@ uses
 {$ifdef FPC}
    ,DateUtils, FileUtil
 {$else}
-  , Winapi.Windows
+  , {$ifndef DELPHI7}Winapi.{$endif}Windows
   , jpeg
 {$endif}
   ;
@@ -128,7 +130,7 @@ procedure TTstWriteReadFile_dEXIF.SetUp;
 {$ifndef FPC}
   function CopyFile(f1,f2:string):boolean;
   begin
-    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+    Result:=  {$ifndef DELPHI7}Winapi.{$endif}Windows.CopyFile(PChar(f1),PChar(f2),true);
   end;
 {$endif}
 begin
@@ -727,6 +729,7 @@ begin
 end;
 
 var
+{$ifndef DELPHI7}
   DefaultFormatSettings : TFormatSettings = (
     CurrencyString: '$';
     CurrencyFormat: 1;
@@ -752,6 +755,32 @@ var
     TwoDigitYearCenturyWindow: 50;
     NegCurrFormat: 5;
   );
+{$else}
+  DefaultFormatSettings : TFormatSettings = (
+    CurrencyFormat: 1;
+    NegCurrFormat: 5;
+    ThousandSeparator: ',';
+    DecimalSeparator: '.';
+    CurrencyDecimals: 2;
+    DateSeparator: '-';
+    TimeSeparator: ':';
+    ListSeparator: ',';
+    CurrencyString: '$';
+    ShortDateFormat: 'd/m/y';
+    LongDateFormat: 'dd" "mmmm" "yyyy';
+    TimeAMString: 'AM';
+    TimePMString: 'PM';
+    ShortTimeFormat: 'hh:nn';
+    LongTimeFormat: 'hh:nn:ss';
+    ShortMonthNames: ('Jan','Feb','Mar','Apr','May','Jun', 
+                      'Jul','Aug','Sep','Oct','Nov','Dec');
+    LongMonthNames: ('January','February','March','April','May','June',
+                     'July','August','September','October','November','December');
+    ShortDayNames: ('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
+    LongDayNames:  ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
+    TwoDigitYearCenturyWindow: 50;
+  );
+{$endif}
 
 function scandatetime(const pattern:string;const s:string;startpos:integer=1) : tdatetime; overload;
 

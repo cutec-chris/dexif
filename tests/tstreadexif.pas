@@ -1,4 +1,4 @@
-﻿{ Important note:
+{ Important note:
   - Never trust a single exif extraction tool. It may just re-use other tags.
 }
 
@@ -7,6 +7,9 @@ unit tstreadexif;
 {$ifdef FPC}
   {$mode objfpc}{$H+}
 {$endif FPC}
+
+{ $ i dExifTest.inc}
+
 
 interface
 
@@ -238,7 +241,7 @@ uses
 {$ifdef FPC}
   , FileUtil
 {$else}
-  , Winapi.Windows
+  , {$ifndef DELPHI7}Winapi.{$endif}Windows
 {$endif}
   ;
 
@@ -679,7 +682,7 @@ procedure TTstReadFile_dEXIF.SetUp;
 {$ifndef FPC}
   function CopyFile(f1,f2:string):boolean;
   begin
-    Result:=  Winapi.Windows.CopyFile(PChar(f1),PChar(f2),true);
+    Result:=  {$ifndef DELPHI7}Winapi.{$endif}Windows.CopyFile(PChar(f1),PChar(f2),true);
   end;
 {$endif}
 begin
