@@ -44,9 +44,6 @@ type
     FSourceFilename: String;
     FDestFileName: String;
     procedure GenericTest(ATestID: Integer);
-  public
-    constructor Create; {$ifdef FPC}override;{$endif}
-    destructor Destroy; {$ifdef FPC}override;{$endif}
   published
     procedure Test_DateTimeOriginal;
     procedure Test_DateTimeDigitized;
@@ -122,22 +119,6 @@ const
 
 { TTstWriteReadFile_dEXIF }
 
-constructor TTstWriteReadFile_dEXIF.Create;
-begin
-  {$ifdef FPC}inherited; {$endif}
-  FSourceFileName := co_SrcPic;
-  FDestFileName := co_DestPic;
-end;
-
-destructor TTstWriteReadFile_dEXIF.Destroy;
-begin
-  {$IFDEF ERASE_TESTIMAGE}
-    if FileExists(FDestFileName) then
-      DeleteFile(FDestFileName);
-  {$ENDIF}
-  inherited;
-end;
-
 procedure TTstWriteReadFile_dEXIF.SetUp;
 {$ifndef FPC}
   function CopyFile(f1,f2:string):boolean;
@@ -146,6 +127,8 @@ procedure TTstWriteReadFile_dEXIF.SetUp;
   end;
 {$endif}
 begin
+  FSourceFileName := co_SrcPic;
+  FDestFileName := co_DestPic;
   if not FileExists(co_DestPic) then
     if FileExists(co_SrcPic) then
       CopyFile(co_SrcPic, co_DestPic);
@@ -154,6 +137,10 @@ end;
 procedure TTstWriteReadFile_dEXIF.TearDown;
 begin
   // nothing to do here
+  {$IFDEF ERASE_TESTIMAGE}
+    if FileExists(FDestFileName) then
+      DeleteFile(FDestFileName);
+  {$ENDIF}
 end;
 
 
