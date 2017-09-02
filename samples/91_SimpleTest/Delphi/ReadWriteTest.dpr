@@ -16,6 +16,7 @@ uses
 begin
   Application.Initialize;
   Application.CreateForm(TMainForm, MainForm);
+  MainForm.BeforeRun;
   Application.Run;
 end.
 

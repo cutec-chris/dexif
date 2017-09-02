@@ -2,6 +2,10 @@ unit rwMain;
 
 {$I ..\..\..\dExif.inc}
 
+{$IFDEF FPC}
+  {$MODE DELPHI}
+{$ENDIF}
+
 interface
 
 uses
@@ -19,21 +23,25 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    EdTestfile: TEdit;
     BtnTest1: TSpeedButton;
     BtnTest2: TSpeedButton;
+    CbTestfile: TComboBox;
     ImageList1: TImageList;
     Label1: TLabel;
     ListView: TListView;
+    OpenDialog: TOpenDialog;
     Panel1: TPanel;
     Panel2: TPanel;
     ExifListView: TListView;
     ExifTabControl: TTabControl;
+    BtnBrowse: TSpeedButton;
     Splitter1: TSplitter;
+    procedure CbTestfileEditingDone(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BtnTest1Click(Sender: TObject);
     procedure ExifTabControlChange(Sender: TObject);
+    procedure BtnBrowseClick(Sender: TObject);
   private
     ImgData: TImgData;
     OutFile: String;
@@ -44,7 +52,12 @@ type
     function Success(ACurrValue, AExpectedValue: String): Boolean;
     procedure WriteTagValue(ATagName, ATagValue: String);
 
+    procedure AddToHistory(AFilename: String);
+    procedure ReadFromIni;
+    procedure WriteToIni;
+
   public
+    procedure BeforeRun;
 
   end;
 
@@ -60,7 +73,8 @@ implementation
 {$ENDIF}
 
 uses
-  StrUtils, Math, dUtils;
+  StrUtils, Math, IniFiles,
+  dUtils;
 
 const
   IMGINDEX_SUCCESS = 0;
@@ -159,6 +173,25 @@ end;
 
 { TMainForm }
 
+procedure TMainForm.AddToHistory(AFileName: String);
+var
+  i: Integer;
+begin
+  if (AFileName = '') or (not FileExists(AFileName)) then
+    exit;
+
+  i := CbTestFile.Items.Indexof(AFileName);
+  if i > -1 then
+    CbTestfile.Items.Delete(i);
+  CbTestFile.Items.Insert(0, AFileName);
+  CbTestFile.ItemIndex := 0;
+end;
+
+procedure TMainForm.BeforeRun;
+begin
+  ReadFromIni;
+end;
+
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ImgData := TImgData.Create;
@@ -166,17 +199,24 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
+  WriteToIni;
   ImgData.Free;
 end;
 
 procedure TMainForm.BtnTest1Click(Sender: TObject);
 begin
+  AddToHistory(CbTestFile.Text);
   if Sender = BtnTest1 then
     ExecTest(TESTCASES_DIR + 'testcases1.txt')
   else if Sender = BtnTest2 then
     ExecTest(TESTCASES_DIR + 'testcases2.txt')
   else
     raise Exception.Create('BtnTextClick: Unexpected Sender');
+end;
+
+procedure TMainForm.CbTestfileEditingDone(Sender: TObject);
+begin
+  AddToHistory(CbTestFile.Text);
 end;
 
 procedure TMainForm.ExecTest(const AParamsFile: String);
@@ -204,8 +244,8 @@ begin
     showMessage('Parameter file "' + AParamsFile + '" not found.');
     exit;
   end;
-  if not FileExists(EdTestFile.Text) then begin
-    ShowMessage('Test picture file "' + EdTestFile.Text + '" not found.');
+  if not FileExists(CbTestfile.Text) then begin
+    ShowMessage('Test picture file "' + CbTestfile.Text + '" not found.');
     exit;
   end;
 
@@ -232,9 +272,9 @@ begin
   {$ENDIF}
 
     // Read EXIF tags from image file
-    ImgData.ProcessFile(EdTestFile.Text);
+    ImgData.ProcessFile(CbTestfile.Text);
     if not ImgData.HasExif then
-      raise Exception.Create('No exif structure detected in "' + EdTestFile.Text + '"');
+      ImgData.CreateExifObj;
 
     OutFile := 'test-image.jpg';   // File name of the modified test image
 
@@ -313,6 +353,17 @@ begin
   end;
 
   ExifTabControlChange(nil);
+end;
+
+procedure TMainForm.BtnBrowseClick(Sender: TObject);
+var
+  olddir: String;
+begin
+  olddir := GetCurrentDir;
+  OpenDialog.FileName := '';
+  if OpenDialog.Execute then
+    AddToHistory(OpenDialog.Filename);
+  SetCurrentDir(oldDir);
 end;
 
 function TMainForm.Success(ACurrValue, AExpectedValue: String): Boolean;
@@ -417,6 +468,7 @@ var
   dt: TDateTime;
   v: variant;
   e: Extended;
+  i: Integer;
 begin
   if ATagName = 'Comment' then
     Result := ImgData.Comment    // not an EXIF tag: the value is in the COM segment
@@ -444,18 +496,24 @@ begin
   end
   else if ATagName = 'GPSLatitude' then begin
     e := ImgData.ExifObj.GPSLatitude;
-//    Result := FloatToStr(e);
     Result := GPSToStr(e, ctLatitude);
   end
   else if ATagName = 'GPSLongitude' then begin
     e := ImgData.ExifObj.GPSLongitude;
-  //  Result := FloatToStr(e);
     Result := GPSToStr(e, ctLongitude);
   end
   else begin
     v := ImgData.ExifObj.TagValue[ATagName];
     if VarIsNull(v) then
       Result := ''
+    else
+    if VarIsArray(v) then begin
+      Result := '';
+      i := VarArrayHighBound(v, 1);
+      for i:=VarArrayLowBound(v, 1) to VarArrayHighBound(v, 1) do
+        Result := Result + dExifDataSep + VarToStr(v[i]);
+      if Result <> '' then Delete(Result, 1, Length(dExifDataSep));
+    end
     else begin
       Result := VarToStr(v);
       FixDecimalSeparator(Result);
@@ -470,7 +528,7 @@ begin
   data := TImgData.Create;
   try
     case ExifTabControl.TabIndex of
-      0: data.ProcessFile(EdTestFile.Text);
+      0: data.ProcessFile(CbTestfile.Text);
       1: data.ProcessFile(OutFile);
     end;
     ExifToListView(data, ExifListView);
@@ -526,6 +584,49 @@ begin
     ImgData.ExifObj.GPSLongitude := StrToGPS(ATagValue)
   else
     ImgData.ExifObj.TagValue[ATagName] := ATagValue;
+end;
+
+function CreateIni: TCustomIniFile;
+begin
+  Result := TMemIniFile.Create(ChangeFileExt(Application.ExeName, '.ini'));
+end;
+
+procedure TMainForm.ReadFromIni;
+var
+  ini: TCustomIniFile;
+  L: TStrings;
+  i: Integer;
+begin
+  ini := CreateIni;
+  try
+    L := TStringList.Create;
+    try
+      ini.ReadSection('History', L);
+      for i:=L.Count-1 downto 0 do  // count downward because AddToHistory adds to the beginning of the list
+        AddToHistory(ini.ReadString('History', L[i], ''));
+      CbTestFile.ItemIndex := 0;
+    finally
+      L.Free;
+    end;
+  finally
+    ini.Free;
+  end;
+end;
+
+procedure TMainForm.WriteToIni;
+var
+  ini: TCustomIniFile;
+  i: Integer;
+begin
+  ini := CreateIni;
+  try
+    for i:=0 to CbTestFile.Items.Count-1 do
+      if (CbTestFile.Items[i] <> '') and FileExists(CbTestFile.Items[i]) then
+        ini.WriteString('History', 'Item'+IntToStr(i+1), CbTestFile.Items[i]);
+    ini.UpdateFile;
+  finally
+    ini.Free;
+  end;
 end;
 
 end.

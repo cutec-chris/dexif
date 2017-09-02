@@ -9,15 +9,6 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   LCLVersion = '1.9.0.0'
-  object EdTestfile: TEdit
-    Left = 8
-    Height = 23
-    Top = 8
-    Width = 904
-    Anchors = [akTop, akLeft, akRight]
-    TabOrder = 0
-    Text = '..\..\..\tests\testpictures\DUTPic03.jpeg'
-  end
   object BtnTest1: TSpeedButton
     Left = 916
     Height = 22
@@ -45,7 +36,7 @@ object MainForm: TMainForm
     BevelOuter = bvNone
     ClientHeight = 482
     ClientWidth = 1009
-    TabOrder = 1
+    TabOrder = 0
     object ListView: TListView
       Left = 0
       Height = 482
@@ -131,7 +122,7 @@ object MainForm: TMainForm
     BorderWidth = 8
     ClientHeight = 61
     ClientWidth = 1025
-    TabOrder = 2
+    TabOrder = 1
     object Label1: TLabel
       Left = 8
       Height = 45
@@ -141,6 +132,25 @@ object MainForm: TMainForm
       Caption = 'Buttons "Test 1" and "Test 2" read test conditions from files "testcases1.txt" and "testcases2.txt", respectively.'#13#10'- Test values expressed as fractions (e.g. exposure times) are evaluated by the program.'#13#10'- Enumerated values can be shown by their index, or by their text followd by | and their index.'
       ParentColor = False
     end
+  end
+  object CbTestfile: TComboBox
+    Left = 8
+    Height = 23
+    Top = 8
+    Width = 872
+    Anchors = [akTop, akLeft, akRight]
+    ItemHeight = 15
+    OnEditingDone = CbTestfileEditingDone
+    TabOrder = 2
+    Text = '..\..\..\tests\testpictures\DUTPic03.jpeg'
+  end
+  object BtnBrowse: TSpeedButton
+    Left = 888
+    Height = 22
+    Top = 8
+    Width = 23
+    Caption = '...'
+    OnClick = BtnBrowseClick
   end
   object ImageList1: TImageList
     left = 400
@@ -212,5 +222,13 @@ object MainForm: TMainForm
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00
     }
+  end
+  object OpenDialog: TOpenDialog
+    Title = 'Open image file'
+    DefaultExt = '.*.jpg'
+    Filter = 'JPEG files (*.jpg; *.jpeg)|*.jpg;*.jpeg'
+    Options = [ofFileMustExist, ofEnableSizing, ofViewDetail]
+    left = 400
+    top = 178
   end
 end

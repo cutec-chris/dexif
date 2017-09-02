@@ -2503,10 +2503,10 @@ begin
     FMT_STRING:
       begin
        {$IFDEF FPC}
-        {$IFNDEF FPC3+}
-        s := AnsiToUTF8(ATag.Raw);
-        {$ELSE}
+        {$IFDEF FPC3+}
         s := ATag.Raw;
+        {$ELSE}
+        s := AnsiToUTF8(ATag.Raw);
         {$ENDIF}
        {$ELSE}
         s := ATag.Raw;
@@ -2891,10 +2891,10 @@ begin
   if tag.TType = FMT_STRING then
   begin
    {$IFDEF FPC}
-    {$IFNDEF FPC3+}
-    s := AnsiToUTF8(tag.Raw);
-    {$ELSE}
+    {$IFDEF FPC3+}
     s := tag.Raw;
+    {$ELSE}
+    s := AnsiToUTF8(tag.Raw);
     {$ENDIF}
    {$ELSE}
     s := tag.Raw;
@@ -3231,15 +3231,15 @@ begin
   end else
   if pos(#0#0#0#0#0#0#0#0, buf) = 1 then begin
     a := Copy(buf, 9, MaxInt);
-    {$IFDEF FPC}
-    {$IFNDEF FPC3+}
-    Result := SysToUTF8(a);
-    {$ELSE}
+   {$IFDEF FPC}
+    {$IFDEF FPC3+}
     Result := WinCPToUTF8(a);
-    {$ENDIF}
     {$ELSE}
-    Result := a;
+    Result := SysToUTF8(a);
     {$ENDIF}
+   {$ELSE}
+    Result := a;
+   {$ENDIF}
   end else
   if Pos('JIS', buf) = 1 then
     raise Exception.Create('JIS-encoded user comment is not supported.');
@@ -4193,9 +4193,9 @@ var
 begin
  {$IFDEF FPC}
   {$IFDEF FPC3+}
-  a := AValue;
-  {$ELSE}
   a := UTF8ToWinCP(AValue);
+  {$ELSE}
+  a := UTF8ToAnsi(AValue);
   {$ENDIF}
  {$ELSE}
   a := AValue;
@@ -4347,9 +4347,9 @@ begin
           Move(Sections[SectionCnt].Data[3], sa[1], Length(sa));
          {$IFDEF FPC}
           {$IFDEF FPC3+}
-          FComment := sa;
-          {$ELSE}
           FComment := WinCPToUTF8(sa);
+          {$ELSE}
+          FComment := AnsiToUTF8(sa);
           {$ENDIF}
          {$ELSE}
           FComment := sa;

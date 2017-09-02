@@ -36,14 +36,23 @@ object MainForm: TMainForm
     Caption = 'Test 2'
     OnClick = BtnTest1Click
   end
-  object EdTestfile: TEdit
+  object BtnBrowse: TSpeedButton
+    Left = 751
+    Top = 8
+    Width = 23
+    Height = 22
+    Anchors = [akTop, akRight]
+    Caption = '...'
+    OnClick = BtnBrowseClick
+  end
+  object CbTestfile: TComboBox
     Left = 8
     Top = 8
-    Width = 768
+    Width = 737
     Height = 21
     Anchors = [akLeft, akTop, akRight]
+    ItemHeight = 13
     TabOrder = 0
-    Text = '..\..\..\tests\testpictures\DUTPic03.jpeg'
   end
   object Panel1: TPanel
     Left = 8
@@ -145,10 +154,10 @@ object MainForm: TMainForm
     end
   end
   object ImageList1: TImageList
-    Left = 400
-    Top = 117
+    Left = 288
+    Top = 125
     Bitmap = {
-      494C010102001800300010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102001800380010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000001AA41C001AA41C00000000000000000000000000000000000000
@@ -286,5 +295,11 @@ object MainForm: TMainForm
       FFC0C00300000000FFE0800100000000FFF0018000000000FFF903C000000000
       FFFF07E000000000FFFF8FF10000000000000000000000000000000000000000
       000000000000}
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = '.jpg'
+    Filter = 'JPEG files ('#39'.jpg, *.jpeg)|*.jpg;*.jpeg'
+    Left = 288
+    Top = 192
   end
 end
