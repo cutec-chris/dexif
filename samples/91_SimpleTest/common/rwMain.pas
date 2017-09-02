@@ -194,7 +194,6 @@ var
   {$IFDEF FPC}
   stream: TMemorystream;
   {$ELSE}
-  jpeg: TJpegImage;
   stream: TMemoryStream;
   a: ansistring;
   {$ENDIF}
