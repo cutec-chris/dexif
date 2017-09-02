@@ -2505,7 +2505,7 @@ begin
        {$ELSE}
         s := ATag.Raw;
        {$ENDIF}
-        while s[Length(s)] = #0 do
+        while (s <> '') and (s[Length(s)] = #0) do
           Delete(s, Length(s), 1);
         Result := s;
         exit;
@@ -3440,14 +3440,19 @@ var
   degs, mins, secs: double;
   val: Extended;
 begin
-  val := abs(AValue);
-  degs := trunc(val);
-  mins := trunc(frac(val) * 60);
-  secs := (frac(val) * 60 - mins) * 60;
-//  secs := trunc(frac(AValue) * 3600) - mins*60;
-//  secs := trunc(mins*60 - frac(frac(AValue) * 60));
-  v := VarArrayOf([degs, mins, secs]);
+  if IsNaN(AValue) then
+    v := NULL
+  else begin
+    val := abs(AValue);
+    degs := trunc(val);
+    mins := trunc(frac(val) * 60);
+    secs := (frac(val) * 60 - mins) * 60;
+    v := VarArrayOf([degs, mins, secs]);
+  end;
   InternalSetTagValue(ATagName, v, [ttGps]);
+  if IsNaN(AValue) then
+    InternalSetTagValue(ATagName + 'Ref', NULL, [ttGps])
+  else
   if AValue > 0 then
     InternalSetTagValue(ATagName + 'Ref', Ref[ACoordType, 1], [ttGps])
   else

@@ -12,3 +12,5 @@ Orientation	Mirror horizontal|2
 ExposureProgram	Manual|1
 MeteringMode	Spot|3
 LightSource	Tungsten|3
+GPSLatitude	
+GPSLongitude	

@@ -85,7 +85,7 @@ const
 type
   TStringArray = array of string;
 
-function Split(s: String; Separator: Char = #9): TStringArray;
+function Split(s: String; AMinCount: Integer; Separator: Char = #9): TStringArray;
 const
   BLOCK_SIZE = 20;
 var
@@ -93,10 +93,14 @@ var
   i, j, n, L: Integer;
   part: String;
 begin
+  WriteLn('s = "', s , '"');
+
   if s = '' then begin
     SetLength(Result, 0);
     exit;
   end;
+
+  s := s + Separator;
   L := Length(s);
   SetLength(Result, BLOCK_SIZE);
   i := 1;
@@ -104,14 +108,22 @@ begin
   n := 0;
   while (i <= L) do begin
     if (s[i] = Separator) or (i = L)  then begin
-      if i=L then inc(i);
+      //if i=L then inc(i);
+
       Result[n] := Copy(s, j, i-j);
+      WriteLn('  ', n, ': "', Result[n], '"', ' i: ', i, ' j: ', j);
       inc(n);
       if n mod BLOCK_SIZE = 0 then
         SetLength(Result, Length(Result) + BLOCK_SIZE);
       j := i+1;
     end;
     inc(i);
+  end;
+  while n < AMinCount do begin
+    Result[n] := '';
+    inc(n);
+    if n mod BLOCK_SIZE = 0 then
+      SetLength(Result, Length(Result) + BLOCK_SIZE);
   end;
   SetLength(Result, n);
 end;
@@ -290,7 +302,7 @@ begin
           Continue;
 
         // Extract test parameters
-        testdata := Split(testCases[i]);
+        testdata := Split(testCases[i], 2);
         tagName := testdata[0];
         newTagValue := testdata[1];
 
@@ -324,7 +336,7 @@ begin
         break;
       if (testcases[i] = '') or (testcases[i][1] = ';') then
         Continue;
-      testdata := Split(testCases[i]);
+      testdata := Split(testCases[i], 2);
       tagname := testdata[0];
       newTagValue := testdata[1];
       currTagValue := ReadTagValue(tagname);

@@ -492,9 +492,10 @@ var
   isFloat: Array[-1..2] of Boolean;
   sgn: Integer;
 begin
-  Result := 0;
-  if s = '' then
+  if s = '' then begin
+    Result := NaN;
     exit;
+  end;
   i := 1;
   tmp := '';
   scannedPart := 0;
