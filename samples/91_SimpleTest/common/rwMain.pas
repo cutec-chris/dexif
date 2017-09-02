@@ -385,6 +385,11 @@ begin
   if Result then
     exit;
 
+  if (ACurrValue = '') or (AExpectedValue = '') then begin
+    Result := false;
+    exit;
+  end;
+
   { Check for alternative expected value }
   p := pos('|', AExpectedValue);
   if p > 0 then begin

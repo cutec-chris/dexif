@@ -41,6 +41,7 @@ type
     TType: word;         // tag type  -- see FMT_XXXX constants
     ICode: Word;         // iptc code
     Tag: Word;           // primary key
+    ParentID: Word;      // Tag ID of the parent folder
     Count: Word;         // count of TType elements
     Name: String;        // searchable
     Desc: String;        // translatable
@@ -51,7 +52,7 @@ type
     Size: integer;       // used by ITPC module
     CallBack: TStrFunc;  // formatting string
 //    id: word;            // msta - used for exif-parent-child-structure
-    parentID: word;      // msta - used for exif-parent-child-structure
+//    parentID: word;      // msta - used for exif-parent-child-structure
   end;
   PTagEntry = ^TTagEntry; // msta
 
@@ -127,9 +128,8 @@ const
   ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
   EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
 
-  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; Count:1;
-    Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0;
-    CallBack: nil; parentID:0);
+  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; ParentID:0; Count:1;
+    Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:nil);
 
   GpsFormat = gf_DMS_Short;
 
