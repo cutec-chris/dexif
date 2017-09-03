@@ -36,7 +36,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="14">
+    <Units Count="15">
       <Unit0>
         <Filename Value="TestGUIdEXIF.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -95,6 +95,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="tstThumbnail"/>
       </Unit13>
+      <Unit14>
+        <Filename Value="tstdeleteexif.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstDeleteExif"/>
+      </Unit14>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

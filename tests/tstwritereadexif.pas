@@ -32,7 +32,7 @@ const
   co_DestPic = './testpictures/ReadWriteTest.jpg';
 
 type
-  { TTsWriteReadFile_dEXIF }
+  { TTstWriteReadFile_dEXIF }
 
   TTstWriteReadFile_dEXIF= class(TTestCase)
   {$ifdef FPC}
@@ -84,7 +84,6 @@ uses
   , jpeg
 {$endif}
   ;
-
 
 type
   TWriteReadParam = record
@@ -189,8 +188,8 @@ var
       4: Result := DUT.Comment;
       5: Result := DUT.ExifObj.Artist;
       6: Result := DUT.ExifObj.Artist;
-      7: Result := DUT.ExifObj.ExifComment;
-      8: Result := DUT.ExifObj.ExifComment;
+      7: Result := DUT.ExifObj.ExifComment;     // Ascii
+      8: Result := DUT.ExifObj.ExifComment;     // Unicode
       9: Result := DUT.ExifObj.ImageDescription;
      10: Result := DUT.ExifObj.CameraMake;
      11: Result := DUT.ExifObj.CameraMake;
@@ -229,8 +228,8 @@ var
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;
       6: DUT.ExifObj.Artist := strValue;
-      7: DUT.ExifObj.ExifComment := strValue;
-      8: DUT.ExifObj.ExifComment := strValue;
+      7: DUT.ExifObj.ExifComment := strValue;    // Ascii
+      8: DUT.ExifObj.ExifComment := strValue;    // Unicode
       9: DUT.ExifObj.ImageDescription := strValue;
      10: DUT.ExifObj.CameraMake := strValue;
      11: DUT.ExifObj.CameraMake := strValue;

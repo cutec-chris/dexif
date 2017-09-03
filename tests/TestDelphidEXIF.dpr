@@ -15,7 +15,8 @@ uses
   msData in '..\msData.pas',
   tstreadexif in 'tstreadexif.pas',
   tstselfimage in 'tstselfimage.pas',
-  tstwritereadexif in 'tstwritereadexif.pas';
+  tstwritereadexif in 'tstwritereadexif.pas',
+  tstdeleteexif in 'tstdeleteexif.pas';
 
 //  tstreadexif in 'tstreadexif.pas',
 //  tstselfimage in 'tstselfimage.pas',

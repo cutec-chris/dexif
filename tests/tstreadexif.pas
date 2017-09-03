@@ -229,7 +229,9 @@ type
     procedure SetUp; override;
   published
     procedure TstReadFile_Artist;
-    procedure TstReadFile_CommentExif;
+   {$IFNDEF DELPHI7}
+    procedure TstReadFile_CommentExif;   // Test must fail in D7 due to unicode characters
+   {$ENDIF}
     procedure TstReadFile_CommentSegment;
     procedure TstReadFile_ImageDescription;
   end;
@@ -924,14 +926,30 @@ begin
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CommentExif;
+const
+ {$IFDEF FPC}
+  COMMENT_TEXT = 'This is an EXIF user comment with äöü';
+ {$ELSE}
+  COMMENT_TEXT = 'This is an EXIF user comment with ' + #228 + #246 + #252;
+ {$ENDIF}
 begin
-  Test_UserComment(FImgFileName, 'This is an EXIF user comment with äöü');
+  Test_UserComment(FImgFileName, COMMENT_TEXT);
 end;
 
+{$IFNDEF DELPHI7}
 procedure TTstReadFile_dEXIF_03.TstReadFile_CommentExif;
+const
+ {$IFDEF FPC}
+  CYRILLIC = 'Лев Николаевич Толсто́й';
+ {$ELSE}
+  CYRILLIC = #$041B#$0435#$0432#$0020#$041D#$0438#$043A +
+        #$043E#$043B#$0430#$0435#$0432#$0438#$0447#$0020 +
+        #$0422#$043E#$043B#$0441#$0442#$043E#$0301#$0439;
+ {$ENDIF}
 begin
-  Test_UserComment(FImgFileName, 'am Reinheimer Teich - Лев Николаевич Толсто́й - End of line.');
+  Test_UserComment(FImgFileName, 'am Reinheimer Teich - ' + CYRILLIC + ' - End of line.');
 end;
+{$ENDIF}
 
 
 { CommentSegment }

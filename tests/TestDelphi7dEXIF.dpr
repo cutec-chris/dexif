@@ -12,10 +12,11 @@ uses
   dtags in '..\dtags.pas',
   dUtils in '..\dUtils.pas',
   msData in '..\msData.pas',
-  tstbasic in 'tstbasic.pas', 
+  tstbasic in 'tstbasic.pas',
   tstreadexif in 'tstreadexif.pas',
   tstselfimage in 'tstselfimage.pas',
-  tstwritereadexif in 'tstwritereadexif.pas';
+  tstwritereadexif in 'tstwritereadexif.pas',
+  tstDeleteExif in 'tstdeleteexif.pas';
 
 {$R *.RES}
 

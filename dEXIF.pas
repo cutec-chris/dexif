@@ -190,7 +190,7 @@ type
     function GetTagPtr(ATagTypes: TTagTypes; ATagID: Word; AForceCreate: Boolean=false;
       AParentID: word=0; ATagType: word=65535): PTagEntry;
       *)
-    procedure RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: word=0);
+    procedure RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: Word=0);
 
     procedure ClearDirStack;
     procedure PushDirStack(dirStart, offsetbase: Integer);
@@ -2643,12 +2643,12 @@ begin
   // Delete this tag if the provided value is varNull or varEmpty
   if tagDef.TType = FMT_BINARY then begin
     if ABinaryData = nil then begin
-      RemoveTag(ATagTypes, tagID);
+      RemoveTag(ATagTypes, tagID, tagDef^.ParentID);
       exit;
     end;
   end else begin
     if VarIsNull(AValue) or VarIsEmpty(AValue) then begin
-      RemoveTag(ATagTypes, tagID);
+      RemoveTag(ATagTypes, tagID, tagDef^.ParentID);
       exit;
     end;
   end;
@@ -3062,6 +3062,44 @@ end;
 
 procedure TImageInfo.RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: Word=0);
 var
+  i: Integer;
+begin
+  i := 0;
+  if ttThumb in ATagTypes then
+  begin
+    while i < fiThumbCount do
+    begin
+      if (fiThumbArray[i].Tag = ATagID) and (fiThumbArray[i].ParentID = AParentID) then
+      begin
+        while (i < fiThumbCount-1) do begin
+          fiThumbArray[i] := fiThumbArray[i+1];
+          inc(i);
+        end;
+        dec(fiThumbCount);
+        break;
+      end else
+        inc(i);
+    end;
+  end else
+  begin
+    while i < fiTagCount do
+    begin
+      if (fiTagArray[i].Tag = ATagID) and (fiTagArray[i].ParentID = AParentID) then
+      begin
+        while (i < fiTagCount-1) do begin
+          fiTagArray[i] := fiTagArray[i+1];
+          inc(i);
+        end;
+        dec(fiTagCount);
+        break;
+      end else
+        inc(i);
+    end;
+  end;
+end;
+  (*
+procedure TImageInfo.RemoveTag(ATagTypes: TTagTypes; ATagID: Word; AParentID: Word=0);
+var
   i, j: integer;
 begin
   j := 0;
@@ -3086,7 +3124,7 @@ begin
       dec(fiTagCount);
   end;
 end;
-
+          *)
 function TImageInfo.CreateTagPtr(const ATagDef: TTagEntry; IsThumbTag: Boolean;
   AParentID: Word = 0): PTagEntry;
 var
@@ -3249,11 +3287,11 @@ begin
   if pos('UNICODE', buf) = 1 then begin
     SetLength(w, (Length(buf) - 8) div SizeOf(WideChar));
     Move(buf[9], w[1], Length(w) * Sizeof(WideChar));
-    {$IFDEF FPC}
+   {$IFDEF FPC}
     Result := UTF8Encode(w);
-    {$ELSE}
+   {$ELSE}
     Result := w;
-    {$ENDIF}
+   {$ENDIF}
   end else
   if pos('ASCII', buf) = 1 then begin
     a := Copy(buf, 9, MaxInt);
