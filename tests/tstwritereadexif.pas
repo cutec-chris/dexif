@@ -20,11 +20,11 @@ interface
 uses
   Classes
   {$ifdef FPC}
-     , Graphics, SysUtils, fpcunit, testutils, testregistry
+     , Graphics, SysUtils, FileUtil, fpcunit, testutils, testregistry
   {$else}
-     , DateUtils, TestFrameWork , sysutils
+     , Windows, Graphics, SysUtils, jpeg, TestFrameWork
   {$endif}
-     , dEXIF;
+     , DateUtils, dEXIF;
 
 const
   // Picture with EXIF data taken from CANON camera }
@@ -76,14 +76,7 @@ function scandatetime(const pattern:string;const s:string;startpos:integer=1) : 
 implementation
 
 uses
-  Math, dGlobal, dUtils
-{$ifdef FPC}
-   ,DateUtils, FileUtil
-{$else}
-  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
-  , jpeg
-{$endif}
-  ;
+  Math, dGlobal, dUtils;
 
 type
   TWriteReadParam = record
@@ -172,7 +165,7 @@ var
   msg: String;
   imgStream: TMemoryStream;
   jpeg: TJpegImage;
-  deg,min,sec: Double;
+  bmp: TBitmap;
 
   function ReadTagValue(ATestID: Integer; DUT: TImgData): string;
   var
@@ -332,10 +325,17 @@ begin
     // Open the written file into a TJpegImage. It must open without an error.
     //--------------------------------------------------------------------------
     jpeg := TJpegImage.Create;
+    bmp := TBitmap.Create;
     try
-      jpeg.LoadfromFile(FDestFileName);
-    except
-      fail('Incorrectly written file "' + FDestFileName + '"');
+      try
+        jpeg.LoadfromFile(FDestFileName);
+        bmp.Assign(jpeg);
+      except
+        fail('Incorrectly written file "' + FDestFileName + '"');
+      end;
+    finally
+      bmp.Free;
+      jpeg.Free;
     end;
     {$ENDIF}
 

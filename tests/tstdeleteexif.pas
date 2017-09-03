@@ -20,12 +20,11 @@ interface
 uses
   Classes, SysUtils
   {$ifdef FPC}
-     , Graphics, FileUtil, fpcunit, testutils, testregistry
+    , Graphics, FileUtil, fpcunit, testutils, testregistry
   {$else}
-    {$ifndef DELPHI7}, Winapi.Windows{$else}, Windows{$endif}
-     , TestFrameWork, jpeg
+    , Windows, Graphics, jpeg, TestFrameWork
   {$endif}
-     , dEXIF;
+    , dEXIF;
 
 const
   // Picture with EXIF data taken from CANON camera }
@@ -157,6 +156,7 @@ var
   msg: String;
   imgStream: TMemoryStream;
   jpeg: TJpegImage;
+  bmp: TBitmap;
   TagAvailAfter: Boolean;
   TagAvailBefore: Boolean;
 begin
@@ -206,10 +206,17 @@ begin
   // Open the written file into a TJpegImage. It must open without an error.
   //--------------------------------------------------------------------------
   jpeg := TJpegImage.Create;
+  bmp := TBitmap.Create;
   try
-    jpeg.LoadfromFile(FTestFileName);
-  except
-    fail('Incorrectly written file "' + FTestFileName + '"');
+    try
+      jpeg.LoadfromFile(FTestFileName);
+      bmp.Assign(jpeg);
+    except
+      fail('Incorrectly written file "' + FTestFileName + '"');
+    end;
+  finally
+    bmp.Free;
+    jpeg.Free;
   end;
   {$ENDIF}
 end;
