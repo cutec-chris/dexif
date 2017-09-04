@@ -99,7 +99,6 @@ function SSpeedCallBack(instr: AnsiString): String;
 function xpTranslate(instr: AnsiString): String;
 
 
-
 implementation
 
 uses

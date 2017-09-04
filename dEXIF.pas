@@ -96,6 +96,8 @@ type
 
   TImageInfo = class(tEndInd)
   private
+    FExifVersion: string;
+
     FITagArray: array of TTagEntry;
     FITagCount: integer;
 
@@ -126,7 +128,8 @@ type
     function GetArtist: String;
     procedure SetArtist(v: String);
 
-    function GetExifComment: String;
+    function GetExifComment(const ATag: TTagEntry): String; overload;
+    function GetExifComment: String; overload;
     procedure SetExifComment(AValue: String);
 
     function GetImageDescription: String;
@@ -155,6 +158,8 @@ type
     function GetWidth: Integer;
     procedure SetWidth(AValue: Integer);
 
+    function GetVersion(ATag: TTagEntry): String;
+
     function GetTagByID(ATagID: Word): TTagEntry;
     procedure SetTagByID(ATagID: Word; const AValue: TTagEntry);
     function GetTagByIndex(AIndex: Integer): TTagEntry;
@@ -179,6 +184,7 @@ type
     function InternalGetTagValue(ATag: TTagEntry): Variant;
     procedure InternalSetTagValue(ATagName: String; AValue: Variant;
       ATagTypes: TTagTypes; ABinaryData: Pointer = nil; ABinaryDataCount: Word = 0);
+    function BinaryTagToVar(const ATag: TTagEntry): Variant;
     function NumericTagToVar(ABuffer: Pointer; ATagType: Integer): Variant;
     procedure VarToNumericTag(AValue:variant; ATag: PTagEntry);
 
@@ -211,7 +217,6 @@ type
   public
     MaxTag: integer;
     Parent: timgdata;
-    ExifVersion : string[6];
 //    Height, Width, HPosn, WPosn: integer;
     FlashUsed: integer;
     BuildList: integer;
@@ -278,7 +283,7 @@ type
     function GetRawInt(ATagName: String): integer;
     function GetTagByDesc(SearchStr: String): TTagEntry;
     function LookupTag(ATagName: String): integer; virtual;
-    function LookupTagVal(ATagName: String): String; virtual;
+//    function LookupTagVal(ATagName: String): String; virtual;
     function LookupTagDefn(ATagName: String): integer;
     function LookupTagByDesc(ADesc: String): integer;
     function LookupTagInt(ATagName: String): integer;
@@ -313,6 +318,8 @@ type
         read GetDateTimeModified write SetDateTimeModified;
     property ExifComment: String
         read GetExifComment write SetExifComment;
+    property ExifVersion: String
+        read FExifVersion;
     property GPSLatitude: Extended
         read GetGPSLatitude write SetGPSLatitude;
     property GPSLongitude: Extended
@@ -1387,6 +1394,7 @@ begin
   Result := -1;
 end;
 
+(*
 // This function returns the data value for a given tag name.
 function TImageInfo.LookupTagVal(ATagName: String): String;
 var
@@ -1401,6 +1409,7 @@ begin
     end;
   Result := '';
 end;
+  *)
 
 // This function returns the integer data value for a given tag name.
 function TImageInfo.LookupTagInt(ATagName: String):integer;
@@ -2053,8 +2062,10 @@ begin
           except
           end;
         end;
+
       TAG_EXIFVERSION:
-        ExifVersion := rawstr;
+        FExifVersion := rawstr;
+
       TAG_MAKERNOTE:
         begin
           MakerNote := rawStr;
@@ -2401,7 +2412,7 @@ begin
       Result := L.Text;
     end else
     begin
-      DateTimeToString(FileDateTime, ISODateFormat, Parent.FileDateTime);
+      FileDateTime := FormatDateTime(ISODateFormat, Parent.FileDateTime);
 
       L.Add(Format('%-*s %s',      [w, 'File name:', ExtractFileName(Parent.Filename)]));
       L.Add(Format('%-*s %dkB',    [w, 'File size:', Parent.FileSize div 1024]));
@@ -2412,32 +2423,39 @@ begin
 
       if BuildList in [GenString,GenAll] then
       begin
-        tmpStr := LookupTagVal('ExposureTime');
+        tmpStr := TagValueAsString['ExposureTime'];
+//        tmpStr := LookupTagVal('ExposureTime');
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]))
         else
         begin
-          tmpStr := LookupTagVal('ShutterSpeedValue');
+//          tmpStr := LookupTagVal('ShutterSpeedValue');
+          tmpStr := TagValueAsstring['ShutterSpeedValue'];
           if tmpStr <> '' then
             L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]));
         end;
 
-        tmpStr := LookupTagVal('FocalLength');
+//        tmpStr := LookupTagVal('FocalLength');
+        tmpStr := TagValueAsString['FocalLength'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Focal length:', tmpStr]));
 
-        tmpStr := LookupTagVal('FocalLengthIn35mm');
+//        tmpStr := LookupTagVal('FocalLengthIn35mm');
+        tmpStr := TagValueAsString['FocalLengthIn35mm'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Focal length (35mm):', tmpStr]));
 
-        tmpStr := LookupTagVal('FNumber');
+//        tmpStr := LookupTagVal('FNumber');
+        tmpStr := TagValueAsString['FNumber'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'F number', tmpStr]));
 
-        tmpStr := LookupTagVal('ISOSpeedRatings');
+//        tmpStr := LookupTagVal('ISOSpeedRatings');
+        tmpStr := TagValueAsString['ISOSpeedRatings'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'ISO:', tmpStr]));
       end;
+
       L.Add(Format('%-*s %s', [w, 'Flash fired:', siif(odd(FlashUsed),'Yes','No')]));
       Result := L.Text;
     end;
@@ -2534,7 +2552,7 @@ begin
       end;
     FMT_BINARY:
       begin
-        Result := '<binary>';
+        Result := BinaryTagToVar(ATag);
         exit;
       end;
   end;
@@ -2559,6 +2577,26 @@ begin
     TAG_SHUTTERSPEED:
       // Is stored as -log2 of exposure time
       Result := power(2.0, -Result);
+  end;
+end;
+
+function TImageInfo.BinaryTagToVar(const ATag: TTagEntry): Variant;
+var
+  s: String;
+begin
+  case ATag.Tag of
+    TAG_EXIFVERSION,
+    TAG_FLASHPIXVERSION:
+      begin
+        SetLength(s, Length(ATag.Raw));
+        Move(ATag.Raw[1], s[1], Length(s));
+        Result := s;
+      end;
+    TAG_USERCOMMENT:
+      begin
+      end;
+  else
+    Result := '<binary>';
   end;
 end;
 
@@ -2755,6 +2793,8 @@ begin
     Move(fracValue, ATag^.Raw[len + 1], 8);
     ATag^.Size := Length(ATag^.Raw);
     s := FormatNumber(ATag^.Raw, ATag^.TType, ATag^.FormatS, ATag^.Code);
+    if Assigned(ATag.Callback) and dExifDecode then
+      s := ATag.Callback(s);
     ATag^.Data := s; //siif(len = 0, s, ATag^.Data + dExifDataSep + s);
     exit;
   end;
@@ -2923,8 +2963,15 @@ begin
       Delete(s, Length(s), 1);
     Result := s;
   end
-  else
+  else if tag.Name = 'ExifVersion' then
+    Result := GetVersion(tag)
+  else if tag.Name = 'FlashPixVersion' then
+    Result := GetVersion(tag)
+  else begin
     Result := FormatNumber(tag.Raw, tag.TType, tag.FormatS, tag.Code);
+    if Assigned(tag.Callback) and dExifDecode then
+      Result := tag.Callback(Result)
+  end;
 end;
 
 procedure TImageInfo.SetTagValueAsString(ATagName: String; AValue: String);
@@ -3247,40 +3294,17 @@ procedure TImageInfo.SetArtist(v: String);
 begin
   SetTagValue('Artist', v);
 end;
-(*
 
-var
-  p : PTagEntry;
-begin
-  if (v = '') then begin
-    RemoveTag([ttExif], TAG_ARTIST, 0);
-    exit;
-  end;
-  p := GetTagPtr([ttExif], TAG_ARTIST, true, 0, 2);
-  {$IFDEF FPC}
-  p^.Raw := UTF8ToAnsi(v) + #0;
-  {$ELSE}
-  p^.Raw := AnsiString(v) + #0;
-  {$ENDIF}
-  p^.Data := p^.Raw;
-  p^.Size := Length(p^.Raw);
-end;
-  *)
-function TImageInfo.GetExifComment: String;
+function TImageInfo.GetExifComment(const ATag: TTagEntry): String;
 var
   buf: ansistring;
-  w: WideString;
+  w: widestring;
   a: ansistring;
   n: Integer;
-  tag: TTagEntry;
 begin
   Result := '';
 
-  tag := GetTagByName('UserComment');
-  if tag.Tag = 0 then
-    exit;
-
-  InternalGetBinaryTagValue(tag, buf);
+  InternalGetBinaryTagValue(ATag, buf);
   if buf = '' then
     exit;
 
@@ -3311,6 +3335,17 @@ begin
   end else
   if Pos('JIS', buf) = 1 then
     raise Exception.Create('JIS-encoded user comment is not supported.');
+end;
+
+function TImageInfo.GetExifComment: String;
+var
+  tag: TTagEntry;
+begin
+  tag := GetTagByName('UserComment');
+  if tag.Tag <> 0 then
+    Result := GetExifComment(tag)
+  else
+    Result := '';
 end;
 
 (*
@@ -3534,7 +3569,6 @@ begin
   VarClear(v);
 end;
 
-
 function TImageInfo.GetGPSLatitude: Extended;
 begin
   Result := GetGPSCoordinate('GPSLatitude', ctLatitude);
@@ -3553,6 +3587,25 @@ end;
 procedure TImageInfo.SetGPSLongitude(const AValue: Extended);
 begin
   SetGPSCoordinate('GPSLongitude', AValue, ctLongitude);
+end;
+
+{ The version of the supported Exif or FlashPix standard.
+
+  All four bytes should be interpreted as ASCII values. The first two bytes
+  encode the upper part of the standard version, the next two bytes encode the
+  lower part. For example, the byte sequence 48, 50, 50, 48, is the equivalent
+  of the ASCII value "0220", and denotes version 2.20.
+
+  http://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif/exifversion.html
+  http://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif/flashpixversion.html
+}
+function TImageInfo.GetVersion(ATag: TTagEntry): String;
+var
+  s: String;
+begin
+  Result := '';
+  InternalGetBinaryTagValue(ATag, s);
+  Result := s;
 end;
 
 function TImageInfo.IterateFoundTags(TagId: integer; var RetVal: TTagEntry): boolean;

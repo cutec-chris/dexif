@@ -79,8 +79,9 @@
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\dTags.pas"/>
+        <Filename Value="..\dtags.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dTags"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\dExif.inc"/>

@@ -657,7 +657,7 @@ begin
   try
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATagName);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATagName];
     ExtractGPSPosition(currStrValue, currDeg, currMin, currSec);
     if IsNaN(AExpectedDeg) and IsNaN(AExpectedMin) and IsNaN(AExpectedSec) then
       CheckTRUE(IsNaN(currDeg) and IsNaN(currMin) and IsNaN(currSec), AMismatchMsg)
@@ -697,7 +697,7 @@ begin
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currFloatValue := DUT.ExifObj.GetRawFloat(ATestTag);
     if IsNaN(AExpectedResult) then begin
-      currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+      currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
       CheckEquals('', currStrValue, AMismatchMsg);
     end else
     begin
@@ -724,7 +724,7 @@ begin
   try
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
     if currStrValue = '' then
       currVal := 0.0
     else begin
@@ -770,7 +770,7 @@ begin
   try
     DUT.ProcessFile(AFilename);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
 
     // dEXIF strings sometimes are quoted...
     if (currStrValue <> '') and (currStrValue[1] = '"') then

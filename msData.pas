@@ -616,8 +616,8 @@ begin
       tmp := copy(MakerNote,1,5);
       x := max(0,Pos(' ', imgParent.CameraModel));
       tmp2 := imgParent.CameraModel[x+1];
-      if (imgParent.exifVersion > '0210') or
-          ((imgParent.exifVersion = '') and
+      if (imgParent.ExifVersion > '0210') or
+          ((imgParent.ExifVersion = '') and
           (tmp2 = 'D') and isTiff) then
         ProcessHWSpecific(MakerNote,Nikon2Table,18,9)
       else
