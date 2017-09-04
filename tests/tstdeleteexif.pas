@@ -28,7 +28,7 @@ uses
 
 const
   // Picture with EXIF data taken from CANON camera }
-  co_DeleteSrcPic_01 = './testpictures/original/with_exif_large.jpeg';
+  co_DeleteSrcPic_01 = './testpictures/original/with_exif_small.jpg';
   co_DeleteSrcPic_02 = './testpictures/original/img_9438.jpg';
   co_DeleteSrcPic_03 = './testpictures/original/Schilfgebiet.jpg';
 
