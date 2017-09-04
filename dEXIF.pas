@@ -128,9 +128,9 @@ type
     function GetArtist: String;
     procedure SetArtist(v: String);
 
-    function GetExifComment(const ATag: TTagEntry): String; overload;
     function GetExifComment: String; overload;
     procedure SetExifComment(AValue: String);
+    function GetUserComment(const ATag: TTagEntry): String; overload;
 
     function GetImageDescription: String;
     procedure SetImageDescription(const AValue: String);
@@ -3295,7 +3295,7 @@ begin
   SetTagValue('Artist', v);
 end;
 
-function TImageInfo.GetExifComment(const ATag: TTagEntry): String;
+function TImageInfo.GetUserComment(const ATag: TTagEntry): String;
 var
   buf: ansistring;
   w: widestring;
@@ -3343,7 +3343,7 @@ var
 begin
   tag := GetTagByName('UserComment');
   if tag.Tag <> 0 then
-    Result := GetExifComment(tag)
+    Result := GetUserComment(tag)
   else
     Result := '';
 end;
@@ -3601,7 +3601,7 @@ end;
 }
 function TImageInfo.GetVersion(ATag: TTagEntry): String;
 var
-  s: String;
+  s: AnsiString;
 begin
   Result := '';
   InternalGetBinaryTagValue(ATag, s);
