@@ -64,7 +64,7 @@ function GPSToStr(ACoord: Extended; ACoordType: TGpsCoordType;
 function StrToGPS(s: String): Extended;
 
 procedure InitTagEntry(out ATagEntry: TTagEntry);
-function InsertSpaces(InStr: String): String;
+function InsertSpaces(ACamelCaseText: String): String;
 
 function JPEGImageSize(AStream: TStream; out AWidth, AHeight: Integer): Boolean;
 procedure JPEGScaleImage(ASrcStream, ADestStream: TStream;
@@ -938,17 +938,22 @@ begin
   end;
 end;
 
-function InsertSpaces(InStr: String): String;
+{ Inserts spaces into a camel-case text, i.e. 'ShutterSpeed' --> 'Shutter Speed'}
+function InsertSpaces(ACamelCaseText: String): String;
 var
   i: integer;
   ch: char;
   lastUC: boolean;
 begin
+  if Length(ACamelCaseText) < 3 then begin
+    Result := ACamelCaseText;
+    exit;
+  end;
   lastUC := true;
-  Result := InStr[1]; //Copy(InStr, 1, 1);
-  for i := 2 to Length(InStr) do
+  Result := ACamelCaseText[1];
+  for i := 2 to Length(ACamelCaseText) do
   begin
-    ch := InStr[i];
+    ch := ACamelCaseText[i];
     if (ch >= 'A') and (ch <= 'Z') then
     begin
       if lastUC then

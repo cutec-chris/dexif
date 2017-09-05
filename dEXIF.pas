@@ -48,15 +48,17 @@ const
   ThumbTag = 4;
   }
 
+  // To be used in Exifobj.IterateFoundTags
   GenericEXIF = 0;
   CustomEXIF = 1;
-  AllEXIF = -1;
+
+//  AllEXIF = -1;
   GenNone = 0;
   GenAll = 255;
   GenString = 2;
   GenList = 4;
-  VLMin = 0;
-  VLMax = 1;
+//  VLMin = 0;
+//  VLMax = 1;
 
 type
   TImgData = class;
@@ -96,6 +98,7 @@ type
 
   TImageInfo = class(tEndInd)
   private
+    FParent: TImgData;
     FExifVersion: string;
 
     FITagArray: array of TTagEntry;
@@ -112,8 +115,8 @@ type
     FThumbnailStartOffset: Integer;
     FThumbnailSize: Integer;
 
-    iterator: integer;
-    iterThumb: integer;
+    FIterator: integer;
+    FThumbIterator: integer;
 
       // Getter / setter
     function GetDateTimeOriginal: TDateTime;
@@ -205,18 +208,20 @@ type
   protected
     function AddTagToArray(ANewTag: iTag): integer;
     function AddTagToThumbArray(ANewTag: iTag): integer;
+    procedure Calc35Equiv;
     function CvtInt(ABuffer: Ansistring): Longint;
     function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
     procedure ExtractThumbnail;
     function FormatNumber(ABuffer: ansistring; AFmt: integer; AFmtStr: string;
       ADecodeStr: string=''): String;
     function GetNumber(ABuffer: ansistring; AFmt: integer): double;
+    function LookupRatio: double;
+
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: LongInt;
       ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word=0);
 
   public
     MaxTag: integer;
-    Parent: timgdata;
 //    Height, Width, HPosn, WPosn: integer;
     FlashUsed: integer;
     BuildList: integer;
@@ -233,26 +238,8 @@ type
     msName:ansistring;
     MakerOffset : integer;
 
-    procedure ProcessHWSpecific(MakerBuff:ansistring;
-                  TagTbl: array of TTagEntry;
-                  DirStart:longint;
-                  aMakerOffset:Longint;
-                  spOffset:integer = 0);
-
-    procedure AddMSTag(fname: String; ARawStr: ansistring; fType: word);
-    procedure AdjExifSize(AHeight, AWidth: Integer);
-
-    procedure ResetIterator;
-    function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
-    function IterateFoundThumbTags(TagId: integer;
-      var retVal: TTagEntry): boolean;
-    procedure ResetThumbIterator;
-
-    procedure Calc35Equiv;
-    function LookupRatio: double;
-
   public
-    constructor Create(p: TImgData; BuildCode: integer = GenAll);
+    constructor Create(AParent: TImgData; BuildCode: integer = GenAll);
     procedure Assign(source: TImageInfo);
     destructor Destroy; override;
 
@@ -271,12 +258,28 @@ type
     property ThumbTagValue[ATagName: String]: variant
         read GetThumbTagValue write SetThumbTagValue;
 
+    // Manufacturer-specific
+    procedure AddMSTag(ATagName: String; ARawStr: ansistring; AType: word);
+    procedure ProcessHWSpecific(AMakerBuff: ansistring;
+      TagTbl: array of TTagEntry; ADirStart, AMakerOffset: Longint;
+      spOffset: integer = 0);
+
+    // Iterate through found tags
+    procedure ResetIterator;
+    procedure ResetThumbIterator;
+    function IterateFoundTags(TagId:integer; var retVal:TTagEntry):boolean;
+    function IterateFoundThumbTags(TagId: integer;
+      var retVal: TTagEntry): boolean;
+
     // Collective output
     procedure EXIFArrayToXML(AList: TStrings); overload;
     function EXIFArrayToXML: TStringList; overload;
       deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     function ToShortString: String;   //  Summarizes in a single line
     function ToLongString(ALabelWidth: Integer = 15): String;
+
+    // Special actions
+    procedure AdjExifSize(AHeight, AWidth: Integer);
 
     // Looking up tags and tag values
     function GetRawFloat(ATagName: String): double;
@@ -335,6 +338,9 @@ type
         read GetThumbTagByIndex write SetThumbTagByIndex;
     property ThumbTagCount: Integer
         read fiThumbCount;
+
+    property Parent: TImgData
+        read FParent;
   end; // TInfoData
 
   TSection = record
@@ -1334,14 +1340,14 @@ end;
 {                            TImageInfo                                        }
 {------------------------------------------------------------------------------}
 
-constructor TImageInfo.Create(p: timgdata; buildCode: integer = GenAll);
+constructor TImageInfo.Create(AParent: TImgData; buildCode: integer = GenAll);
 begin
   inherited Create;
   LoadTagDescs(True);  // initialize global structures
   FITagCount := 0;
   buildList := BuildCode;
-  clearDirStack;
-  parent := p;
+  ClearDirStack;
+  FParent := AParent;
 end;
 
 // These destructors provided by Keith Murray of byLight Technologies - Thanks!
@@ -2109,6 +2115,7 @@ begin
         NewEntry.TType := tagFormat;
         NewEntry.Count := tagComponents;
         NewEntry.ParentID := AParentID;
+        NewEntry.TID := GenericEXIF;  // 0
         if ATagType = ttThumb then
           AddTagToThumbArray(newEntry)
         else
@@ -2121,9 +2128,8 @@ begin
   end;
 end;
 
-
-procedure TImageInfo.ProcessHWSpecific(MakerBuff: ansistring;
-  TagTbl: array of TTagEntry; DirStart: Longint; AMakerOffset: Longint;
+procedure TImageInfo.ProcessHWSpecific(AMakerBuff: ansistring;
+  TagTbl: array of TTagEntry; ADirStart, AMakerOffset: Longint;
   spOffset: Integer = 0);
 var
   NumDirEntries: integer;
@@ -2136,14 +2142,14 @@ var
   OffsetBase: longint;
   NewEntry: TTagEntry;
 begin
-  DirStart := DirStart+1;
-  OffsetBase := DirStart - aMakerOffset + 1;
-  SetDataBuff(MakerBuff);
+  ADirStart := ADirStart+1;
+  OffsetBase := ADirStart - AMakerOffset + 1;
+  SetDataBuff(AMakerBuff);
   try
-    NumDirEntries := Get16u(DirStart);
+    NumDirEntries := Get16u(ADirStart);
     for de := 0 to NumDirEntries-1 do
     begin
-      DirEntry := DirStart+2+12*de;
+      DirEntry := ADirStart + 2 + 12*de;
       tag := Get16u(DirEntry);
       tagFormat := Get16u(DirEntry+2);
       tagComponents := Get32u(DirEntry+4);
@@ -2158,10 +2164,10 @@ begin
         ValuePtr := DirEntry + 8;
 
       // Adjustment needed by Olympus Cameras
-      if ValuePtr + ByteCount > Length(MakerBuff) then
+      if ValuePtr + ByteCount > Length(AMakerBuff) then
         rawStr := Copy(parent.DataBuff, OffsetVal + spOffset, ByteCount)
       else
-        rawStr := copy(MakerBuff, ValuePtr, ByteCount);
+        rawStr := copy(AMakerBuff, ValuePtr, ByteCount);
 
       tagID := LookupMTagID(tag, TagTbl);
       if tagID < 0 then
@@ -2240,7 +2246,7 @@ begin
           NewEntry.Raw   := rawStr;
           NewEntry.TType := tagFormat;
           NewEntry.Count := tagComponents;
-          NewEntry.TID   := 1; // MsSpecific
+          NewEntry.TID   := CustomEXIF;  // = 1 --> Manufacturer-specific
 
           AddTagToArray(NewEntry);
         except
@@ -2259,22 +2265,23 @@ begin
    SetDataBuff(parent.DataBuff);
 end;
 
-procedure TImageInfo.AddMSTag(fname: String; ARawStr: ansistring; fType: word);
+procedure TImageInfo.AddMSTag(ATagName: String; ARawStr: ansistring; AType: word);
 var
   newEntry: TTagEntry;
 begin
   if BuildList in [GenList,GenAll] then
   begin
     try
-      newEntry.Name := fname;
-      newEntry.Desc := fname;
+      InitTagEntry(newEntry);
+      newEntry.Name := ATagName;
+      newEntry.Desc := InsertSpaces(ATagName);
       newEntry.Data := ARawStr;
       newEntry.Raw  := ARawStr;
       newEntry.Size := Length(ARawStr);
-      NewEntry.TType:= fType;
+      NewEntry.TType:= AType;
       NewEntry.Count := 1;
-      newEntry.parentID := 0;
-      newEntry.TID  := 1; // MsSpecific
+      newEntry.ParentID := 0;
+      newEntry.TID  := CustomEXIF;  // = 1 --> manufacturer-specific
       AddTagToArray(newEntry);
     except
       // if we're here: unknown tag.
@@ -3612,12 +3619,12 @@ function TImageInfo.IterateFoundTags(TagId: integer; var RetVal: TTagEntry): boo
 begin
   InitTagEntry(Retval);
 
-  while (iterator < FITagCount) and (FITagArray[iterator].TID <> TagId) do
-    inc(iterator);
-  if (iterator < FITagCount) then
+  while (FIterator < FITagCount) and (FITagArray[FIterator].TID <> TagId) do
+    inc(FIterator);
+  if (FIterator < FITagCount) then
   begin
-    RetVal := FITagArray[iterator];
-    inc(iterator);
+    RetVal := FITagArray[FIterator];
+    inc(FIterator);
     Result := true;
   end
   else
@@ -3626,7 +3633,7 @@ end;
 
 procedure TImageInfo.ResetIterator;
 begin
-  iterator := 0;
+  FIterator := 0;
 end;
 
 function TImageInfo.IterateFoundThumbTags(TagId: integer;
@@ -3634,12 +3641,12 @@ function TImageInfo.IterateFoundThumbTags(TagId: integer;
 begin
   InitTagEntry(RetVal);
 
-  while (iterThumb < FIThumbCount) and (FITagArray[iterThumb].TID <> TagId) do
-    inc(iterThumb);
-  if (iterThumb < FIThumbCount) then
+  while (FThumbIterator < FIThumbCount) and (FITagArray[FThumbIterator].TID <> TagId) do
+    inc(FThumbIterator);
+  if (FThumbIterator < FIThumbCount) then
   begin
-    RetVal := FIThumbArray[iterThumb];
-    inc(iterThumb);
+    RetVal := FIThumbArray[FThumbIterator];
+    inc(FThumbIterator);
     Result := true;
   end
   else
@@ -3648,7 +3655,7 @@ end;
 
 procedure TImageInfo.ResetThumbIterator;
 begin
-  iterThumb := 0;
+  FThumbIterator := 0;
 end;
 
 function TImageInfo.GetRawFloat(ATagName: String): Double;
@@ -3680,7 +3687,7 @@ end;
 //  enough info in the EXIF to calculate the equivalent 35mm
 //  focal length and it needs to be looked up on a camera
 //  by camera basis. - next rev - maybe
-Function TImageInfo.LookupRatio: double;
+function TImageInfo.LookupRatio: double;
 var
   estRatio: double;
   upMake, upModel: String;
@@ -3688,7 +3695,7 @@ begin
   upMake := Uppercase(copy(CameraMake, 1, 5));
   upModel := Uppercase(copy(Cameramodel, 1, 5));
   estRatio := 4.5;  // ballpark for *my* camera -
-  result := estRatio;
+  Result := estRatio;
 end;
 
 procedure TImageInfo.Calc35Equiv;
