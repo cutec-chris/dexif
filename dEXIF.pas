@@ -842,7 +842,7 @@ var
   (TID:0; TType:5; ICode:2; Tag:$9206; ParentID:$8769; Count:1; Name:'SubjectDistance'),
   (TID:0; TType:3; ICode:2; Tag:$9207; ParentID:$8769; Count:1; Name:'MeteringMode';
     Desc:'';
-    Code:'0:Unknown,1:Average,2:Center,3:Spot,4:MultiSpot,5:MultiSegment,6:Partial'),
+    Code:'0:Unknown,1:Average,2:Center,3:Spot,4:Multi-spot,5:Multi-segment,6:Partial'),
   (TID:0; TType:3; ICode:2; Tag:$9208; ParentID:$8769; Count:1; Name:'LightSource';
     Desc:'';
     Code:'0:Unidentified,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
@@ -856,7 +856,7 @@ var
   (TID:0; TType:0; ICode:2; Tag:$920E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution'),
   (TID:0; TType:0; ICode:2; Tag:$920F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution'),
   (TID:0; TType:0; ICode:2; Tag:$9210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
-    Desc:''; Code:'1:None Specified,2:Inch,3:Centimeter'),
+    Desc:''; Code:'1:None Specified,2:inches,3:cm'),
   (TID:0; TType:4; ICode:2; Tag:$9211; ParentID:$8769; Count:1; Name:'ImageNumber'),
   (TID:0; TType:2; ICode:2; Tag:$9212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
   (TID:0; TType:2; ICode:2; Tag:$9213; ParentID:$8769; Count:1; Name:'ImageHistory'),
@@ -893,7 +893,7 @@ var
   (TID:0; TType:5; ICode:2; Tag:$A20E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution'),    // TID:0;TType:0;ICode: 2;Tag: $920E    -  -
   (TID:0; TType:5; ICode:2; Tag:$A20F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution'),    // TID:0;TType:0;ICode: 2;Tag: $920F    -  -
   (TID:0; TType:3; ICode:2; Tag:$A210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
-    Desc:''; Code:'1:None specified,2:inch,3:cm'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
+    Desc:''; Code:'1:None specified,2:inches,3:cm'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
   (TID:0; TType:0; ICode:2; Tag:$A211; ParentID:$8769; Count:1; Name:'ImageNumber'),
   (TID:0; TType:0; ICode:2; Tag:$A212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
   (TID:0; TType:0; ICode:2; Tag:$A213; ParentID:$8769; Count:1; Name:'ImageHistory'),
@@ -902,9 +902,9 @@ var
   (TID:0; TType:0; ICode:2; Tag:$A216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID';
     Desc:'TIFF/EPStandardID'),
   (TID:0; TType:3; ICode:2; Tag:$A217; ParentID:$8769; Count:1; Name:'SensingMethod'; Desc:'';
-    Code:'0:Unknown,1:MonochromeArea,1:Not defined,2:OneChipColorArea,'+
-         '3:TwoChipColorArea,4:ThreeChipColorArea,5:ColorSequentialArea,'+
-         '6:MonochromeLinear,7:TriLinear,8:ColorSequentialLinear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
+    Code:'0:Unknown,1:Monochrome area,1:Not defined,2:One-chip color area,'+
+         '3:Two-chip color area,4:Three-chip color area,5:Color-sequential area,'+
+         '6:Monochrome linear,7:Tri-linear,8:Color-sequential linear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
   (TID:0; TType:7; ICode:2; Tag:$A300; ParentID:$8769; Count:1; Name:'FileSource'; Desc:'';
     Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
   (TID:0; TType:7; ICode:2; Tag:$A301; ParentID:$8769; Count:1; Name:'SceneType';
