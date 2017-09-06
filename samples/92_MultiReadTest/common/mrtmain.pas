@@ -254,6 +254,7 @@ var
   node: TTreeNode;
   tagID: Word;
   lTag: TTagEntry;
+  v: Variant;
 begin
   if ANode.Count = 0 then begin
     Log('Skipping image "' + ANode.Text + '": No EXIF data found by ExifTool.');
@@ -286,9 +287,20 @@ begin
       lTag := imgData.ExifObj.TagByName[tagName];
       if (lTag.Name = '') or SameText(lTag.Name, 'Unknown') then begin
         // tag not found by name
-        tagID := PtrInt(node.Data);
-        tagName := Format('[$%.4x] %s', [tagID, tagName]);
-        currTagValue := imgData.ExifObj.TagValueAsStringByID[tagID];
+        if pos('Thumbnail', tagName) > 0 then begin
+          lTag := imgData.ExifObj.ThumbTagByID[tagID];
+          if (lTag.Name = '') or SameText(lTag.Name, 'Unknown') then
+            currTagValue := ''
+          else
+            currTagValue := imgData.ExifObj.ThumbTagValueAsString[lTag.Name];
+        end else begin
+          lTag := imgData.ExifObj.TagById[tagID];
+          if (lTag.Name = '') or SameText(lTag.Name, 'Unknown') then
+            currTagValue := ''
+          else
+            currTagValue := imgData.ExifObj.TagValueAsString[ltag.Name];
+        end;
+        //tagName := Format('[$%.4x] %s', [tagID, tagName]);
       end else
         currTagValue := imgData.ExifObj.TagValueAsString[tagName];
       expectedTagvalue := trim(Copy(s, p+1, MaxInt));
@@ -296,10 +308,11 @@ begin
       if SameText(expectedTagValue, currTagValue) then
         node.ImageIndex := 3
       else begin
-        Log('    Mismatching tag "' + tagName + '"');
+        Log('    Mismatching tag "' + Format('[$%.4x] %s', [tagID, tagName]) + '"');
         Log('        expected: ' + expectedTagValue);
         Log('        found: ' + currTagValue);
         node.ImageIndex := 1;
+        node.Text := tagname + ': ' + expectedTagValue + ' --> found: ' + currTagValue;
         inc(FMismatchCount);
       end;
       node.SelectedIndex := node.ImageIndex;

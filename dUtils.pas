@@ -46,8 +46,8 @@ function LEtoN(const AValue: DWord): DWord; overload;
 
 {$ENDIF}
 
-function CvtRational(InStr: String): double;
-function CvtTime(InStr: String): String;
+function CvtRational(AText: String): double;
+function CvtTime(AText: String): String;
 function FmtRational(ANum, ADenom: Integer): String;
 function DoubleToRational(AValue: Double): TExifRational;
 
@@ -93,7 +93,7 @@ function DefFracFmt(ANum, ADenom: Integer): String;
 function GpsPosn(instr: String): String;
 function GpsAltitude(instr: String): String;
 function GpsVersionID(AText: String): String;
-function GenCompConfig(instr: String): String;
+function CompCfgCallBack(AText: String): String;
 function ExposCallBack(instr: String): String;
 function FlashCallBack(instr: String): String;
 function SSpeedCallBack(instr: String): String;
@@ -243,14 +243,14 @@ end;
 
 {$ENDIF}
 
-function CvtRational(InStr: String): double;
+function CvtRational(AText: String): double;
 var
   s: String;
   p: Integer;
   intVal, num, denom: Integer;
 begin
   Result := 0.0;
-  s := trim(InStr);
+  s := trim(AText);
   p := pos(' ', s);
   if p > 0 then
   begin
@@ -274,23 +274,23 @@ begin
     Result := Result + intVal;
 end;
 
-function CvtTime(InStr: String): String;
+function CvtTime(AText: String): String;
 var
   p, len: integer;
   s: ansistring;
   tHours, tMin, tSec: double;
 begin
-  Result := InStr;                    // if error return input string
+  Result := AText;                    // if error return input string
   len := Length(dExifDataSep);
-  p := pos(dExifDataSep, InStr);
-  s := copy(InStr, 1, p-1);           // get first rational number
+  p := pos(dExifDataSep, AText);
+  s := copy(AText, 1, p-1);           // get first rational number
   tHours := CvtRational(s);           // bottom of lens speed range
-  InStr := copy(InStr, p+len-1, MaxInt);
-  p := pos(dExifDataSep, InStr);
-  s := copy(InStr, 1, p-1);           // get second irrational number
+  AText := copy(AText, p+len-1, MaxInt);
+  p := pos(dExifDataSep, AText);
+  s := copy(AText, 1, p-1);           // get second irrational number
   tMin := CvtRational(s);             // minutes
-  InStr := copy(InStr, p+1, MaxInt);
-  tSec := CvtRational(InStr);         // seconds
+  AText := copy(AText, p+1, MaxInt);
+  tSec := CvtRational(AText);         // seconds
   Result := Format('%.0f:%.0f:%.0f', [tHours, tMin, tSec]);
 end;
 
@@ -833,23 +833,24 @@ begin
   end;
 end;
 
-function GenCompConfig(InStr: String): String;
+function CompCfgCallback(AText: String): String;
 var
   i, ti: Integer;
 begin
   Result := '';
-  for i := 1+1 to 4+1 do  // skip first char...
-  begin
-    ti := integer(InStr[i]);
-    case ti of
-      1: Result := Result + 'Y';
-      2: Result := Result + 'Cb';
-      3: Result := Result + 'Cr';
-      4: Result := Result + 'R';
-      5: Result := Result + 'G';
-      6: Result := Result + 'B';
+  for i := 1 to 4 do
+    if i <= Length(AText) then begin
+      ti := integer(AText[i]);
+      case ti of
+//        0: Result := Result + '-';
+        1: Result := Result + 'Y';
+        2: Result := Result + 'Cb';
+        3: Result := Result + 'Cr';
+        4: Result := Result + 'R';
+        5: Result := Result + 'G';
+        6: Result := Result + 'B';
+      end;
     end;
-  end;
 end;
 
 function FlashCallBack(InStr: String): String;

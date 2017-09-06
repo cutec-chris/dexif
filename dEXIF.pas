@@ -173,8 +173,6 @@ type
     procedure SetTagValue(ATagName: String; AValue: variant);
     function GetTagValueAsString(ATagName: String): String;
     procedure SetTagValueAsString(ATagName: String; AValue: String);
-    function GetTagValueAsStringByID(ATagID: word): String;
-    function GetTagValueByID(ATagID: Word): Variant;
 
     function GetThumbTagByID(ATagID: Word): TTagEntry;
     procedure SetThumbTagByID(ATagID: Word; const AValue: TTagEntry);
@@ -184,6 +182,8 @@ type
     procedure SetThumbTagByName(ATagName: String; const AValue: TTagEntry);
     function GetThumbTagValue(ATagName: String): Variant;
     procedure SetThumbTagValue(ATagName: String; AValue: variant);
+    function GetThumbTagValueAsString(ATagName: String): string;
+    procedure SetThumbTagValueAsString(ATagName: String; AValue: String);
 
     procedure InternalGetBinaryTagValue(const ATag: TTagEntry; var ABuffer: ansistring);
     function InternalGetTagValue(const ATag: TTagEntry): Variant;
@@ -252,17 +252,6 @@ type
     procedure AdjDateTime(ADays, AHours, AMins, ASecs: integer);
     function  GetImgDateTime: TDateTime;
 
-    // Thumbnail
-    procedure CreateThumbnail(AThumbnailSize: Integer = DEFAULT_THUMBNAIL_SIZE);
-    function HasThumbnail: boolean;
-    procedure ProcessThumbnail;
-    procedure RemoveThumbnail;
-    procedure LoadThumbnailFromStream(AStream: TStream);
-    procedure SaveThumbnailToStream(AStream: TStream);
-    property ThumbnailBuffer: TBytes read FThumbnailBuffer;
-    property ThumbTagValue[ATagName: String]: variant
-        read GetThumbTagValue write SetThumbTagValue;
-
     // Manufacturer-specific
     procedure AddMSTag(ATagName: String; ARawStr: ansistring; AType: word);
     procedure ProcessHWSpecific(AMakerBuff: ansistring;
@@ -288,7 +277,7 @@ type
     function GetRawFloat(ATagName: String): double;
     function GetRawInt(ATagName: String): integer;
     function GetTagByDesc(SearchStr: String): TTagEntry;
-    function LookupTag(ATagName: String): integer; virtual;
+    function LookupTagIndex(ATagName: String): integer; virtual;
 //    function LookupTagVal(ATagName: String): String; virtual;
     function LookupTagDefn(ATagName: String): integer;
     function LookupTagByDesc(ADesc: String): integer;
@@ -297,15 +286,12 @@ type
     // Tag values as variant
     property TagValue[ATagName: String]: Variant
         read GetTagValue write SetTagValue; default;
-    property TagValueByID[ATagID: Word]: Variant
-        read GetTagValueByID;
 
     // Tag values as string
     property TagValueAsString[ATagName: String]: String
         read GetTagValueAsString write SetTagValueAsString;
-    property TagValueAsStringByID[ATagID: Word]: String
-        read GetTagValueAsStringByID;
 
+    // Accessing entire tag record
     property TagByID[ATagID: Word]: TTagEntry
         read GetTagByID write SetTagByID;
     property TagByIndex[AIndex: Integer]: TTagEntry
@@ -344,10 +330,26 @@ type
     property Width: Integer
         read GetWidth write SetWidth;
 
+  public
+    // Thumbnail
+    procedure CreateThumbnail(AThumbnailSize: Integer = DEFAULT_THUMBNAIL_SIZE);
+    function HasThumbnail: boolean;
+    procedure ProcessThumbnail;
+    procedure RemoveThumbnail;
+    procedure LoadThumbnailFromStream(AStream: TStream);
+    procedure SaveThumbnailToStream(AStream: TStream);
+    property ThumbnailBuffer: TBytes
+        read FThumbnailBuffer;
+    property ThumbTagByID[ATagID: Word]: TTagEntry
+        read GetThumbTagByID write SetThumbTagByID;
     property ThumbTagByIndex[AIndex: Integer]: TTagEntry
         read GetThumbTagByIndex write SetThumbTagByIndex;
     property ThumbTagCount: Integer
         read fiThumbCount;
+    property ThumbTagValue[ATagName: String]: variant
+        read GetThumbTagValue write SetThumbTagValue;
+    property ThumbTagValueAsString[ATagName: String]: String
+        read GetThumbTagValueAsString;
 
     property Parent: TImgData
         read FParent;
@@ -589,53 +591,6 @@ const
   GPSCnt = 32;
   ExifTagCnt = 251;  // NOTE: was 250 before, but "count" is 251
   TotalTagCnt = GPSCnt + ExifTagCnt;
-           (*
-var
-  Whitelist: array [0..37] of Word = (
-    TAG_EXIF_OFFSET,
-    TAG_IMAGEWIDTH,
-    TAG_IMAGELENGTH,
-    TAG_BITSPERSAMPLE,
-    TAG_COMPRESSION,
-    TAG_PHOTOMETRICINTERPRETATION,
-    TAG_IMAGEDESCRIPTION,
-    TAG_MAKE,
-    TAG_MODEL,
-    TAG_DATETIME_MODIFY,
-    TAG_ARTIST,
-    TAG_WHITEPOINT,          // $013E
-    {
-    $8769,  $100,  $101,  $102,
-    $103,  $106,
-    $10E,  $10F,  $110,  $132,
-    $13B,   $13E,                    }
-     $301,
-     $304,
-     $5010,
-     $5011,
-    TAG_COPYRIGHT,           // $8298,
-    TAG_EXPOSURETIME,        // $829A,
-    TAG_TIMEZONEOFFSET,      // $882A,
-    TAG_DATETIME_ORIGINAL,   // $9003,
-    TAG_DATETIME_DIGITIZED,  // $9004,
-    TAG_SHUTTERSPEED,        // $9201,
-    TAG_APERTURE,            // $9202,
-    TAG_BRIGHTNESSVALUE,     // $9203,
-    TAG_EXPOSUREBIASVALUE,   // $9204,
-    TAG_MAXAPERTUREVALUE,    // $9205,
-    TAG_SUBJECT_DISTANCE,    // $9206,
-    TAG_LIGHT_SOURCE,        // $9208,
-    TAG_FLASH,               // $9209,
-    TAG_FOCALLENGTH,         // $920A,
-    TAG_FLASH_ENERGY,        // $920B,
-    TAG_NOISE,               // $920D,
-    TAG_USERCOMMENT,         // $9286,
-    TAG_XP_TITLE,            // $9C9B,
-    TAG_XP_COMMENT,          // $9C9C,
-    TAG_XP_AUTHOR,           // $9C9D,
-    TAG_XP_KEYWORDS,         // $9C9E,
-    TAG_XP_SUBJECT           // $9C9F
-  );                  *)
 
 { Many tags added based on Php4 source...
     http://lxr.php.net/source/php4/ext/exif/exif.c
@@ -667,10 +622,10 @@ var
   (TID:0; TType:2; ICode:2; Tag:$0110; ParentID:$0000; Count:1; Name:'Model'),
   (TID:0; TType:4; ICode:2; Tag:$0111; ParentID:$0000; Count:1; Name:'StripOffsets'),
   (TID:0; TType:3; ICode:2; Tag:$0112; ParentID:$0000; Count:1; Name:'Orientation';
-    Desc:''; Code:'1:Normal,2:Mirror horizontal,3:Rotated 180°,'+
-                  '4:Mirror vertical,5:Mirror horizontal and rotate 90° CCW,'+
-                  '6:Rotate 90° CCW,7:Mirror horizontal and rotate 90° CW,'+
-                  '8:Clockwise 90°'),
+    Desc:''; Code:'1:Horizontal (normal),2:Mirror horizontal,3:Rotate 180,'+
+                  '4:Mirror vertical,5:Mirror horizontal and rotate 270 CW,'+
+                  '6:Rotate 90 CW,7:Mirror horizontal and rotate 90 CW,'+
+                  '8:Rotate 270 CW'),
   (TID:0; TType:3; ICode:2; Tag:$0115; ParentID:$0000; Count:1; Name:'SamplesPerPixel'),
   (TID:0; TType:4; ICode:2; Tag:$0116; ParentID:$0000; Count:1; Name:'RowsPerStrip'),
   (TID:0; TType:4; ICode:2; Tag:$0117; ParentID:$0000; Count:1; Name:'StripByteCounts'),
@@ -820,7 +775,7 @@ var
   (TID:0; TType:0; ICode:2; Tag:$828F; ParentID:$0000; Count:1; Name:'BatteryLevel'),
   (TID:0; TType:2; ICode:2; Tag:$8298; ParentID:$0000; Count:1; Name:'Copyright'),
   (TID:0; TType:5; ICode:2; Tag:$829A; ParentID:$8769; Count:1; Name:'ExposureTime';
-    Desc:'Exposure time'; Code:''; Data:''; Raw:''; FormatS:'%s sec'),   {160}
+    Desc:'Exposure time'; Code:''; Data:''; Raw:''; FormatS:'%s sec'; Size:8; Callback:nil), //SSpeedCallback),   {160}
   (TID:0; TType:5; ICode:2; Tag:$829D; ParentID:$8769; Count:1; Name:'FNumber';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
   (TID:0; TType:4; ICode:2; Tag:$83BB; ParentID:$0000; Count:1; Name:'IPTC/NAA';
@@ -832,9 +787,9 @@ var
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),
   (TID:0; TType:0; ICode:2; Tag:$8773; ParentID:$0000; Count:1; Name:'InterColorProfile'),
   (TID:0; TType:3; ICode:2; Tag:$8822; ParentID:$8769; Count:1; Name:'ExposureProgram';
-    Desc:''; Code:'0:Unidentified,1:Manual,2:Normal,3:Aperture priority,'+
-                  '4:Shutter priority,5:Creative(slow),'+
-                  '6:Action(high-speed),7:Portrait mode,8:Landscape mode'),
+    Desc:''; Code:'0:Not denfined,1:Manual,2:Program AE,3:Aperture-priority AE,'+
+                  '4:Shutter speed priority AE,5:Creative (slow speed),'+
+                  '6:Action (high speed),7:Portrait,8:Landscape;9:Bulb'),
   (TID:0; TType:2; ICode:2; Tag:$8824; ParentID:$8769; Count:1; Name:'SpectralSensitivity'),
   (TID:0; TType:4; ICode:2; Tag:$8825; ParentID:$0000; Count:1; Name:'GPSInfo';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),                                {170}
@@ -848,7 +803,7 @@ var
   (TID:0; TType:2; ICode:2; Tag:$9003; ParentID:$8769; Count:1; Name:'DateTimeOriginal'),
   (TID:0; TType:2; ICode:2; Tag:$9004; ParentID:$8769; Count:1; Name:'DateTimeDigitized'),
   (TID:0; TType:7; ICode:2; Tag:$9101; ParentID:$8769; Count:1; Name:'ComponentsConfiguration';
-    Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:GenCompConfig),
+    Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:CompCfgCallBack),
   (TID:0; TType:5; ICode:2; Tag:$9102; ParentID:$8769; Count:1; Name:'CompressedBitsPerPixel'),         {180}
   (TID:0; TType:10;ICode:2; Tag:$9201; ParentID:$8769; Count:1; Name:'ShutterSpeedValue';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:SSpeedCallBack),
@@ -925,16 +880,16 @@ var
   (TID:0; TType:0; ICode:2; Tag:$A216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID';
     Desc:'TIFF/EPStandardID'),
   (TID:0; TType:3; ICode:2; Tag:$A217; ParentID:$8769; Count:1; Name:'SensingMethod'; Desc:'';
-    Code:'0:Unknown,1:Monochrome area,1:Not defined,2:One-chip color area,'+
-         '3:Two-chip color area,4:Three-chip color area,5:Color-sequential area,'+
-         '6:Monochrome linear,7:Tri-linear,8:Color-sequential linear'),	       	           // TID:0;TType:0;ICode: 2;Tag: $9217    -  -
-  (TID:0; TType:7; ICode:2; Tag:$A300; ParentID:$8769; Count:1; Name:'FileSource'; Desc:'';
+    Code:'0:Unknown,1:Not defined,2:One-chip color area,3:Two-chip color area,'+
+         '4:Three-chip color area,5:Color sequential area,7:Trilinear,'+
+         '8:Color-sequential linear'),
+  (TID:0; TType:1; ICode:2; Tag:$A300; ParentID:$8769; Count:1; Name:'FileSource'; Desc:'';
     Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
   (TID:0; TType:7; ICode:2; Tag:$A301; ParentID:$8769; Count:1; Name:'SceneType';
     Desc:''; Code:'0:Unknown,1:Directly Photographed'),
   (TID:0; TType:7; ICode:2; Tag:$A302; ParentID:$8769; Count:1; Name:'CFAPattern'),
   (TID:0; TType:3; ICode:2; Tag:$A401; ParentID:$8769; Count:1; Name:'CustomRendered';
-    Desc:''; Code:'0:Normal process,1:Custom process'),
+    Desc:''; Code:'0:Normal,1:Custom'),
   (TID:0; TType:3; ICode:2; Tag:$A402; ParentID:$8769; Count:1; Name:'ExposureMode';
     Desc:''; Code:'0:Auto,1:Manual,2:Auto bracket'),
   (TID:0; TType:3; ICode:2; Tag:$A403; ParentID:$8769; Count:1; Name:'WhiteBalance';
@@ -1410,7 +1365,7 @@ end;
 
 
 //  This function returns the index of a tag name in the tag buffer.
-function TImageInfo.LookupTag(ATagName: String): integer;
+function TImageInfo.LookupTagIndex(ATagName: String): integer;
 var
   i: integer;
 begin
@@ -1734,6 +1689,15 @@ begin
           // not used anyway; not sure how to interpret endian issues
           Result := Result +  '-9999.99';
         end;
+      FMT_BINARY:
+        if ABufferSize = 1 then begin
+          tmp := CvtInt(P, 1);
+          if (ADecodeSTr = '') or not Parent.Decode then
+            Result := Result + DefIntFmt(tmp)
+          else
+            Result := Result + DecodeField(ADecodeStr, IntToStr(tmp));
+        end else
+          Result := Result + '?';
     else
       Result := Result + '?';
     end;
@@ -2002,8 +1966,8 @@ begin
               if fStr[byteCount] = #0 then
                 Delete(fStr, byteCount, 1);
             end;
-        else
-          fStr := FormatNumber(@rawStr[1], Length(rawStr), tagFormat, FormatS, Code);
+          else
+            fStr := FormatNumber(@rawStr[1], Length(rawStr), tagFormat, FormatS, Code);
         end;
         if ((tag > 0) or (lookupEntry.Name <> 'Unknown')) and Assigned(Callback) and Parent.Decode then
           fStr := Callback(fStr)
@@ -2805,8 +2769,10 @@ begin
     Move(fracValue, ATag^.Raw[len + 1], 8);
     ATag^.Size := Length(ATag^.Raw);
     s := FormatNumber(@ATag^.Raw[1], Length(ATag^.Raw), ATag^.TType, ATag^.FormatS, ATag^.Code);
+    {
     if Assigned(ATag.Callback) and Parent.Decode then
       s := ATag.Callback(s);
+      }
     ATag^.Data := s; //siif(len = 0, s, ATag^.Data + dExifDataSep + s);
     exit;
   end;
@@ -2907,7 +2873,7 @@ function TImageInfo.GetTagByName(ATagName: String): TTagEntry;
 var
   i: integer;
 begin
-  i := LookupTag(ATagName);
+  i := LookupTagIndex(ATagName);
   if i >= 0 then
     Result := fITagArray[i]
   else
@@ -2919,7 +2885,7 @@ var
   i: integer;
   P: PTagEntry;
 begin
-  i := LookupTag(ATagName);
+  i := LookupTagIndex(ATagName);
   if i >= 0 then
     fITagArray[i] := AValue
   else
@@ -2962,17 +2928,6 @@ begin
   Result := InternalGetTagValueAsString(tag);
 end;
 
-function TImageInfo.GetTagValueAsStringByID(ATagID: Word): String;
-var
-  tag: TTagEntry;
-begin
-  Result := '';
-  tag := GetTagByID(ATagID);
-  if (tag.Name = '') or (tag.Name = 'Unknown') then
-    exit;
-  Result := InternalGetTagValueAsString(tag);
-end;
-
 function TImageInfo.InternalGetTagValueAsString(const ATag: TTagEntry): String;
 var
   s: String;
@@ -2988,12 +2943,17 @@ begin
    {$ELSE}
     s := ATag.Raw;
    {$ENDIF}
-    while (s <> '') and (s[Length(s)] = #0) do
+    while (s <> '') and ((s[Length(s)] = #0) or (s[Length(s)] = ' ')) do
       Delete(s, Length(s), 1);
     Result := s;
   end else
   if ATag.TType = FMT_BINARY then
   begin
+    if (ATag.Size=1) then begin
+      Result := FormatNumber(@ATag.Raw[1], Length(ATag.Raw), ATag.TType, ATag.FormatS, ATag.Code);
+      if Assigned(ATag.Callback) and Parent.Decode then
+        Result := ATag.Callback(Result);
+    end else
     if ATag.Name = 'ExifVersion' then
       Result := GetVersion(ATag)
     else if ATag.Name = 'FlashPixVersion' then
@@ -3021,17 +2981,6 @@ var
 begin
   v := AValue;
   SetTagValue(ATagName, v);
-end;
-
-function TImageInfo.GetTagValueByID(ATagID: Word): variant;
-var
-  tag: TTagEntry;
-begin
-  Result := Null;
-  tag := GetTagByID(ATagID);
-  if tag.Tag = 0 then
-    exit;
-  Result := InternalGetTagValue(tag);
 end;
 
 function TImageInfo.GetThumbTagByID(ATagID: Word): TTagEntry;
@@ -3120,6 +3069,25 @@ end;
 procedure TImageInfo.SetThumbTagValue(ATagName: String; AValue: Variant);
 begin
   InternalSetTagValue(ATagName, AValue, [ttThumb]);
+end;
+
+function TImageInfo.GetThumbTagValueAsString(ATagName: String): String;
+var
+  tag: TTagEntry;
+begin
+  Result := '';
+  tag := GetThumbTagByName(ATagName);
+  if (tag.Name = '') or (tag.Name = 'Unknown') then
+    exit;
+  Result := InternalGetTagValueAsString(tag);
+end;
+
+procedure TImageInfo.SetThumbTagValueAsString(ATagName: String; AValue: String);
+var
+  v: Variant;
+begin
+  v := AValue;
+  SetThumbTagValue(ATagName, v);
 end;
 
 function TImageInfo.GetWidth: Integer;
@@ -3372,11 +3340,13 @@ begin
   end else
   if pos('ASCII', buf) = 1 then begin
     a := Copy(buf, 9, MaxInt);
+    while (a <> '') and ((a[Length(a)] = #0) or (a[Length(a)] = ' ')) do
+      Delete(a, Length(a), 1);
     Result := a;
   end else
   if pos(#0#0#0#0#0#0#0#0, buf) = 1 then begin
     a := Copy(buf, 9, MaxInt);
-    while (a <> '') and (a[Length(a)] = #0) do
+    while (a <> '') and ((a[Length(a)] = #0) or (a[Length(a)] = ' ')) do
       Delete(a, Length(a), 1);
    {$IFDEF FPC}
     {$IFDEF FPC3+}
@@ -3755,7 +3725,7 @@ var
   NewE, LookUpE: TTagEntry;
   w: Word;
 begin
-  if LookUpTag('FocalLengthin35mmFilm') >= 0 then
+  if LookUpTagIndex('FocalLengthin35mmFilm') >= 0 then
     exit;  // no need to calculate - already have it
 
   CCDWidth  := 0.0;
