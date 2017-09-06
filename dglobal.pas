@@ -20,6 +20,7 @@ type
 {$IFNDEF FPC}
   DWord = Cardinal;
   PDWord = ^DWord;
+  PtrInt = NativeInt;
 
   Int32 = LongInt;
 {$ENDIF}

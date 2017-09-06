@@ -1,12 +1,19 @@
 unit mrtmain;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ComCtrls, ExtCtrls, EditBtn,
+ {$IFDEF FPC}
+  FileUtil,
+ {$ELSE}
+  Windows, ImageList,
+ {$ENDIF}
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  ComCtrls, ExtCtrls, ImgList,
   dExif;
 
 type
@@ -20,7 +27,6 @@ type
     BtnCreateTxtFiles: TButton;
     BtnRunTest: TButton;
     EdImageDir: TEdit;
-    ImageList1: TImageList;
     Label1: TLabel;
     Memo: TMemo;
     Panel1: TPanel;
@@ -30,6 +36,7 @@ type
     Panel4: TPanel;
     Panel5: TPanel;
     Splitter1: TSplitter;
+    ImageList1: TImageList;
     procedure BtnReadFilesClick(Sender: TObject);
     procedure BtnRunTestClick(Sender: TObject);
     procedure BtnCreateTxtFilesClick(Sender: TObject);
@@ -51,16 +58,31 @@ var
 
 implementation
 
-{$R *.lfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 uses
-  Variants, Process,
+  Variants,
+ {$IFDEF FPC}
+  Process,
+ {$ELSE}
+  ShellApi,
+ {$ENDIF}
   dGlobal;
 
 { TMainForm }
 
 const
   EXIFTOOL_CMD = '..\..\..\tools\Exiftool.exe';
+
+  IMG_INDEX_WORKING = 0;
+  IMG_INDEX_FAIL = 1;
+  IMG_INDEX_IGNORE = 1;
+  IMG_INDEX_EXIF = 2;
+  IMG_INDEX_SUCCESS = 3;
 
 procedure TMainForm.BtnReadFilesClick(Sender: TObject);
 var
@@ -78,7 +100,7 @@ begin
       if (info.Name <> '.') and (info.Name <> '..') and (info.Attr and faDirectory = 0) then
       begin
         node := FileTreeview.Items.AddChild(nil, ExtractFileName(info.Name));
-        node.ImageIndex := 1;
+        node.ImageIndex := IMG_INDEX_IGNORE;
         tagFile := ChangeFileExt(imgDir + info.Name, '.txt');
         if FileExists(tagFile) then
         begin
@@ -86,7 +108,7 @@ begin
           try
             L.LoadFromFile(tagFile);
             if ExtractRefTags(node, L) then
-              node.ImageIndex := 2;
+              node.ImageIndex := IMG_INDEX_EXIF;
           finally
             L.Free;
           end;
@@ -111,6 +133,7 @@ begin
   end;
   Label1.Caption := Format('%d mismatches out of %d tests (%.0f%%)', [
     FMismatchCount, FTotalCount, FMismatchCount/FTotalCount*100]);
+  Label1.Show;
 end;
 
 procedure TMainForm.BtnCreateTxtFilesClick(Sender: TObject);
@@ -131,18 +154,19 @@ begin
 
   node := FileTreeView.Items.GetFirstNode;
   while (node <> nil) do begin
+    node.DeleteChildren;
     node.ImageIndex := -1;
     node := node.GetNextSibling;
   end;
 
   node := FileTreeView.Items.GetFirstNode;
   while (node <> nil) do begin
-    node.ImageIndex := 0;
+    node.ImageIndex := IMG_INDEX_WORKING;
     Application.ProcessMessages;
     if not CreateRefTags(node, imgDir + node.Text) then begin
-      node.ImageIndex := 1;
+      node.ImageIndex := IMG_INDEX_IGNORE;
     end else
-      node.ImageIndex := 2;
+      node.ImageIndex := IMG_INDEX_EXIF;
     node.SelectedIndex := node.ImageIndex;
     node := node.GetNextSibling;
   end;
@@ -150,13 +174,18 @@ end;
 
 function TMainForm.CreateRefTags(ANode: TTreeNode; AFileName: String): Boolean;
 var
-  prc: TProcess;
   destFile: String;
   output: String;
-  fs: TFileStream;
   L: TStringList;
+{$IFNDEF FPC}
+  params: String;
+  res: Integer;
+{$ENDIF}
 begin
   Result := false;
+  destFile := ChangeFileExt(AFileName, '.txt');
+
+  {$IFDEF FPC}
   if RunCommand(EXIFTOOL_CMD, ['-a', '-H', '-s', '-G', AFileName], output) then
     // -a ... extract all tags, also duplicates.
     // -H ... extract hex tag id if possible
@@ -171,8 +200,8 @@ begin
     try
       L.Text := output;
       if ExtractReftags(ANode, L) then
-        ANode.ImageIndex := 2 else
-        ANode.ImageIndex := 1;
+        ANode.ImageIndex := IMG_INDEX_EXIF else
+        ANode.ImageIndex := IMG_INDEX_IGNORE;
       ANode.SelectedIndex := ANode.ImageIndex;
       L.SaveToFile(destFile);
       Result := true;
@@ -180,6 +209,23 @@ begin
       L.Free;
     end;
   end;
+  {$ELSE}
+  params := '/c ' + EXIFTOOL_CMD + ' -a -H -s -G ' + AFileName + ' > ' + destFile;
+  res := ShellExecute(Application.Handle, 'open', PChar('cmd'), PChar(params), '', SW_HIDE);
+  if res <= 32 then
+    exit;
+  L := TStringList.Create;
+  try
+    L.LoadFromFile(destFile);
+    if ExtractRefTags(ANode, L) then
+      ANode.ImageIndex := IMG_INDEX_EXIF else
+      ANode.ImageIndex := IMG_INDEX_IGNORE;
+    ANode.SelectedIndex := ANode.ImageIndex;
+    Result := true;
+  finally
+    L.Free;
+  end;
+  {$ENDIF}
 end;
 
 function TMainForm.ExtractRefTags(ANode: TTreeNode; AList: TStringList): Boolean;
@@ -306,12 +352,12 @@ begin
       expectedTagvalue := trim(Copy(s, p+1, MaxInt));
 
       if SameText(expectedTagValue, currTagValue) then
-        node.ImageIndex := 3
+        node.ImageIndex := IMG_INDEX_SUCCESS
       else begin
         Log('    Mismatching tag "' + Format('[$%.4x] %s', [tagID, tagName]) + '"');
         Log('        expected: ' + expectedTagValue);
         Log('        found: ' + currTagValue);
-        node.ImageIndex := 1;
+        node.ImageIndex := IMG_INDEX_FAIL;
         node.Text := tagname + ': ' + expectedTagValue + ' --> found: ' + currTagValue;
         inc(FMismatchCount);
       end;
@@ -324,6 +370,8 @@ begin
     Log('');
     imgData.Free;
   end;
+
+  FileTreeView.Invalidate;
 
 end;
 
