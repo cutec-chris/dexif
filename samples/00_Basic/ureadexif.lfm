@@ -6,7 +6,7 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 332
   ClientWidth = 470
-  LCLVersion = '1.2.0.3'
+  LCLVersion = '1.9.0.0'
   object Image1: TImage
     AnchorSideTop.Control = ToolBar
     AnchorSideTop.Side = asrBottom
@@ -35,13 +35,13 @@ object Form1: TForm1
     end
     object ToolButton2: TToolButton
       Left = 24
+      Height = 22
       Top = 2
-      Width = 10
       Caption = 'ToolButton2'
       Style = tbsSeparator
     end
     object ToolButton3: TToolButton
-      Left = 34
+      Left = 32
       Top = 2
       Action = FileOpen
     end

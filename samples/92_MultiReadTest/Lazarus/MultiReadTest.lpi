@@ -62,6 +62,7 @@
       <Unit7>
         <Filename Value="..\..\..\dtags.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dTags"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\dUtils.pas"/>

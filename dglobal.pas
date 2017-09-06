@@ -34,7 +34,7 @@ type
   TFmtReal = function(inReal: Double): String;
   TFmtFrac = function(inNum, inDenom: Integer): String;
 
-  TStrFunc = function(s: AnsiString): String;
+  TStrFunc = function(s: String): String;
 
   TTagEntry = record
     TID: integer;        // TagTableID - EXIF use
@@ -125,8 +125,8 @@ const
     1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8
   );
 
-  ISODateFormat  = 'yyyy-mm-dd hh:nn:ss';
-  EXIFDateFormat = 'yyyy:mm:dd hh:nn:ss';
+  ISO_DATETIME_FORMAT  = 'yyyy-mm-dd hh:nn:ss';
+  EXIF_DATETIME_FORMAT = 'yyyy:mm:dd hh:nn:ss';
 
   EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; ParentID:0; Count:1;
     Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:nil);
@@ -147,7 +147,7 @@ var
   dExifDataSep     : ansistring = ', ';
   dExifDecodeSep   : string = ',';
   dExifDelim       : string = ' = ';
-  dExifDecode      : boolean = true;
+//  dExifDecode      : boolean = true;
   EstimateValues   : boolean = false;
   TiffReadLimit    : longint = 256000;
 

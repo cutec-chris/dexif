@@ -496,15 +496,15 @@ begin
     Result := ImgData.ExifObj.CameraModel
   else if ATagName = 'DateTimeOriginal' then begin
     dt := ImgData.ExifObj.DateTimeOriginal;
-    Result := FormatDateTime(ISODateFormat, dt);
+    Result := FormatDateTime(ISO_DATETIME_FORMAT, dt);
   end
   else if ATagName = 'DateTimeDigitized' then begin
     dt := ImgData.ExifObj.DateTimeDigitized;
-    Result := FormatDateTime(ISODateFormat, dt);
+    Result := FormatDateTime(ISO_DATETIME_FORMAT, dt);
   end
   else if ATagName = 'DateTime' then begin
     dt := ImgData.ExifObj.DateTimeModified;
-    Result := FormatDateTime(ISODateFormat, dt);
+    Result := FormatDateTime(ISO_DATETIME_FORMAT, dt);
   end
   else if ATagName = 'GPSLatitude' then begin
     e := ImgData.ExifObj.GPSLatitude;

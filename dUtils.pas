@@ -46,8 +46,8 @@ function LEtoN(const AValue: DWord): DWord; overload;
 
 {$ENDIF}
 
-function CvtRational(InStr: AnsiString): double;
-function CvtTime(InStr: AnsiString): String;
+function CvtRational(InStr: String): double;
+function CvtTime(InStr: String): String;
 function FmtRational(ANum, ADenom: Integer): String;
 function DoubleToRational(AValue: Double): TExifRational;
 
@@ -84,19 +84,21 @@ function StrCount(s, ADelim: String): integer;
 function aPick(AInfo: String; AItem:integer; ADecodeStr: String): String;
 function DecodeField(DecodeStr, idx: String): String;
 
-// These formatting functions can be used elsewhere
-function DefIntFmt(inInt: Integer): String;
-function DefRealFmt(inReal: Double): String;
-function DefFracFmt(inNum, inDenom: Integer): String;
+// These formatting functions can be used everywhere
+function DefIntFmt(AValue: Integer): String;
+function DefRealFmt(AValue: Double): String;
+function DefFracFmt(ANum, ADenom: Integer): String;
 
 //  Formatting callbacks
-function GpsPosn(instr: AnsiString): String;
-function GpsAltitude(instr: AnsiString): String;
-function GenCompConfig(instr: AnsiString): String;
-function ExposCallBack(instr: AnsiString): String;
-function FlashCallBack(instr: AnsiString): String;
-function SSpeedCallBack(instr: AnsiString): String;
-function xpTranslate(instr: AnsiString): String;
+function GpsPosn(instr: String): String;
+function GpsAltitude(instr: String): String;
+function GpsVersionID(AText: String): String;
+function GenCompConfig(instr: String): String;
+function ExposCallBack(instr: String): String;
+function FlashCallBack(instr: String): String;
+function SSpeedCallBack(instr: String): String;
+function xpTranslate(instr: String): String;
+function VersionCallback(AText: String): String;
 
 
 implementation
@@ -241,14 +243,14 @@ end;
 
 {$ENDIF}
 
-function CvtRational(InStr: AnsiString): double;
+function CvtRational(InStr: String): double;
 var
   s: String;
   p: Integer;
   intVal, num, denom: Integer;
 begin
   Result := 0.0;
-  s := trim(string(InStr));
+  s := trim(InStr);
   p := pos(' ', s);
   if p > 0 then
   begin
@@ -259,16 +261,20 @@ begin
   else
     intVal := 0;
   p := pos('/', s);
-  if not TryStrToInt(copy(s, 1, p-1), num) then
-    exit;
-  if not TryStrToInt(copy(s, p+1, MaxInt), denom) then
-    exit;
-  if denom = 0 then
-    exit;
-  Result := intVal + num/denom;
+  if p > 0 then begin
+    if not TryStrToInt(copy(s, 1, p-1), num) then
+      exit;
+    if not TryStrToInt(copy(s, p+1, MaxInt), denom) then
+      exit;
+    if denom = 0 then
+      exit;
+    Result := intVal + num/denom;
+  end else
+  if TryStrToFloat(s, Result, dExifFmtSettings) then
+    Result := Result + intVal;
 end;
 
-function CvtTime(InStr: AnsiString): String;
+function CvtTime(InStr: String): String;
 var
   p, len: integer;
   s: ansistring;
@@ -288,19 +294,29 @@ begin
   Result := Format('%.0f:%.0f:%.0f', [tHours, tMin, tSec]);
 end;
 
-function DefIntFmt(inInt: Integer): String;
+function DefIntFmt(AValue: Integer): String;
 begin
-  Result := IntToStr(inInt);
+  Result := IntToStr(AValue);
 end;
 
-function DefRealFmt(inReal: Double): String;
+function DefRealFmt(AValue: Double): String;
 begin
-  result := FloatToStr(inReal, dExifFmtSettings);
+  Result := Format('%.g', [AValue], dExifFmtSettings);
+//  result := FloatToStr(AValue, dExifFmtSettings);
 end;
 
-function DefFracFmt(inNum, inDenom: Integer): String;
+function DefFracFmt(ANum, ADenom: Integer): String;
 begin
-  result := Format('%d/%d', [inNum, inDenom]);
+  if ANum = 0 then
+    Result := '0'
+  else
+  if ADenom = 1 then
+    Result := IntToStr(ANum)
+  else
+  if ANum = ADenom then
+    Result := '1'
+  else
+    Result := Format('%d/%d', [ANum, ADenom]);
  // result := fmtRational(inNum, inDenom);
  //
  // It turns out this is not a good idea generally
@@ -739,7 +755,7 @@ end;
 
 { Formatting callbacks }
 
-Function GpsPosn(InStr: AnsiString): String;
+Function GpsPosn(InStr: String): String;
 const
   {$IFDEF FPC}
   DEGREES: string = '°';
@@ -748,19 +764,19 @@ const
   {$ENDIF}
 var
   p, sl: integer;
-  s: ansistring;
+  s: string;
   gDegree, gMin, gSec: double;
 begin
   sl := length(dExifDataSep);
-  result := instr;                     // if error return input string
-  p := Pos(dExifDataSep,instr);
+  Result := instr;                     // if error return input string
+  p := Pos(dExifDataSep, instr);
   s := copy(InStr, 1, p-1);            // get first irrational number
   gDegree := CvtRational(s);           // degrees
-  InStr := copy(InStr, p+sl-1, 64);
-  p := Pos(DexifDataSep,instr);
+  InStr := copy(InStr, p+sl, 64);
+  p := Pos(dExifDataSep, instr);
   s := copy(InStr, 1, p-1);            // get second irrational number
   gMin := CvtRational(s);              // minutes
-  InStr := copy(InStr, p+sl-1, 64);
+  InStr := copy(InStr, p+sl, 64);
   gSec := CvtRational(InStr);          // seconds
   if gSec = 0 then       // camera encoded as decimal minutes
   begin
@@ -781,13 +797,13 @@ begin
     gf_DM_Short:
       Result := Format('%0.0f%s %1.2f''', [gDegree, DEGREES, gMin +  gsec/60]);
     gf_DMS:
-      Result := Format('%0.0f Degrees %0.0f Minutes %0.0f Seconds', [gDegree, gMin, gSec]);
+      Result := Format('%0.0f Degrees %0.0f Minutes %0.2f Seconds', [gDegree, gMin, gSec]);
     gf_DMS_Short:
-      Result := Format('%0.0f%s %0.0f'' %0.0f"', [gDegree, DEGREES, gMin, gSec]);
+      Result := Format('%0.0f%s %0.0f'' %0.2f"', [gDegree, DEGREES, gMin, gSec]);
   end;
 end;
 
-function GpsAltitude(InStr: Ansistring): String;
+function GpsAltitude(InStr: string): String;
 var
   gAltitude: double;
 begin
@@ -796,7 +812,28 @@ begin
   Result := Format('%1.2f m', [gAltitude]);
 end;
 
-function GenCompConfig(InStr: AnsiString): String;
+function GpsVersionID(AText: String): String;
+var
+  i: Integer;
+  sep: Char;
+begin
+  Result := '';
+  sep := ',';
+  for i:=1 to Length(dExifDataSep) do
+    if dExifDataSep[i] <> ' ' then begin
+      sep := char(dExifDataSep[i]);
+      break;
+    end;
+
+  for i:=1 to Length(AText) do begin
+    if AText[i] = sep then
+      Result := Result + '.'
+    else if AText[i] <> ' ' then
+      Result := Result + AText[i];
+  end;
+end;
+
+function GenCompConfig(InStr: String): String;
 var
   i, ti: Integer;
 begin
@@ -815,10 +852,15 @@ begin
   end;
 end;
 
-function FlashCallBack(InStr: AnsiString): String;
+function FlashCallBack(InStr: String): String;
 var
   tmp: integer;
 begin
+  if (Instr = '') or (InStr = '0') then begin
+    Result := 'Unknown';
+    exit;
+  end;
+
   tmp := StrToInt(InStr);
   Result :=          siif(tmp and  1 =  1, 'On', 'Off');             // bit0
   Result := Result + siif(tmp and  6 =  2, ', UNKNOWN');             // bit1
@@ -831,11 +873,11 @@ begin
   Result := Result + siif(tmp and 64 = 64, ', red-eye reduction');   // bit6
 end;
 
-function ExposCallBack(InStr: AnsiString): String;
+function ExposCallBack(InStr: String): String;
 var
   expoTime: double;
 begin
-  expoTime := StrToFloat(string(InStr));
+  expoTime := StrToFloat(InStr);
   Result := Format('%4.4f sec', [expoTime]);
   if expoTime <= 0.5 then
     Result := Result + Format(' (1/%d)',[round(1/expoTime)]);
@@ -892,30 +934,35 @@ begin
   Result := Format('%.*f', [ADecs, AValue], PointSeparator);
 end;
                 }
-function SSpeedCallBack(InStr: Ansistring): String;
+function SSpeedCallBack(InStr: String): String;
 var
   expoTime: double;
 begin
   expoTime := CvtRational(instr);
   expoTime := 1.0 / exp(expoTime*ln(2));
-  Result := Format('%4.4f sec',[expoTime]);
+  Result := Format('%4.4f sec', [expoTime]);
   if expoTime <= 0.5 then
     Result := Result + Format(' (1/%d)', [round(1/ExpoTime)]);
 end;
 
-function xpTranslate(InStr: AnsiString): String;
+function xpTranslate(InStr: String): String;
 var
   i: integer;
-  ch: AnsiChar;
+  ch: Char;
 begin
   Result := '';
   for i := 1 to StrCount(InStr, ',') do
     if odd(i) then
     begin
-       ch := AnsiChar(StrToInt(StrNth(Instr, ',', i)));
+       ch := char(StrToInt(StrNth(Instr, ',', i)));
        if ch <> #0 then
          Result := Result + ch;
     end;
+end;
+
+function VersionCallback(AText: String): String;
+begin
+  Result := AText;
 end;
 
 procedure InitTagEntry(out ATagEntry: TTagEntry);
@@ -1036,8 +1083,8 @@ var
   i: integer;
 begin
   for i := 2 to n do
-    s := strAfter(s, ADelim);
-  Result := strBefore(s, ADelim);
+    s := StrAfter(s, ADelim);
+  Result := StrBefore(s, ADelim);
 end;
 
 function StrCount(s, ADelim: String): Integer;

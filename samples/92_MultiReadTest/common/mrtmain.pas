@@ -33,6 +33,7 @@ type
     procedure BtnReadFilesClick(Sender: TObject);
     procedure BtnRunTestClick(Sender: TObject);
     procedure BtnCreateTxtFilesClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     FTotalCount: Integer;
     FMismatchCount: Integer;
@@ -53,7 +54,8 @@ implementation
 {$R *.lfm}
 
 uses
-  Process;
+  Variants, Process,
+  dGlobal;
 
 { TMainForm }
 
@@ -68,6 +70,7 @@ var
   tagFile: String;
   L: TStringList;
 begin
+  FileTreeView.Items.Clear;
   imgDir := GetImageDir;
   if FindFirst(imgDir + '*.jpg', faAnyFile and faDirectory, info) = 0 then
   begin
@@ -155,7 +158,7 @@ var
 begin
   Result := false;
   if RunCommand(EXIFTOOL_CMD, ['-a', '-H', '-s', '-G', AFileName], output) then
-    // -a ... extract all tags
+    // -a ... extract all tags, also duplicates.
     // -H ... extract hex tag id if possible
     // -s ... short tag name (hopefully this is the dExif tag name)
     // -G ... print group name for each tag
@@ -221,6 +224,12 @@ begin
   Result := ANode.Count > 0;
 end;
 
+procedure TMainForm.FormCreate(Sender: TObject);
+begin
+  if EdImageDir.Text <> '' then
+    BtnReadFilesClick(nil);
+end;
+
 function TMainForm.GetImageDir: String;
 begin
   Result := IncludeTrailingPathDelimiter(ExpandFilename(EdImageDir.Text));
@@ -243,6 +252,8 @@ var
   s: String;
   p: Integer;
   node: TTreeNode;
+  tagID: Word;
+  lTag: TTagEntry;
 begin
   if ANode.Count = 0 then begin
     Log('Skipping image "' + ANode.Text + '": No EXIF data found by ExifTool.');
@@ -270,17 +281,29 @@ begin
         continue;
       end;
 
+      tagID := PtrInt(node.Data);
       tagName := trim(Copy(s, 1, p-1));
+      lTag := imgData.ExifObj.TagByName[tagName];
+      if (lTag.Name = '') or SameText(lTag.Name, 'Unknown') then begin
+        // tag not found by name
+        tagID := PtrInt(node.Data);
+        tagName := Format('[$%.4x] %s', [tagID, tagName]);
+        currTagValue := imgData.ExifObj.TagValueAsStringByID[tagID];
+      end else
+        currTagValue := imgData.ExifObj.TagValueAsString[tagName];
       expectedTagvalue := trim(Copy(s, p+1, MaxInt));
-      currTagValue := imgData.ExifObj.TagValueAsString[tagName];
 
-      if not SameText(expectedTagValue, currTagValue) then begin
+      if SameText(expectedTagValue, currTagValue) then
+        node.ImageIndex := 3
+      else begin
         Log('    Mismatching tag "' + tagName + '"');
         Log('        expected: ' + expectedTagValue);
         Log('        found: ' + currTagValue);
-
+        node.ImageIndex := 1;
         inc(FMismatchCount);
       end;
+      node.SelectedIndex := node.ImageIndex;
+
       node := node.GetNextSibling;
       inc(FTotalCount);
     end;

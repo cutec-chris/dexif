@@ -53,11 +53,11 @@ type
   //  More complex fields can be formatted with a
   //  callback function.  Declare them here and insert
   //  the code in the implemenetation section.
-  function NikonLens(InStr: AnsiString): String;
-  function NikonColorMode(InStr: AnsiString): String;
-  function CanonExp1(InStr: AnsiString): String;
-  function CanonExp2(InStr: AnsiString): String;
-  function CanonCustom1(InStr: AnsiString): String;
+  function NikonLens(InStr: String): String;
+  function NikonColorMode(InStr: String): String;
+  function CanonExp1(InStr: String): String;
+  function CanonExp2(InStr: String): String;
+  function CanonCustom1(InStr: String): String;
 
 const
   Nikon1Table : array [0..10] of TTagEntry = (
@@ -360,7 +360,7 @@ uses
 //
 //  Ok, Ok, usually you'd have a parser do the
 //  work but hey - this is just a simple example
-Function NikonColorMode(InStr: AnsiString): String;
+Function NikonColorMode(InStr: String): String;
 begin
   InStr := Copy(InStr, 2, 5);
   Result := InStr;
@@ -374,7 +374,7 @@ begin
     Result := 'Mode 3 (sRGB): higher saturation'
 end;
 
-function NikonLens(InStr: AnsiString): String;
+function NikonLens(InStr: String): String;
 var
   i,sl: Integer;
   tb: Ansistring;
@@ -464,7 +464,7 @@ const
                           '3:Av-priority,4:Manual,5:A-DEP';
   CanonFocus2  : string = '0:Single,1:Continuous';
 
-function CanonExp1(instr: AnsiString): String;
+function CanonExp1(instr: String): String;
 var
   s: String;
 begin
@@ -503,7 +503,7 @@ const
                        '32:1 EV,44:1.33 EV,48:1.50 EV,52:1.67 EV,'+
                        '64:2 EV';
 
-function CanonExp2(InStr: AnsiString): String;
+function CanonExp2(InStr: String): String;
 var
   s: ansistring;
 begin
@@ -536,7 +536,7 @@ Const
   CanonSetBtn  : ansistring = '0:Not assigned,1:Change quality,2:Change ISO speed,'+
                               '3:Select parameters';
 
-Function CanonCustom1(InStr: AnsiString): String;
+Function CanonCustom1(InStr: String): String;
 var
   fn, s, r: String;
   fnct, data, i, j: Integer;

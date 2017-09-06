@@ -174,9 +174,9 @@ var
     Result := '';
     // !!!!!  ADD NEW TESTS HERE !!!!!!
     case ATestID of
-      0: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeOriginal);
-      1: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeDigitized);
-      2: Result := FormatDateTime(ISODateFormat, DUT.EXIfObj.DateTimeModified);
+      0: Result := FormatDateTime(ISO_DATETIME_FORMAT, DUT.EXIfObj.DateTimeOriginal);
+      1: Result := FormatDateTime(ISO_DATETIME_FORMAT, DUT.EXIfObj.DateTimeDigitized);
+      2: Result := FormatDateTime(ISO_DATETIME_FORMAT, DUT.EXIfObj.DateTimeModified);
       3: Result := DUT.Comment;
       4: Result := DUT.Comment;
       5: Result := DUT.ExifObj.Artist;
@@ -214,9 +214,9 @@ var
     strValue := TestParams[ATestID].Value;
     // !!!!!  ADD NEW TESTS HERE !!!!!!
     case ATestID of
-      0: DUT.ExifObj.DatetimeOriginal := ScanDatetime(ISODateFormat, strValue);
-      1: DUT.ExifObj.DatetimeDigitized := ScanDatetime(ISODateFormat, strValue);
-      2: DUT.ExifObj.DatetimeModified := ScanDatetime(ISODateFormat, strValue);
+      0: DUT.ExifObj.DatetimeOriginal := ScanDatetime(ISO_DATETIME_FORMAT, strValue);
+      1: DUT.ExifObj.DatetimeDigitized := ScanDatetime(ISO_DATETIME_FORMAT, strValue);
+      2: DUT.ExifObj.DatetimeModified := ScanDatetime(ISO_DATETIME_FORMAT, strValue);
       3: DUT.Comment := strValue;
       4: DUT.Comment := strValue;
       5: DUT.ExifObj.Artist := strValue;

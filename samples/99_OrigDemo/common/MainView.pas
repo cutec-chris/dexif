@@ -641,7 +641,7 @@ procedure TForm1.cbDecodeClick(Sender: TObject);
 begin
   // This variable will determine if the
   // tags are decoded into human-based terms
-  DexifDecode := cbDecode.Checked;
+  ImgData.Decode := cbDecode.Checked;
 end;
 
 procedure TForm1.cbVerboseClick(Sender: TObject);

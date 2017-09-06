@@ -22,6 +22,7 @@ const
   TAG_KODAK_OFFSET       = $8290;
   // there are some more...
 
+  TAG_INTEROPVERSION     = $0002;
   TAG_IMAGEWIDTH         = $0100;
   TAG_IMAGELENGTH        = $0101;
   TAG_BITSPERSAMPLE      = $0102;
