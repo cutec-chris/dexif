@@ -789,17 +789,17 @@ begin
   // Minutes, Seconds or Decimal Degrees.
   case GpsFormat of
     gf_DD:
-      Result := Format('%1.4f Decimal Degrees', [gDegree + (gMin + gSec/60)/60]);
+      Result := Format('%1.4f Decimal Degrees', [gDegree + (gMin + gSec/60)/60], dExifFmtSettings);
     gf_DD_Short:
-      Result := Format('%1.4f%s', [gDegree + (gmin + gSec/60)/60, DEGREES]);
+      Result := Format('%1.4f%s', [gDegree + (gmin + gSec/60)/60, DEGREES], dExifFmtSettings);
     gf_DM:
-      Result := Format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + gsec/60]);
+      Result := Format('%0.0f Degrees %1.2f Minutes',[gDegree, gMin + gsec/60], dExifFmtSettings);
     gf_DM_Short:
-      Result := Format('%0.0f%s %1.2f''', [gDegree, DEGREES, gMin +  gsec/60]);
+      Result := Format('%0.0f%s %1.2f''', [gDegree, DEGREES, gMin +  gsec/60], dExifFmtSettings);
     gf_DMS:
-      Result := Format('%0.0f Degrees %0.0f Minutes %0.2f Seconds', [gDegree, gMin, gSec]);
+      Result := Format('%0.0f Degrees %0.0f Minutes %0.2f Seconds', [gDegree, gMin, gSec], dExifFmtSettings);
     gf_DMS_Short:
-      Result := Format('%0.0f%s %0.0f'' %0.2f"', [gDegree, DEGREES, gMin, gSec]);
+      Result := Format('%0.0f%s %0.0f'' %0.2f"', [gDegree, DEGREES, gMin, gSec], dExifFmtSettings);
   end;
 end;
 

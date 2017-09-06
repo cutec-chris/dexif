@@ -10,7 +10,7 @@ uses
  {$IFDEF FPC}
   FileUtil,
  {$ELSE}
-  Windows, ImageList,
+  Windows, {$IFDEF UNICODE}ImageList,{$ENDIF}
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
   ComCtrls, ExtCtrls, ImgList,
@@ -180,13 +180,15 @@ var
 {$IFNDEF FPC}
   params: String;
   res: Integer;
+const
+  DEG_SYMBOL: ansistring = #176;
 {$ENDIF}
 begin
   Result := false;
   destFile := ChangeFileExt(AFileName, '.txt');
 
   {$IFDEF FPC}
-  if RunCommand(EXIFTOOL_CMD, ['-a', '-H', '-s', '-G', AFileName], output) then
+  if RunCommand(EXIFTOOL_CMD, ['-a', '-H', '-s', '-G', '-c', '"%d° %d'' %.2f"\"', AFileName], output) then
     // -a ... extract all tags, also duplicates.
     // -H ... extract hex tag id if possible
     // -s ... short tag name (hopefully this is the dExif tag name)
@@ -210,7 +212,8 @@ begin
     end;
   end;
   {$ELSE}
-  params := '/c ' + EXIFTOOL_CMD + ' -a -H -s -G ' + AFileName + ' > ' + destFile;
+//  params := '/c ' + EXIFTOOL_CMD + ' -a -H -s -G -c "%d' + DEG_SYMBOL + ' %d'' %.2f"\"' + AFileName + ' > ' + destFile;
+  params := '/c ' + EXIFTOOL_CMD + ' -a -H -s -G -c "%d° %d'' %.2f"\"' + AFileName + ' > ' + destFile;
   res := ShellExecute(Application.Handle, 'open', PChar('cmd'), PChar(params), '', SW_HIDE);
   if res <= 32 then
     exit;
@@ -303,7 +306,8 @@ var
   v: Variant;
 begin
   if ANode.Count = 0 then begin
-    Log('Skipping image "' + ANode.Text + '": No EXIF data found by ExifTool.');
+    Log('Skipping image "' + ANode.Text + '":');
+    Log('    No EXIF data found by ExifTool.');
     Log('');
     exit;
   end;
@@ -313,7 +317,8 @@ begin
   try
     imgData.ProcessFile(GetImageDir + ANode.Text);
     if not imgData.HasExif then begin
-      Log('Skipping "' + ANode.Text + '": no EXIF data found.');
+      Log('Skipping "' + ANode.Text + '":');
+      Log('    No EXIF data found by dExif.');
       Log('');
       exit;
     end;
@@ -346,7 +351,6 @@ begin
           else
             currTagValue := imgData.ExifObj.TagValueAsString[ltag.Name];
         end;
-        //tagName := Format('[$%.4x] %s', [tagID, tagName]);
       end else
         currTagValue := imgData.ExifObj.TagValueAsString[tagName];
       expectedTagvalue := trim(Copy(s, p+1, MaxInt));

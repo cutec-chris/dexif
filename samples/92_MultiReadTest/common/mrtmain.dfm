@@ -1,10 +1,10 @@
 object MainForm: TMainForm
   Left = 326
   Top = 138
+  Width = 988
+  Height = 599
   ActiveControl = BtnRunTest
   Caption = 'Multi read test'
-  ClientHeight = 560
-  ClientWidth = 972
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -159,6 +159,7 @@ object MainForm: TMainForm
       Width = 566
       Height = 492
       Align = alClient
+      ScrollBars = ssBoth
       TabOrder = 1
     end
   end
@@ -166,7 +167,7 @@ object MainForm: TMainForm
     Left = 112
     Top = 177
     Bitmap = {
-      494C010104000800180010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101040008001C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
