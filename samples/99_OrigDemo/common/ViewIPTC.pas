@@ -201,7 +201,7 @@ begin
     maxChars := ImgData.IptcObj[i].Size;
     if lName = 'Image caption'  then
     begin
-      Memo(value);
+      Memo(lValue);
       // scroll back to top - memo1.Lines.
       Memo1.CaretPos := Point(0, 0);
 //      memo1.Perform(EM_LINESCROLL, 0, -memo1.Lines.Count);

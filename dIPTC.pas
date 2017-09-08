@@ -71,7 +71,7 @@ type
     FParent: TObject;
     fITagCount : integer;
     fITagArray: array of iTag;
-    function ExtractTag(const ABuffer: ansistring; var start: integer): iTag;
+    function ExtractTag(const ABuffer: ansistring; var AStart: integer): iTag;
   public
     constructor Create(AParent: TObject);
     procedure Reset;
@@ -225,16 +225,16 @@ begin
 end;
 
 function TIPTCData.ExtractTag(const ABuffer: ansistring;
-  var start: integer): iTag;
+  var AStart: integer): iTag;
 var
   bLen, tagId, code, i: integer;
   tmp: iTag;
 begin
   InitITag(tmp);
-  code := byte(ABuffer[start]);
-  tagId := byte(ABuffer[start+1]);     // should be #$1C
-  bLen := (byte(ABuffer[start+2]) shl 8) or byte(ABuffer[start+3]);
-  inc(start, 4);                     // skip length bytes
+  code := byte(ABuffer[AStart]);
+  tagId := byte(ABuffer[AStart+1]);     // should be #$1C
+  bLen := (byte(ABuffer[AStart+2]) shl 8) or byte(ABuffer[AStart+3]);
+  inc(AStart, 4);                     // skip length bytes
   if code in [2, 8] then
   begin
     tmp.Tag := 65534;
@@ -244,7 +244,7 @@ begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
-          tmp.Data := copy(ABuffer, start, blen);
+          tmp.Data := copy(ABuffer, AStart, blen);
         end;
         break;
       end;
@@ -254,12 +254,12 @@ begin
       tmp.Desc := 'Custom_' + IntToStr(tagid);
       tmp.Tag := tagid;
       tmp.ICode := code;
-      tmp.Data := copy(ABuffer, start, blen);
-      tmp.Raw := copy(ABuffer, start, blen);
+      tmp.Data := copy(ABuffer, AStart, blen);
+      tmp.Raw := copy(ABuffer, AStart, blen);
       tmp.Size := 64; // length for unknown fields ?
     end;
   end;
-  start := start + blen + 1;
+  AStart := AStart + blen + 1;
   Result := tmp;
 end;
 
