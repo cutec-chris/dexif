@@ -71,9 +71,7 @@ const
     procedure CleanScrollBox;
     procedure LoadDisplayFromArray;
     procedure CopyDisplayToArray;
-   {$IFDEF FPC}
-    procedure WMSysCommand(var Msg: TLMSysCommand); message LM_SYSCOMMAND;
-   {$ELSE}
+   {$IFDEF DELPHI}
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
    {$ENDIF}
   public
@@ -86,7 +84,8 @@ var
 
 implementation
 
-uses TagPickU;
+uses
+ TagPickU;
 
 {$IFDEF FPC}
  {$R *.lfm}
@@ -94,14 +93,16 @@ uses TagPickU;
  {$R *.dfm}
 {$ENDIF}
 
+// Shortcut to add memo data
 procedure TIPTCForm.Memo(AMsg: string);
 begin
-  Memo1.Lines.Add(AMsg);                           // Shortcut to add memo data
+  Memo1.Lines.Add(AMsg);
 end;
 
+// setup universal about box
 procedure TIPTCform.btnAboutClick(Sender: TObject);
 begin
-  AboutBox.FormSetup(ProgName,dIPTCVersion);    // setup universal about box
+  AboutBox.FormSetup(ProgName, dIPTCVersion);
   AboutBox.ShowModal;
 end;
 
@@ -110,25 +111,26 @@ var
   SysMenu: HMenu;
 begin
   ImgData := TimgData.Create;
-                              (*
+
+ {$IFDEF DELPHI}
   // Fun with Translations...
  {$IFDEF MSWINDOWS}
   SysMenu := GetSystemMenu(Handle, FALSE);
   AppendMenu(SysMenu, MF_SEPARATOR, 0, '');
   AppendMenu(SysMenu, MF_STRING, SC_TransMenuItem, 'Write Translation file');
   IPTCReadTransFile('transIn.Txt');
- {$ENDIF}                     *)
-                    (*
+ {$ENDIF}
+ {$ENDIF}
   Verbose := false;
   Constraints.MinWidth := Width;               // no smaller than
   Constraints.MinHeight := Height;             // initial size
   Panel1.Constraints.MinWidth := Panel1.Width; // set sizing limits
   Panel1.Constraints.MinHeight := Panel1.Height;
-  *)
+
   //  wp --- removed for testing...
-  //Panel1.DoubleBuffered := true;               // block that flicker
+  //Panel1.DoubleBuffered := true;             // block that flicker
   //Memo1.DoubleBuffered := true;
-  ScrollBox1.DoubleBuffered := true;
+  //ScrollBox1.DoubleBuffered := true;
 end;
 
 procedure TIPTCform.FormDestroy(Sender: TObject);
@@ -136,14 +138,15 @@ begin
   ImgData.Free;
 end;
 
+// Wipe all controls from scroll panel
 procedure TIPTCform.CleanScrollBox;
 var
   i: Integer;
   tc: TControl;
 begin
   Memo1.Clear;
-  for i := ScrollBox1.ControlCount-1 downto 0 do  // Wipe all controls from
-  begin                                           // scroll panel.
+  for i := ScrollBox1.ControlCount-1 downto 0 do
+  begin
     tc := ScrollBox1.Controls[i];
     tc.Parent := nil;
     tc.Free;
@@ -163,7 +166,7 @@ begin
     Parent := ScrollBox1;
     Alignment := taRightJustify;
     AutoSize := false;
-    Top := 8+30*idx;
+    Top := 8 + 30*idx;
     Left := 8;
     Width := 200;
     Font.Style := [fsBold];
@@ -173,18 +176,18 @@ begin
   begin
     Parent := ScrollBox1;
     Anchors := [akTop,akLeft, akRight]; // expand when window resized
-    Top := 7+30*idx;
-    Left := 216;
+    Top := 7 + 30*idx;
+    Left := newLabel.Left + newLabel.Width + 8;
     Tag := idx;
     MaxLength := MaxChars;
-    // Width hardcoded, otherwise changes when vertical scroll bar appears.
     Width := Scrollbox1.ClientWidth - Left - 16;
     Text := vValue;
   //  DoubleBuffered := true;             // Flicker-free dynamic resizing
   end;
 end;
 
-procedure TIPTCform.LoadDisplayFromArray;  // populate form
+// Populate form
+procedure TIPTCform.LoadDisplayFromArray;
 var
   maxChars: Integer;
   lName, lValue: String;
@@ -272,6 +275,12 @@ end;
 
 procedure TIPTCform.btnWriteClick(Sender: TObject);
 begin
+  if not WriteDlg.Execute then
+    exit;
+  CopyDisplayToArray();
+  ImgData.WriteEXIFJpegTo(WriteDlg.FileName);
+
+  (*
  {$IFNDEF dExifNoJpeg}
   if not WriteDlg.execute then
     exit;
@@ -280,6 +289,7 @@ begin
  {$ELSE}
   ShowMessage('This function is not implemented.');
  {$ENDIF}
+ *)
 end;
 
 procedure TIPTCform.btnXMLClick(Sender: TObject);
@@ -297,18 +307,7 @@ begin
   end;
 end;
 
-{$IFDEF FPC}
-procedure TIPTCform.WMSysCommand(var Msg:TLMSysCommand);
-begin
-  if Msg.CmdType = SC_TransMenuItem then
-  begin
-    IPTCWriteTransFile('TransOut.txt');
-    //MessageBeep(0);
-  end
-  else
-    inherited;
-end;
-{$ELSE}
+{$IFDEF DELPHI}
 procedure TIPTCform.WMSysCommand(var Msg:TWMSysCommand);
 begin
  if Msg.CmdType = SC_TransMenuItem then
@@ -320,11 +319,12 @@ begin
    inherited;
 end;
 {$ENDIF}
+
 procedure TIPTCform.btnSetDTClick(Sender: TObject);
 begin
   // current valid date/time tag prefixes are:
   //  Release, Expire, and Digitize
-  ImgData.IptcObj.SetDateTimeExt(now,'Release');
+  ImgData.IptcObj.SetDateTimeExt(now, 'Release');
   CleanScrollBox;
   LoadDisplayFromArray;
 end;

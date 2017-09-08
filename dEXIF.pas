@@ -394,8 +394,9 @@ type
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AWriteMetadata: TMetadataKinds = mdkAll);
     procedure ProcessEXIF;
-    function ReadJpegSections(AStream: TStream):boolean;
-    function ReadTiffSections(AStream: TStream):boolean;
+    function ReadJpegSections(AStream: TStream;
+      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
+    function ReadTiffSections(AStream: TStream): boolean;
     function SaveExif(AStream: TStream; AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
 
   public
@@ -426,8 +427,10 @@ type
     function CreateIPTCObj: TIPTCData;
 
     // Reading
-    function ProcessFile(const AFileName: String): boolean;
-    function ReadJpegFile(const AFileName: string): boolean;
+    function ProcessFile(const AFileName: String;
+      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
+    function ReadJpegFile(const AFileName: string;
+      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
     function ReadTiffFile(const AFileName: string): boolean;
     function ReadExifInfo(AFilename: String): boolean;
     procedure ReadIPTCStrings(const AFilename: String; AList: TStrings); overload;
@@ -3812,7 +3815,7 @@ end;
 // decodes the segments.  Further parsing isthen passed on to
 // the TImageInfo (for EXIF) and TIPTCData objects
 //--------------------------------------------------------------------------
-Procedure TImgData.MakeIPTCSegment(buff:ansistring);
+Procedure TImgData.MakeIPTCSegment(buff: ansistring);
 var bl:integer;
 begin
   bl := length(buff)+2;
@@ -3821,7 +3824,7 @@ begin
     inc(SectionCnt);
     IPTCSegment := @(sections[SectionCnt]);
   end;
-  IPTCSegment^.data := ansichar(bl div 256)+ansichar(bl mod 256)+buff;
+  IPTCSegment^.data := ansichar(bl div 256) + ansichar(bl mod 256) + buff;
   IPTCSegment^.size := bl;
   IPTCSegment^.dtype := M_IPTC;
 end;
@@ -3946,6 +3949,7 @@ begin
 
   // Write IPTCSegment
   if (mdkIPTC in AWriteMetadata) and HasIPTC then
+    MakeIPTCSegment(IPTCObj.IPTCArrayToBuffer);      // Create IPTC segment from buffer
     with IPTCSegment^ do
     begin
       buff := chr($FF) + chr(Dtype) + data;
@@ -4048,7 +4052,7 @@ var
   jms: TMemoryStream;
   jfs: TFileStream;
   w, h: Integer;
-  NewExifBlock: boolean;
+  //NewExifBlock: boolean;
 begin
   jfs := TFileStream.Create(AFilename, fmCreate or fmShareExclusive);
   try
@@ -4060,7 +4064,7 @@ begin
     end;
     //  SaveExif(jfs);
     // If no exif block is here create a new one
-    NewExifBlock:= (ExifObj = nil);
+    //NewExifBlock:= (ExifObj = nil);
     jms := TMemoryStream.Create;
     try
       jms.CopyFrom(AJpeg, AJpeg.Size);
@@ -4324,7 +4328,8 @@ begin
   result := HasMetaData();
 end;
 
-function TImgData.ProcessFile(const AFileName: string): boolean;
+function TImgData.ProcessFile(const AFileName: string;
+  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
 var
   ext: string;
 begin
@@ -4339,7 +4344,7 @@ begin
     ext := LowerCase(ExtractFileExt(filename));
     if (ext = '.jpg') or (ext = '.jpeg') or (ext = '.jpe') then
     begin
-      if not ReadJpegFile(FileName) then
+      if not ReadJpegFile(FileName, AMetadataKinds) then
         exit;
     end else
     if (ext = '.tif') or (ext = '.tiff') or (ext = '.nef') then
@@ -4406,7 +4411,8 @@ end;
 //--------------------------------------------------------------------------
 // Parse the marker stream until SOS or EOI is seen
 //--------------------------------------------------------------------------
-function TImgData.ReadJpegSections(AStream: TStream): boolean;
+function TImgData.ReadJpegSections(AStream: TStream;
+  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
 var
   a, b: byte;
   ll, lh, itemLen, marker: integer;
@@ -4455,6 +4461,7 @@ begin
       M_EOI:
         break;  // in case it's a tables-only JPEG stream
       M_COM:
+        if mdkComment in AMetadataKinds then
         begin
           SetLength(sa, Sections[SectionCnt].Size - 2);
           Move(Sections[SectionCnt].Data[3], sa[1], Length(sa));
@@ -4471,12 +4478,13 @@ begin
         end;
       M_IPTC:
         begin // IPTC section
-          if (IPTCSegment = nil) then
+          if (mdkIPTC in AMetadataKinds) then //and (IPTCSegment = nil) then
           begin
             IPTCSegment := @Sections[SectionCnt];
             IPTCobj := TIPTCdata.Create(self);
-            IPTCobj.ParseIPTCArray;
-          end;
+            IPTCobj.ParseIPTCArray(IPTCSegment^.Data);
+          end else
+            dec(SectionCnt);
         end;
       M_JFIF:
         begin
@@ -4487,7 +4495,7 @@ begin
         end;
       M_EXIF:
         begin
-          if ((SectionCnt <= 5) and (EXIFsegment = nil)) then
+          if (mdkEXIF in AMetadataKinds) and (SectionCnt <= 5) and (EXIFsegment = nil) then
           begin
             // Seen files from some 'U-lead' software with Vivitar scanner
             // that uses marker 31 later in the file (no clue what for!)
@@ -4523,7 +4531,8 @@ begin
   Result := HasMetaData();
 end;
 
-function TImgData.ReadJpegFile(const AFileName: string): boolean;
+function TImgData.ReadJpegFile(const AFileName: string;
+  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
 var
   fs: TFilestream;
 begin
@@ -4532,7 +4541,7 @@ begin
   fs := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
   try
     try
-      result := ReadJpegSections(fs);
+      result := ReadJpegSections(fs, AMetadataKinds);
     except
       result := false;
     end;

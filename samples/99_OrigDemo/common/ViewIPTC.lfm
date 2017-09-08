@@ -147,7 +147,7 @@ object IPTCform: TIPTCform
     top = 8
   end
   object WriteDlg: TSavePictureDialog
-    left = 256
+    left = 304
     top = 8
   end
 end

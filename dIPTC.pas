@@ -86,8 +86,7 @@ type
     procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
     function ParseIPTCStrings(buff: ansistring): TStringlist; overload;
       deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
-    procedure ParseIPTCArray; overload;
-    procedure ParseIPTCArray(ABuffer: ansistring); overload;
+    procedure ParseIPTCArray(ABuffer: ansistring);
 
     function LookupTag(SearchStr: String): integer; virtual;
     Function LookupTagDefn(AName: String): integer;
@@ -114,8 +113,10 @@ type
 
    {$IFNDEF FPC}
     {$IFNDEF dExifNoJpeg}
+    (*
     procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
     procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
+    *)
     {$ENDIF}
    {$ENDIF}
 
@@ -351,11 +352,6 @@ begin
   result := fITagCount-1;
 end;
  
-Procedure TIPTCdata.ParseIPTCArray;
-begin
-  ParseIPTCArray(TImgData(FParent).IPTCsegment^.Data);
-end;
-
 Procedure TIPTCdata.ParseIPTCArray(ABuffer: Ansistring);
 var
   nextTag: ITag;
@@ -634,6 +630,7 @@ end;
 
 {$IFNDEF FPC}
 {$IFNDEF dExifNoJpeg}
+(*
 procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
 var tmp:ansistring;
 begin
@@ -655,7 +652,7 @@ begin
   timgdata(parent).WriteEXIFjpeg(Orig,FName); // Write to disk
   Orig.free;
 end;
-
+          *)
 (*
 {$ELSE}
 procedure TIPTCdata.WriteFile(fname:ansistring; origname :ansistring = '');
