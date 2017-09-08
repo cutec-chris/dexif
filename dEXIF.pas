@@ -4475,6 +4475,7 @@ begin
           begin
             IPTCSegment := @Sections[SectionCnt];
             IPTCobj := TIPTCdata.Create(self);
+            IPTCobj.ParseIPTCArray;
           end;
         end;
       M_JFIF:

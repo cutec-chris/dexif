@@ -25,10 +25,7 @@ interface
 
 uses
  {$IFDEF FPC}
-  {$IFDEF MSWINDOWS} Windows, Messages,
-  {$ELSE}
-   LCLIntf, LCLType, LCLProc, LMessages,
-  {$ENDIF}
+  LCLIntf, LCLType, LCLProc, LMessages,
  {$ELSE}
   Windows, Messages,
  {$ENDIF}
@@ -52,32 +49,35 @@ const
     btnLoad: TButton;
     Splitter1: TSplitter;
     ScrollBox1: TScrollBox;
-    Button1: TButton;
+    btnClose: TButton;
     btnTags: TButton;
     btnWrite: TButton;
     WriteDlg: TSavePictureDialog;
-    Button2: TButton;
+    btnXML: TButton;
     btnSetDT: TButton;
     lblDateTime: TLabel;
-    procedure btnLoadClick(Sender: TObject);
     procedure btnAboutClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject);
+    procedure btnLoadClick(Sender: TObject);
+    procedure btnSetDTClick(Sender: TObject);
     procedure btnTagsClick(Sender: TObject);
     procedure btnWriteClick(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure btnSetDTClick(Sender: TObject);
+    procedure btnXMLClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    procedure Memo(s: string);
-    procedure AddControlSet(idx:integer; vName,vValue:string;
-        MaxChars:integer);
+    procedure Memo(AMsg: string);
+    procedure AddControlSet(idx:integer; vName, vValue:string; MaxChars:integer);
     procedure CleanScrollBox;
     procedure LoadDisplayFromArray;
     procedure CopyDisplayToArray;
-    procedure WMSysCommand(var Msg: TWMSysCommand); message wm_syscommand;
+   {$IFDEF FPC}
+    procedure WMSysCommand(var Msg: TLMSysCommand); message LM_SYSCOMMAND;
+   {$ELSE}
+    procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
+   {$ENDIF}
   public
-    verbose:boolean;
+    Verbose:boolean;
   end;
 
 var
@@ -94,9 +94,9 @@ uses TagPickU;
  {$R *.dfm}
 {$ENDIF}
 
-procedure TIPTCform.Memo(s:string);
+procedure TIPTCForm.Memo(AMsg: string);
 begin
-  Memo1.Lines.Add(s);                           // Shortcut to add memo data
+  Memo1.Lines.Add(AMsg);                           // Shortcut to add memo data
 end;
 
 procedure TIPTCform.btnAboutClick(Sender: TObject);
@@ -106,26 +106,29 @@ begin
 end;
 
 procedure TIPTCform.FormCreate(Sender: TObject);
-var SysMenu : HMenu;
+var
+  SysMenu: HMenu;
 begin
-   ImgData := TimgData.Create;
-
-   // Fun with Translations...
-   {$IFDEF MSWINDOWS}
-   SysMenu := GetSystemMenu(Handle, FALSE);
-   AppendMenu(SysMenu, MF_SEPARATOR, 0, '');
-   AppendMenu(SysMenu, MF_STRING, SC_TransMenuItem, 'Write Translation file');
-   IPTCReadTransFile('transIn.Txt');
-   {$ENDIF}
-
-   verbose := false;
-   Constraints.MinWidth := width;               // no smaller than
-   Constraints.MinHeight := height;             // initial size
-   Panel1.Constraints.MinWidth := Panel1.width; // set sizing limits
-   Panel1.Constraints.MinHeight := Panel1.height;
-   Panel1.DoubleBuffered := true;               // block that flicker
-   memo1.DoubleBuffered := true;
-   ScrollBox1.DoubleBuffered := true;
+  ImgData := TimgData.Create;
+                              (*
+  // Fun with Translations...
+ {$IFDEF MSWINDOWS}
+  SysMenu := GetSystemMenu(Handle, FALSE);
+  AppendMenu(SysMenu, MF_SEPARATOR, 0, '');
+  AppendMenu(SysMenu, MF_STRING, SC_TransMenuItem, 'Write Translation file');
+  IPTCReadTransFile('transIn.Txt');
+ {$ENDIF}                     *)
+                    (*
+  Verbose := false;
+  Constraints.MinWidth := Width;               // no smaller than
+  Constraints.MinHeight := Height;             // initial size
+  Panel1.Constraints.MinWidth := Panel1.Width; // set sizing limits
+  Panel1.Constraints.MinHeight := Panel1.Height;
+  *)
+  //  wp --- removed for testing...
+  //Panel1.DoubleBuffered := true;               // block that flicker
+  //Memo1.DoubleBuffered := true;
+  ScrollBox1.DoubleBuffered := true;
 end;
 
 procedure TIPTCform.FormDestroy(Sender: TObject);
@@ -134,8 +137,9 @@ begin
 end;
 
 procedure TIPTCform.CleanScrollBox;
-var i:integer;
-    tc:tControl;
+var
+  i: Integer;
+  tc: TControl;
 begin
   Memo1.Clear;
   for i := ScrollBox1.ControlCount-1 downto 0 do  // Wipe all controls from
@@ -146,8 +150,8 @@ begin
   end;
 end;
 
-procedure TIPTCform.AddControlSet(idx:integer; vName,vValue:string;
-  MaxChars:integer);
+procedure TIPTCform.AddControlSet(idx: integer; vName,vValue: String;
+  MaxChars: integer);
 var
   newLabel: TLabel;
   newEdit: TEdit;
@@ -156,73 +160,76 @@ begin
   newEdit := TEdit.Create(ScrollBox1);    // create new edit box
   with newLabel do
   begin
+    Parent := ScrollBox1;
     Alignment := taRightJustify;
     AutoSize := false;
-    top := 8+30*idx;
-    left := 8;
-    width := 200;
-    parent := ScrollBox1;
-    font.Style := [fsBold];
+    Top := 8+30*idx;
+    Left := 8;
+    Width := 200;
+    Font.Style := [fsBold];
     Caption := vName;
   end;
   with newEdit do
   begin
+    Parent := ScrollBox1;
     Anchors := [akTop,akLeft, akRight]; // expand when window resized
-    parent := ScrollBox1;
-    top := 7+30*idx;
-    left := 216;
-    tag := idx;
+    Top := 7+30*idx;
+    Left := 216;
+    Tag := idx;
     MaxLength := MaxChars;
     // Width hardcoded, otherwise changes when vertical scroll bar appears.
     Width := Scrollbox1.ClientWidth - Left - 16;
     Text := vValue;
-    DoubleBuffered := true;             // Flicker-free dynamic resizing
+  //  DoubleBuffered := true;             // Flicker-free dynamic resizing
   end;
 end;
 
 procedure TIPTCform.LoadDisplayFromArray;  // populate form
-var maxChars:integer;
-    name,value:string;
-    i:integer;
-    tdTmp:TDateTime;
+var
+  maxChars: Integer;
+  lName, lValue: String;
+  i: integer;
+  dt: TDateTime;
 begin
  {$IFDEF DELPHI}
-  scrollbox1.DisableAutoRange;    // Suspend repainting
+  Scrollbox1.DisableAutoRange;    // Suspend repainting
  {$ENDIF}
   for i := 0 to ImgData.IptcObj.Count-1 do
   begin
-    name  := ImgData.IptcObj[i].Desc;
-    value := ImgData.IptcObj[i].Data;
+    lName := ImgData.IptcObj[i].Desc;
+    lValue := ImgData.IptcObj[i].Data;
     maxChars := ImgData.IptcObj[i].Size;
-    if name = 'Image caption'  then
+    if lName = 'Image caption'  then
     begin
-      memo(value);
+      Memo(value);
       // scroll back to top - memo1.Lines.
-      memo1.Perform(EM_LINESCROLL,0,-memo1.Lines.Count);
+      Memo1.CaretPos := Point(0, 0);
+//      memo1.Perform(EM_LINESCROLL, 0, -memo1.Lines.Count);
     end;
-    AddControlSet(i,Name,Value,maxChars); // Add a label/edit box pair
+    AddControlSet(i, lName, lValue, maxChars); // Add a label/edit box pair
   end;
-  tdTmp := ImgData.IptcObj.GetDateTime();
-  if tdTmp > 0 then
-    if frac(tdtmp) = 0 then
-      lblDateTime.Caption := FormatDateTime('mmm-dd-yyyy',tdTmp)
+  dt := ImgData.IptcObj.GetDateTime();
+  if dt > 0 then
+    if frac(dt) = 0 then
+      lblDateTime.Caption := FormatDateTime('mmm-dd-yyyy', dt)
     else
-      lblDateTime.Caption := FormatDateTime('mmm-dd-yyyy hh:nn:ss',tdTmp);
+      lblDateTime.Caption := FormatDateTime('mmm-dd-yyyy hh:nn:ss', dt);
  {$IFDEF DELPHI}
-  scrollbox1.enableAutoRange;             // Enable control painting
+  Scrollbox1.EnableAutoRange;             // Enable control painting
  {$ENDIF}
 end;
 
 procedure TIPTCform.CopyDisplayToArray;
-var tc:tEdit;
-    i,insrt:integer;
+var
+  tc: TEdit;
+  i,insrt: Integer;
 begin
-  for i := 0 to scrollbox1.ControlCount-1 do
-     if scrollbox1.Controls[i] is TEdit then
-     begin
-       tc := tEdit(scrollbox1.Controls[i]);   // To save a search,
-       insrt := tc.Tag;                       // control has array position
-       ImgData.IptcObj.SetTagByIdx(insrt,tc.text);   // stored in .tag field
+  for i := 0 to Scrollbox1.ControlCount-1 do
+    if Scrollbox1.Controls[i] is TEdit then
+    begin
+      tc := TEdit(Scrollbox1.Controls[i]);   // To save a search,
+      insrt := tc.Tag;                       // control has array position
+      ImgData.IptcObj.SetTagByIdx(insrt, tc.Text);   // stored in .tag field
      end;
 end;
 
@@ -230,12 +237,11 @@ procedure TIPTCform.btnLoadClick(Sender: TObject);
 begin
   if pdlg.Execute then
   begin
-    StatusBar1.SimpleText  := 'Info for '+pdlg.FileName;
+    StatusBar1.SimpleText := 'Info for '+pdlg.FileName;
     Memo1.Clear;
     CleanScrollBox();               // get rid of previous controls
     if imgData.ProcessFile(pdlg.FileName) and (ImgData.IptcObj <> nil) then
     begin
-      ImgData.IptcObj.ParseIPTCArray;
 //    Added in 1.02a to demonstrate use of custom fields:
 //      if these tags are found, then descriptions are altered,
 //      otherwise these statements have no effect
@@ -245,12 +251,12 @@ begin
       LoadDisplayFromArray()        // create controls based on found tags
     end
     else
-      memo('Sorry: No IPTC info detected.');
+      Memo('Sorry: No IPTC info detected.');
     btnWrite.Enabled := true;
   end;
 end;
 
-procedure TIPTCform.Button1Click(Sender: TObject);
+procedure TIPTCform.btnCloseClick(Sender: TObject);
 begin
   close;
 end;
@@ -276,7 +282,7 @@ begin
  {$ENDIF}
 end;
 
-procedure TIPTCform.Button2Click(Sender: TObject);
+procedure TIPTCform.btnXMLClick(Sender: TObject);
 var
   xml: TStringList;
 begin
@@ -291,6 +297,18 @@ begin
   end;
 end;
 
+{$IFDEF FPC}
+procedure TIPTCform.WMSysCommand(var Msg:TLMSysCommand);
+begin
+  if Msg.CmdType = SC_TransMenuItem then
+  begin
+    IPTCWriteTransFile('TransOut.txt');
+    //MessageBeep(0);
+  end
+  else
+    inherited;
+end;
+{$ELSE}
 procedure TIPTCform.WMSysCommand(var Msg:TWMSysCommand);
 begin
  if Msg.CmdType = SC_TransMenuItem then
@@ -301,7 +319,7 @@ begin
  else
    inherited;
 end;
-
+{$ENDIF}
 procedure TIPTCform.btnSetDTClick(Sender: TObject);
 begin
   // current valid date/time tag prefixes are:

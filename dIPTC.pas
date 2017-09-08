@@ -59,31 +59,35 @@ type
 
   TIPTCdata = class
   private
-    function GetTimeZoneStr: string;
-  protected
-    MaxTag: integer;
-    parent: tobject;
-    fITagCount : integer;
-    fITagArray: array of iTag;
+    function GetCount: integer;
+    procedure SetCount(const AValue: integer);
     function GetTagElement(TagID: integer): ITag;
     procedure SetTagElement(TagID: integer; const Value: ITag);
-    function GetCount: integer;
-    procedure SetCount(const Value: integer);
+    function GetTimeZoneStr: string;
     procedure SetDateTimePrim(TimeIn: TDateTime; prefix: string);
+  protected
+//    FBuffer: ansistring;
+    MaxTag: integer;
+    FParent: TObject;
+    fITagCount : integer;
+    fITagArray: array of iTag;
+    function ExtractTag(const ABuffer: ansistring; var start: integer): iTag;
   public
-    constructor Create(p: TObject);
+    constructor Create(AParent: TObject);
     procedure Reset;
     function HasData: boolean;
-    function Clone(ASource: TIPTCdata): TIPTCdata;
+    function Clone(ASource: TIPTCData): TIPTCData;
+
+    function IPTCArrayToBuffer:ansistring;
+    procedure IPTCArrayToXML(AList: TStrings); overload;
+    function IPTCArrayToXML: TStringList; overload;
+      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
+
     procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
     function ParseIPTCStrings(buff: ansistring): TStringlist; overload;
       deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     procedure ParseIPTCArray; overload;
     procedure ParseIPTCArray(ABuffer: ansistring); overload;
-    function IPTCArrayToBuffer:ansistring;
-    procedure IPTCArrayToXML(AList: TStrings); overload;
-    function IPTCArrayToXML: TStringList; overload;
-      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
 
     function LookupTag(SearchStr: String): integer; virtual;
     Function LookupTagDefn(AName: String): integer;
@@ -96,15 +100,18 @@ type
     function UpdateTag(ATagName: String; ADataVal: ansistring): integer;
     procedure SetTagByIdx(idx:integer; AValue:ansistring);
     function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
+
     function ReadFile(const AFileName: String): boolean; virtual;
     procedure ReadFileStrings(const AFilename: String; AList: TStrings); overload;
     function ReadFileStrings(const AFileName: String): TStringList; overload;
       deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
+
     function AddTagToArray(ANewTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
     procedure SetDateTimeExt(TimeIn: TDateTime; APrefix:ansistring);
     function GetMultiPartTag(ATagName: String): TStringList;
+
    {$IFNDEF FPC}
     {$IFNDEF dExifNoJpeg}
     procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
@@ -186,15 +193,15 @@ implementation
 
 uses
   dUtils, dEXIF;
-
+          (*
 var
   Buffer: ansistring;
-
-constructor TIPTCdata.Create(p:tobject);
+            *)
+constructor TIPTCdata.Create(AParent: TObject);
 begin
-  inherited create;
+  inherited Create;
   fITagCount := 0;
-  parent := p;
+  FParent := AParent;
 end;
 
 function TIPTCdata.GetCount: integer;
@@ -202,9 +209,9 @@ begin
   result := fITagCount;
 end;
 
-procedure TIPTCdata.SetCount(const Value: integer);
+procedure TIPTCdata.SetCount(const AValue: integer);
 begin
-  fITagCount := value;
+  fITagCount := AValue;
 end;
 
 function TIPTCdata.GetTagElement(TagID: integer): ITag;
@@ -217,16 +224,16 @@ begin
   fITagArray[TagID] := Value;
 end;
 
-function ExtractTag(var start: integer): iTag;
+function TIPTCData.ExtractTag(const ABuffer: ansistring;
+  var start: integer): iTag;
 var
-  bLen, x, tagId, code, i: integer;
+  bLen, tagId, code, i: integer;
   tmp: iTag;
 begin
   InitITag(tmp);
-  code := byte(Buffer[start]);
-  tagId := byte(Buffer[start+1]);     // should be #$1C
-  bLen := (byte(Buffer[start+2]) shl 8) or byte(Buffer[start+3]);
-  x := bLen;
+  code := byte(ABuffer[start]);
+  tagId := byte(ABuffer[start+1]);     // should be #$1C
+  bLen := (byte(ABuffer[start+2]) shl 8) or byte(ABuffer[start+3]);
   inc(start, 4);                     // skip length bytes
   if code in [2, 8] then
   begin
@@ -237,7 +244,7 @@ begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
-          tmp.Data := copy(Buffer, start, x);
+          tmp.Data := copy(ABuffer, start, blen);
         end;
         break;
       end;
@@ -247,12 +254,12 @@ begin
       tmp.Desc := 'Custom_' + IntToStr(tagid);
       tmp.Tag := tagid;
       tmp.ICode := code;
-      tmp.Data := copy(Buffer, start, x);
-      tmp.Raw := copy(Buffer, start, x);
+      tmp.Data := copy(ABuffer, start, blen);
+      tmp.Raw := copy(ABuffer, start, blen);
       tmp.Size := 64; // length for unknown fields ?
     end;
   end;
-  start := start + x + 1;
+  start := start + blen + 1;
   Result := tmp;
 end;
 
@@ -315,15 +322,15 @@ var
   start, i, j: Integer;
 begin
   Assert(AList <> nil, 'TIPTCData.ParseIPTCStrings called with AList=nil');
-  Buffer := buff;
+  //FBuffer := buff;
   i := Pos('Photoshop 3.0', buff) + 13;
-  for j := i to Length(Buffer) do       // Look for first field marker
-    if (byte(Buffer[j]) = $1C) and (byte(Buffer[j+1]) in [2,8]) then
+  for j := i to Length(buff) do       // Look for first field marker
+    if (byte(buff[j]) = $1C) and (byte(buff[j+1]) in [2, 8]) then
       break;
   start := j+1;
-  while (start < Length(Buffer)-2) do   // Work through buffer
+  while (start < Length(buff)-2) do   // Work through buffer
   begin
-    tmpItem := ExtractTag(start);
+    tmpItem := ExtractTag(buff, start);
     if tmpItem.Name <> '' then         // Empty fields are masked out
       AList.Add(tmpItem.Desc + DexifDelim + tmpItem.Data);
   end;
@@ -346,7 +353,7 @@ end;
  
 Procedure TIPTCdata.ParseIPTCArray;
 begin
-  ParseIPTCArray(TImgData(Parent).IPTCsegment^.Data);
+  ParseIPTCArray(TImgData(FParent).IPTCsegment^.Data);
 end;
 
 Procedure TIPTCdata.ParseIPTCArray(ABuffer: Ansistring);
@@ -355,15 +362,15 @@ var
   start, i, j: Integer;
 begin
   Reset;
-  Buffer := ABuffer;
+//  FBuffer := ABuffer;
   i := Pos('Photoshop 3.0', ABuffer) + 13;
-  for j := i to Length(Buffer) do       // Look for first field marker
-    if (byte(Buffer[j]) = $1C) and (byte(Buffer[j+1]) in [2,8]) then
+  for j := i to Length(ABuffer) do       // Look for first field marker
+    if (byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [2,8]) then
       break;
   start := j+1;
-  while (start < Length(Buffer)-2) do   // Work through buffer
+  while (start < Length(ABuffer)-2) do   // Work through buffer
   begin
-    nextTag := ExtractTag(start);       // Start is incremented by function
+    nextTag := ExtractTag(ABuffer, start);       // Start is incremented by function
     if nextTag.Tag in IPTCMultiTags then
     begin
       AppendToTag(nextTag.Name, nextTag.Data)
@@ -457,7 +464,7 @@ end;
 
 function TIPTCdata.Clone(ASource: TIPTCdata): TIPTCdata;
 begin
-  Result := TIPTCdata.Create(Parent);
+  Result := TIPTCdata.Create(FParent);
   Result.fITagArray := Copy(ASource.fITagArray, 0, MaxTag);
   Result.fITagCount := ASource.fITagCount;
 end;
@@ -603,7 +610,7 @@ function TIPTCdata.ReadFile(const AFileName: String): boolean;
 var
   p: TImgData;
 begin
-  p := TImgData(parent);
+  p := TImgData(FParent);
   Reset;
   p.ProcessFile(AFileName);                  // Get data from file.
   if p.IPTCSegment <> nil then               // If IPTC segment detected
@@ -621,7 +628,7 @@ end;
 procedure TIPTCData.ReadFileStrings(const AFileName: String; AList: TStrings);
 begin
   Assert(AList <> nil, 'TIPTCData.ReadFileStrings called with AList=nil.');
-  ParseIPTCStrings(TImgData(Parent).IPTCSegment^.Data, AList);
+  ParseIPTCStrings(TImgData(FParent).IPTCSegment^.Data, AList);
 end;
 
 
@@ -703,7 +710,8 @@ begin
 end;
 
 procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:string);
-var dateStr, timeStr, timeZone:ansistring;
+var
+  dateStr, timeStr, timeZone:ansistring;
 begin
   if AnsiString(AnsiLowerCase(prefix)) = 'default' then
   begin
