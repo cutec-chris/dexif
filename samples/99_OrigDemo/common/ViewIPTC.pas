@@ -156,10 +156,12 @@ end;
 procedure TIPTCform.AddControlSet(idx: integer; vName,vValue: String;
   MaxChars: integer);
 var
-  newLabel: TLabel;
+//  newLabel: TLabel;
+  newLabel: TStaticText;
   newEdit: TEdit;
 begin
-  newLabel := TLabel.Create(ScrollBox1);  // create new label
+//  newLabel := TLabel.Create(ScrollBox1);  // create new label
+  newLabel := TStaticText.Create(Scrollbox1);
   newEdit := TEdit.Create(ScrollBox1);    // create new edit box
   with newLabel do
   begin
