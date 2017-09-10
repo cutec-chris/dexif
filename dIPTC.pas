@@ -136,56 +136,56 @@ var
     If Count = $FFFF then the tag can have multiple values.
   }
   IPTCTable : array [0..IPTCTAGCNT-1] of ITag = (
-    ( TID:0; TType:0; Tag:$015A {1:90}; Name:'CodedCharacterSet';Desc:'Coded character set'; Code:''; Data:''; Raw:''; FormatS:''; Size:32),
-    ( TID:0; TType:0; Tag:$0200 {2: 0}; Name:'SKIP';             Desc:'Record Version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:0; Tag:$0203 {2: 3}; Name:'ObjectType';       Desc:'Object Type Ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
-    ( TID:0; TType:0; Tag:$0204 {2: 4}; Name:'ObjectAttr';       Desc:'Object Attribute Ref';  Code:'';Data:'';Raw:'';FormatS:'';Size:67),
-    ( TID:0; TType:0; Tag:$0205 {2: 5}; Name:'ObjectName';       Desc:'Object name';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:0; Tag:$0207 {2: 7}; Name:'EditStatus';       Desc:'Edit Status';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:0; Tag:$0208 {2: 8}; Name:'EditorialUpdate';  Desc:'Editorial Update';  Code:'';Data:'';Raw:'';FormatS:'';Size:2),
-    ( TID:0; TType:0; Tag:$020A {2:10}; Name:'Urgency';          Desc:'Urgency';      Code:'';Data:'';Raw:'';FormatS:'';Size:1),
-    ( TID:0; TType:0; Tag:$020C {2:12}; Name:'SubRef';           Desc:'Subject Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:236),
-    ( TID:0; TType:0; Tag:$020F {2:15}; Name:'Category';         Desc:'Category';     Code:'';Data:'';Raw:'';FormatS:'';Size:3),
-    ( TID:0; TType:0; Tag:$0214 {2:20}; Count:$FFFF; Name:'SuppCategory';     Desc:'Supplemental category'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0216 {2:22}; Name:'FixtureID';        Desc:'Fixture ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0219 {2:25}; Count:$FFFF; Name:'Keywords';  Desc:'Keywords';     Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:0; Tag:$021A {2:26}; Name:'ContentLocCode';   Desc:'Content Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
-    ( TID:0; TType:0; Tag:$021B {2:27}; Name:'ContentLocName';   Desc:'Content Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size: 64),
-    ( TID:0; TType:0; Tag:$021E {2:30}; Name:'ReleaseDate';      Desc:'Release Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$0223 {2:35}; Name:'ReleaseTime';      Desc:'Release Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:0; Tag:$0225 {2:37}; Name:'ExpireDate';       Desc:'Expiration Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$0226 {2:38}; Name:'ExpireTime';       Desc:'Expiration Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:0; Tag:$0228 {2:40}; Name:'SpecialInstru';    Desc:'Special Instructions'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
-    ( TID:0; TType:0; Tag:$022A {2:42}; Name:'ActionAdvised';    Desc:'Action Advised'; Code:'';Data:'';Raw:'';FormatS:'';Size:2),
-    ( TID:0; TType:0; Tag:$022D {2:45}; Name:'RefService';       Desc:'Reference Service'; Code:'';Data:'';Raw:'';FormatS:'';Size:10),
-    ( TID:0; TType:0; Tag:$022F {2:47}; Name:'RefDate';          Desc:'Reference Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$0232 {2:50}; Name:'RefNumber';        Desc:'Reference Number'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$0237 {2:55}; Name:'DateCreated';      Desc:'Date created'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$023C {2:60}; Name:'TimeCreated';      Desc:'Time created'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:0; Tag:$023E {2:62}; Name:'DigitizeDate';     Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:0; Tag:$023F {2:63}; Name:'DigitizeTime';     Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:0; Tag:$0241 {2:65}; Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0246 {2:70}; Name:'ProgramVersion';   Desc:'Program version'; Code:'';Data:'';Raw:'';FormatS:'';Size: 10),
-    ( TID:0; TType:0; Tag:$024B {2:75}; Name:'ObjectCycle';      Desc:'Object Cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
-    ( TID:0; TType:0; Tag:$0250 {2:80}; Name:'ByLine';           Desc:'ByLine';       Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0255 {2:85}; Name:'ByLineTitle';      Desc:'ByLine Title'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$025A {2:90}; Name:'City';             Desc:'City';         Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$025C {2:92}; Name:'SubLocation';      Desc:'Sublocation';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$025F {2:95}; Name:'State';            Desc:'Province/State';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0264 {2:100};Name:'LocationCode';     Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
-    ( TID:0; TType:0; Tag:$0265 {2:101};Name:'LocationName';     Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:0; Tag:$0267 {2:103};Name:'TransmissionRef';  Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0269 {2:105};Name:'ImageHeadline';    Desc:'Image headline'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
-    ( TID:0; TType:0; Tag:$026E {2:110};Name:'ImageCredit';      Desc:'Image credit';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0273 {2:115};Name:'Source';           Desc:'Source';        Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0274 {2:116};Name:'Copyright';        Desc:'Copyright Notice';  Code:'';Data:'';Raw:'';FormatS:'';Size:128),
-    ( TID:0; TType:0; Tag:$0276 {2:118};Name:'Contact';          Desc:'Contact';       Code:'';Data:'';Raw:'';FormatS:'';Size:128),
-    ( TID:0; TType:0; Tag:$0278 {2:120};Name:'ImageCaption';     Desc:'Image caption'; Code:'';Data:'';Raw:'';FormatS:'';Size:2000),
-    ( TID:0; TType:0; Tag:$027A {2:122};Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:0; Tag:$0282 {2:130};Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2),
-    ( TID:0; TType:0; Tag:$0283 {2:131};Name:'Orientation';      Desc:'Image Orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
-    ( TID:0; TType:0; Tag:$0287 {2:135};Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3),
-    ( TID:0; TType:0; Tag:$080A {8:10}; Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
+    ( TID:0; TType:2; Tag:$015A {1:90}; Count:1;     Name:'CodedCharacterSet';Desc:'Coded character set'; Code:''; Data:''; Raw:''; FormatS:''; Size:32),
+    ( TID:0; TType:3; Tag:$0200 {2: 0}; Count:1;     Name:'SKIP';             Desc:'Record Version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0203 {2: 3}; Count:1;     Name:'ObjectType';       Desc:'Object Type Ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:2; Tag:$0204 {2: 4}; Count:$FFFF; Name:'ObjectAttr';       Desc:'Object Attribute Ref';  Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:2; Tag:$0205 {2: 5}; Count:1;     Name:'ObjectName';       Desc:'Object name';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0207 {2: 7}; Count:1;     Name:'EditStatus';       Desc:'Edit Status';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0208 {2: 8}; Count:1;     Name:'EditorialUpdate';  Desc:'Editorial Update';  Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$020A {2:10}; Count:1;     Name:'Urgency';          Desc:'Urgency';      Code:'';Data:'';Raw:'';FormatS:'';Size:1),
+    ( TID:0; TType:2; Tag:$020C {2:12}; Count:$FFFF; Name:'SubRef';           Desc:'Subject Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:236),
+    ( TID:0; TType:2; Tag:$020F {2:15}; Count:1;     Name:'Category';         Desc:'Category';     Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:2; Tag:$0214 {2:20}; Count:$FFFF; Name:'SuppCategory';     Desc:'Supplemental category'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0216 {2:22}; Count:1;     Name:'FixtureID';        Desc:'Fixture ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0219 {2:25}; Count:$FFFF; Name:'Keywords';         Desc:'Keywords';     Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$021A {2:26}; Count:$FFFF; Name:'ContentLocCode';   Desc:'Content Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
+    ( TID:0; TType:2; Tag:$021B {2:27}; Count:$FFFF; Name:'ContentLocName';   Desc:'Content Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size: 64),
+    ( TID:0; TType:2; Tag:$021E {2:30}; Count:1;     Name:'ReleaseDate';      Desc:'Release Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0223 {2:35}; Count:1;     Name:'ReleaseTime';      Desc:'Release Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0225 {2:37}; Count:1;     Name:'ExpireDate';       Desc:'Expiration Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0226 {2:38}; Count:1;     Name:'ExpireTime';       Desc:'Expiration Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0228 {2:40}; Count:1;     Name:'SpecialInstru';    Desc:'Special Instructions'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
+    ( TID:0; TType:2; Tag:$022A {2:42}; Count:1;     Name:'ActionAdvised';    Desc:'Action Advised'; Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$022D {2:45}; Count:$FFFF; Name:'RefService';       Desc:'Reference Service'; Code:'';Data:'';Raw:'';FormatS:'';Size:10),
+    ( TID:0; TType:2; Tag:$022F {2:47}; Count:$FFFF; Name:'RefDate';          Desc:'Reference Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0232 {2:50}; Count:$FFFF; Name:'RefNumber';        Desc:'Reference Number'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0237 {2:55}; Count:1;     Name:'DateCreated';      Desc:'Date created'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$023C {2:60}; Count:1;     Name:'TimeCreated';      Desc:'Time created'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$023E {2:62}; Count:1;     Name:'DigitizeDate';     Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$023F {2:63}; Count:1;     Name:'DigitizeTime';     Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0241 {2:65}; Count:1;     Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0246 {2:70}; Count:1;     Name:'ProgramVersion';   Desc:'Program version'; Code:'';Data:'';Raw:'';FormatS:'';Size: 10),
+    ( TID:0; TType:2; Tag:$024B {2:75}; Count:1;     Name:'ObjectCycle';      Desc:'Object Cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
+    ( TID:0; TType:2; Tag:$0250 {2:80}; Count:$FFFF; Name:'ByLine';           Desc:'ByLine';       Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0255 {2:85}; Count:$FFFF; Name:'ByLineTitle';      Desc:'ByLine Title'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025A {2:90}; Count:1;     Name:'City';             Desc:'City';         Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025C {2:92}; Count:1;     Name:'SubLocation';      Desc:'Sublocation';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025F {2:95}; Count:1;     Name:'State';            Desc:'Province/State';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0264 {2:100};Count:1;     Name:'LocationCode';     Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:2; Tag:$0265 {2:101};Count:1;     Name:'LocationName';     Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0267 {2:103};Count:1;     Name:'TransmissionRef';  Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0269 {2:105};Count:1;     Name:'ImageHeadline';    Desc:'Image headline'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
+    ( TID:0; TType:2; Tag:$026E {2:110};Count:1;     Name:'ImageCredit';      Desc:'Image credit';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0273 {2:115};Count:1;     Name:'Source';           Desc:'Source';        Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0274 {2:116};Count:1;     Name:'Copyright';        Desc:'Copyright Notice';  Code:'';Data:'';Raw:'';FormatS:'';Size:128),
+    ( TID:0; TType:2; Tag:$0276 {2:118};Count:$FFFF; Name:'Contact';          Desc:'Contact';       Code:'';Data:'';Raw:'';FormatS:'';Size:128),
+    ( TID:0; TType:2; Tag:$0278 {2:120};Count:1;     Name:'ImageCaption';     Desc:'Image caption'; Code:'';Data:'';Raw:'';FormatS:'';Size:2000),
+    ( TID:0; TType:2; Tag:$027A {2:122};Count:1;     Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0282 {2:130};Count:1;     Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$0283 {2:131};Count:1;     Name:'Orientation';      Desc:'Image Orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
+    ( TID:0; TType:2; Tag:$0287 {2:135};Count:1;     Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:0; Tag:$080A {8:10}; Count:$FFFF; Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
    );
 
 procedure IPTCWriteTransFile(const AFileName: String);
@@ -242,13 +242,14 @@ var
   bLen, tagId, i: integer;
   tmp: iTag;
   recordNo, datasetNo: byte;
+  w: Word;
 begin
   InitITag(tmp);
   recordNo := byte(ABuffer[AStart]);
   datasetNo := byte(ABuffer[AStart+1]);
   bLen := (byte(ABuffer[AStart+2]) shl 8) or byte(ABuffer[AStart+3]);
   inc(AStart, 4);                     // skip length bytes
-  if recordNo in [2, 8] then
+  if recordNo in [1, 2, 8] then
   begin
     tagID := recordNo shl 8 or datasetNo;
     tmp.Tag := 65534;
@@ -258,7 +259,17 @@ begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
-          tmp.Data := copy(ABuffer, AStart, blen);
+          case tmp.TType of
+            2: begin
+                 tmp.Raw := copy(ABuffer, AStart, blen);
+                 tmp.Data := copy(ABuffer, AStart, blen);
+               end;
+            3: begin
+                 w := PWord(@ABuffer[AStart])^;
+                 Move(w, tmp.Raw[1], 2);
+                 tmp.Data := IntToStr(BEToN(w));
+               end;
+          end;
         end;
         break;
       end;
@@ -268,9 +279,19 @@ begin
       tmp.Name := 'Custom_' + IntToStr(datasetNo);
       tmp.Desc := 'Custom_' + IntToStr(datasetNo);
       tmp.Tag := tagID;
-      tmp.Data := copy(ABuffer, AStart, blen);
-      tmp.Raw := copy(ABuffer, AStart, blen);
-      tmp.Size := 64; // length for unknown fields ?
+      case tmp.TType of
+        2: begin
+             tmp.Data := copy(ABuffer, AStart, blen);
+             tmp.Raw := copy(ABuffer, AStart, blen);
+             tmp.Size := 64; // length for unknown fields ?
+           end;
+        3: begin
+             w := PWord(@ABuffer[AStart])^;
+             Move(w, tmp.Raw[1], 2);
+             tmp.Data := IntToStr(BEToN(w));
+             tmp.Size := 2;
+           end;
+      end;
     end;
   end;
   AStart := AStart + blen + 1;
@@ -339,7 +360,7 @@ begin
   //FBuffer := buff;
   i := Pos('Photoshop 3.0', buff) + 13;
   for j := i to Length(buff) do       // Look for first field marker
-    if (byte(buff[j]) = $1C) and (byte(buff[j+1]) in [2, 8]) then
+    if (byte(buff[j]) = $1C) and (byte(buff[j+1]) in [1, 2, 8]) then
       break;
   start := j+1;
   while (start < Length(buff)-2) do   // Work through buffer
@@ -371,17 +392,17 @@ var
   start, i, j: Integer;
 begin
   Reset;
-//  FBuffer := ABuffer;
   i := Pos('Photoshop 3.0', ABuffer) + 13;
   for j := i to Length(ABuffer) do       // Look for first field marker
-    if (byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [2,8]) then
+    if (byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [1, 2, 8]) then
       break;
+
   start := j+1;
   while (start < Length(ABuffer)-2) do   // Work through buffer
   begin
-    nextTag := ExtractTag(ABuffer, start);       // Start is incremented by function
+    nextTag := ExtractTag(ABuffer, start);   // Start is incremented by function
 //    if nextTag.Tag in IPTCMultiTags then
-    if nextTag.Count = MultiTagCount then   // MultiTagCount means: there can be multiple values
+    if nextTag.Count = MultiTagCount then    // MultiTagCount means: there can be multiple values
     begin
       AppendToTag(nextTag.Name, nextTag.Data)
     end
@@ -391,11 +412,12 @@ begin
 end;
  
 function MakeEntry(code,tag: integer; data:ansistring): ansistring;
-var buff,sLen:ansistring;
+var
+  buff,sLen: ansistring;
   bLen:integer;
 begin
-  bLen := length(Data);
-  sLen := ansichar(blen div 256)+ansichar(blen mod 256);
+  bLen := Length(Data);
+  sLen := ansichar(blen div 256) + ansichar(blen mod 256);
   result := buff+ansichar($1C)+ansichar(code)+ansichar(tag)+sLen+Data;
 end;
 
@@ -464,7 +486,7 @@ begin
   for i := 0 to Count-1 do
     with ITagArray[i] do begin
       recordNo := Tag shr 8;
-      datasetNo := Tag and $0F;
+      datasetNo := Tag and $00FF;
       if (recordNo in [1, 2]) and (Count = MultiTagCount) then   // Multiple tag values
         buff := buff + SplitMultiTag(recordNo, datasetNo, data)
       else                                            // Single tag value
