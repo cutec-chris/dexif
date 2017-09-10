@@ -66,7 +66,7 @@ type
     function GetTimeZoneStr: string;
     procedure SetDateTimePrim(TimeIn: TDateTime; prefix: string);
   protected
-//    FBuffer: ansistring;
+    FBuffer: ansistring;
     MaxTag: integer;
     FParent: TObject;
     fITagCount : integer;
@@ -79,6 +79,7 @@ type
     function Clone(ASource: TIPTCData): TIPTCData;
 
     function IPTCArrayToBuffer:ansistring;
+    procedure IPTCArrayToList(AList: TStrings);
     procedure IPTCArrayToXML(AList: TStrings); overload;
     function IPTCArrayToXML: TStringList; overload;
       deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
@@ -100,25 +101,13 @@ type
     procedure SetTagByIdx(idx:integer; AValue:ansistring);
     function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
 
-    function ReadFile(const AFileName: String): boolean; virtual;
-    procedure ReadFileStrings(const AFilename: String; AList: TStrings); overload;
-    function ReadFileStrings(const AFileName: String): TStringList; overload;
-      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
+    class procedure ReadFileStrings(const AFilename: String; AList: TStrings);
 
     function AddTagToArray(ANewTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
     procedure SetDateTimeExt(TimeIn: TDateTime; APrefix:ansistring);
     function GetMultiPartTag(ATagName: String): TStringList;
-
-   {$IFNDEF FPC}
-    {$IFNDEF dExifNoJpeg}
-    (*
-    procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
-    procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
-    *)
-    {$ENDIF}
-   {$ENDIF}
 
     property ITagArray[TagID:integer]: ITag
         read GetTagElement write SetTagElement; default;
@@ -131,7 +120,7 @@ const IPTCTAGCNT = 49;
 var
   rawDefered : boolean = false;
   defaultTimeZone:ansistring = '_0000';
-  IPTCMultiTags: set of byte = [20,25];
+  IPTCMultiTags: set of byte = [20, 25];
   IPTCTable : array [0..IPTCTAGCNT-1] of ITag =
     (( TID:0; TType:0; ICode:2; Tag:  0; Name:'SKIP';             Desc:'Record Version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
      ( TID:0; TType:0; ICode:2; Tag:  3; Name:'ObjectType';       Desc:'Object Type Ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
@@ -386,6 +375,14 @@ begin
   result := buff+ansichar($1C)+ansichar(code)+ansichar(tag)+sLen+Data;
 end;
 
+procedure TIptcData.IptcArrayToList(AList: TStrings);
+var
+  buf: ansistring;
+begin
+  buf := IptcArrayToBuffer;
+  ParseIptcStrings(buf, AList);
+end;
+
 function TIPTCdata.IPTCArrayToXML: TStringList;
 begin
   Result := TStringList.Create;
@@ -446,7 +443,9 @@ begin
       buff := buff+SplitMultiTag(icode,tag,data)
     else
       buff := buff+MakeEntry(icode,tag,data);
- 
+  Result := buff;
+
+                         (*
 // Photoshop requires the following headers:
   if not odd(length(buff)) then
     buff := buff+#0;
@@ -457,6 +456,7 @@ begin
  
 // Photoshop requires the following End-of-data marker:
   result := buff+'8BIM'#$04#$0B#0#0#0#0#0#0;
+  *)
 end;
 
 function TIPTCdata.Clone(ASource: TIPTCdata): TIPTCdata;
@@ -466,6 +466,22 @@ begin
   Result.fITagCount := ASource.fITagCount;
 end;
 
+(*
+procedure TOPTCdata.MakeIPTCSegment(buff: ansisstring);
+var
+  blen: integer;
+begin
+  bl := length(buff) + 2;
+  if IPTCSegment = nil then
+  begin
+    inc(SectionCnt);
+    IPTCSegment := @(sections[SectionCnt]);
+  end;
+  IPTCSegment^.Data := ansichar(bl div 256) + ansichar(bl mod 256) + buff;
+  IPTCSegment^.Size := bl;
+  IPTCSegment^.DType := M_IPTC;
+end;
+  *)
 function TIPTCdata.AddOrAppend(ATagName: String; ADataVal: ansistring): integer;
 var
   i:integer;
@@ -602,70 +618,20 @@ Function TIPTCdata.HasData: boolean;
 begin
   result := Count > 0;
 end;
- 
-function TIPTCdata.ReadFile(const AFileName: String): boolean;
-var
-  p: TImgData;
-begin
-  p := TImgData(FParent);
-  Reset;
-  p.ProcessFile(AFileName);                  // Get data from file.
-  if p.IPTCSegment <> nil then               // If IPTC segment detected
-    ParseIPTCArray(p.IPTCSegment^.Data);
-//    filename := FName;
-  Result := HasData();
-end;
- 
-function TIPTCdata.ReadFileStrings(const AFileName: String): TStringList;
-begin
-  Result := TStringList.Create;
-  ReadFileStrings(AFilename, Result);
-end;
 
-procedure TIPTCData.ReadFileStrings(const AFileName: String; AList: TStrings);
+class procedure TIPTCData.ReadFileStrings(const AFileName: String;
+  AList: TStrings);
+var
+  imgdata: TImgData;
 begin
   Assert(AList <> nil, 'TIPTCData.ReadFileStrings called with AList=nil.');
-  ParseIPTCStrings(TImgData(FParent).IPTCSegment^.Data, AList);
+  imgData := TImgData.Create;
+  try
+    imgData.ReadIptcStrings(AFileName, AList);
+  finally
+    imgData.Free;
+  end;
 end;
-
-
-{$IFNDEF FPC}
-{$IFNDEF dExifNoJpeg}
-(*
-procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
-var tmp:ansistring;
-begin
-  tmp := IPTCArrayToBuffer;                       // Create temp buffer
-  timgdata(parent).MakeIPTCSegment(tmp);          // Create IPTC segment
-  timgdata(parent).WriteEXIFjpeg(memImage,FName); // Write to disk
-end;
- 
-procedure TIPTCdata.WriteFile(FName:ansistring; OrigName :ansistring = '');
-var tmp:ansistring;
-    Orig:tjpegimage;
-begin
-  Orig := TJPEGImage.Create;
-  if OrigName = '' then
-    OrigName := FName;
-  Orig.LoadFromFile(OrigName);                // Get the image
-  tmp := IPTCArrayToBuffer;                   // Create temp buffer
-  timgdata(parent).MakeIPTCSegment(tmp);      // Create IPTC segment
-  timgdata(parent).WriteEXIFjpeg(Orig,FName); // Write to disk
-  Orig.free;
-end;
-          *)
-(*
-{$ELSE}
-procedure TIPTCdata.WriteFile(fname:ansistring; origname :ansistring = '');
-begin
-  // if you're not using Borland's jpeg unit
-  // then you should override/avoid this method
-  raise exception.create('WriteIPTCfile does nothing!');
-  // I suppose I should make this method abstract...
-end;
-*)
-{$ENDIF}
-{$ENDIF}
 
 procedure TIPTCdata.SetTagByIdx(idx: integer; AValue: ansistring);
 begin
@@ -674,7 +640,7 @@ begin
 end;
 
 {$IFDEF MSWINDOWS}
-function GetTimeZoneBias:longint;
+function GetTimeZoneBias: Longint;
 var
   TZoneInfo: TTimeZoneInformation;
 begin
@@ -684,7 +650,7 @@ end;
 {$ENDIF}
 
 {$IFDEF UNIX}
-function GetTimeZoneBias:longint;
+function GetTimeZoneBias: Longint;
 begin
   Result := -TZSeconds div 60;
 end;

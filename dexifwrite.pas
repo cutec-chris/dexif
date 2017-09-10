@@ -23,7 +23,6 @@ type
     FTiffHeaderPosition: Int64;
     FExifSegmentStartPos: Int64;
     FHasThumbnail: Boolean;
-    procedure UpdateSegmentSize(AStream: TStream);
 
   protected
     function CalcOffsetFromTiffHeader(APosition: Int64): DWord;
@@ -97,36 +96,6 @@ begin
     Result := NtoBE(AValue)
   else
     Result := NtoLE(AValue);
-end;
-
-//------------------------------------------------------------------------------
-// Updates the size of the APP1 segment
-//------------------------------------------------------------------------------
-procedure TExifWriter.UpdateSegmentSize(AStream: TStream);
-var
-  startPos: Int64;
-  segmentSize: Word;
-  w: Word;
-begin
-  // If the exif structure is part of a jpeg file then WriteExifHeader has
-  // been called which determines the position where the Exif header starts.
-  if FExifSegmentStartPos < 0 then
-    exit;
-
-  // From the current stream position (at the end) and the position where
-  // the segment size must be written, we calculate the size of the segment
-  startPos := FExifSegmentStartPos + SizeOf(word);
-  segmentSize := AStream.Position - startPos;
-
-  // Move the stream to where the segment size must be written...
-  AStream.Position := startPos;
-
-  // ... and write the segment size.
-  w := BEToN(segmentSize);
-  AStream.WriteBuffer(w, SizeOf(w));
-
-  // Rewind stream to the end
-  AStream.Seek(0, soFromEnd);
 end;
 
 //------------------------------------------------------------------------------
@@ -476,7 +445,7 @@ begin
 
     // If WriteToStream is called within a JPEG structure we must update the
     // size of the EXIF segment.
-    UpdateSegmentSize(AStream);
+    UpdateSegmentSize(AStream, FExifSegmentStartPos);
 
   finally
     subIFDList.Free;

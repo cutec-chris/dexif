@@ -299,11 +299,10 @@ procedure TIPTCform.btnXMLClick(Sender: TObject);
 var
   xml: TStringList;
 begin
-  xml := ImgData.MetaDataToXML;
-  if xml = nil then
-    exit;
+  Memo1.Clear;
+  xml := TStringList.Create;
   try
-    Memo1.Clear;
+    ImgData.MetaDataToXML(xml);
     Memo1.Lines.AddStrings(xml);
   finally
     xml.Free;
