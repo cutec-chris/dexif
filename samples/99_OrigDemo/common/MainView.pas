@@ -22,7 +22,7 @@ uses
   {$ENDIF}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   ExtDlgs, StdCtrls, ComCtrls, ExtCtrls,
-  dGlobal, dExif, dIPTC, msData;
+  dGlobal, dMetadata, dExif, dIPTC, msData;
 
 type
 
@@ -83,7 +83,7 @@ type
 
 var
   Form1: TForm1;
-  ImgData:TImgData;
+  ImgData: TImgData;
 
 implementation
 

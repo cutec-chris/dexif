@@ -14,7 +14,7 @@ uses
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
   ComCtrls, ExtCtrls, ImgList,
-  dExif;
+  dMetaData;
 
 type
 

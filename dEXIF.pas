@@ -61,21 +61,6 @@ const
 //  VLMax = 1;
 
 type
-  TImgData = class;
-
-  { TBasicMetadataWriter }
-
-  TBasicMetadataWriter = class
-  protected
-    FImgData: TImgData;
-    FErrLog: TStrings;
-  public
-    constructor Create(AImgData: TImgData); virtual;
-    destructor Destroy; override;
-    procedure LogError(const AMsg: String);
-    procedure WriteToStream(AStream: TStream); virtual;
-  end;
-
   { TEndInd }
 
   TEndInd = class
@@ -98,7 +83,7 @@ type
 
   TImageInfo = class(tEndInd)
   private
-    FParent: TImgData;
+    FParent: TObject;       // must be cast to TImgData, can't be done here due to unit circular reference
     FExifVersion: string;
 
     FITagArray: array of TTagEntry;
@@ -214,6 +199,7 @@ type
     function AddTagToThumbArray(ANewTag: iTag): integer;
     procedure Calc35Equiv;
     function CvtInt(ABuffer: Pointer; ABufferSize: Integer): Longint;
+    function Decode: Boolean; inline;
     function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
     procedure ExtractThumbnail;
     function FormatNumber(ABuffer: PByte; ABufferSize: Integer;
@@ -221,9 +207,6 @@ type
     function GetNumber(ABuffer: PByte; ABufferSize: Integer;
       AFmt: integer): double;
     function LookupRatio: double;
-
-    procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: LongInt;
-      ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word=0);
 
   public
     MaxTag: integer;
@@ -244,7 +227,7 @@ type
     MakerOffset : integer;
 
   public
-    constructor Create(AParent: TImgData; BuildCode: integer = GenAll);
+    constructor Create(AParent: TObject; BuildCode: integer = GenAll);
     procedure Assign(source: TImageInfo);
     destructor Destroy; override;
 
@@ -331,6 +314,11 @@ type
         read GetWidth write SetWidth;
 
   public
+    // General processing, called internally
+    procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: LongInt;
+      ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word=0);
+
+  public
     // Thumbnail
     procedure CreateThumbnail(AThumbnailSize: Integer = DEFAULT_THUMBNAIL_SIZE);
     function HasThumbnail: boolean;
@@ -351,213 +339,9 @@ type
     property ThumbTagValueAsString[ATagName: String]: String
         read GetThumbTagValueAsString;
 
-    property Parent: TImgData
+    property Parent: TObject
         read FParent;
   end; // TInfoData
-
-  TSection = record
-    Data: ansistring;
-    DType: integer;
-    Size: longint;
-    Base: longint;
-  end;
-  PSection = ^TSection;
-
-
-  { TImgData }
-
-  TImgData = class(TEndInd) // One per image object
-  private
-    FFilename: string;
-    FFileDateTime: TDateTime;
-    FFileSize: Int64;
-    FHeight: Integer;
-    FWidth: Integer;
-    FErrStr: String;
-    FComment: String;
-    FDateTimeFormat: String;
-    FDecode: Boolean;
-    function GetWidth: Integer;
-    function GetHeight: Integer;
-    function GetResolutionUnit: String;
-    function GetXResolution: Integer;
-    function GetYResolution: Integer;
-    procedure SetComment(const AValue: String);
-    procedure SetFileInfo(const AFilename: string);
-    procedure SetHeight(AValue: Integer);
-    procedure SetWidth(AValue: Integer);
-
-  protected
-    ExifSegment: pSection;
-    HeaderSegment: pSection;
-    function ExtractThumbnailBuffer: TBytes;
-    procedure MergeToStream(AInputStream, AOutputStream: TStream;
-      AWriteMetadata: TMetadataKinds = mdkAll);
-    procedure ProcessEXIF;
-    function ReadJpegSections(AStream: TStream;
-      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-    function ReadTiffSections(AStream: TStream): boolean;
-    function SaveExif(AStream: TStream; AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
-
-  public
-    Sections: array[1..21] of TSection;
-    TiffFmt: boolean;
-    BuildList: integer;
-    SectionCnt : integer;
-    IPTCSegment: pSection;
-    ExifObj: TImageInfo;
-    IptcObj: TIPTCData;
-    TraceLevel: integer;
-
-    procedure Reset;
-    procedure MakeIPTCSegment(buff:ansistring);
-    procedure ClearSections;
-    procedure ClearEXIF;
-    procedure ClearIPTC;
-    procedure ClearComments;
-
-    function FillInIptc: boolean;
-
-  public
-    constructor Create(buildCode: integer = GenAll);
-    destructor Destroy; override;
-
-    // Manually create empty EXIF and IPTC structures
-    function CreateExifObj: TImageInfo;
-    function CreateIPTCObj: TIPTCData;
-
-    // Reading
-    function ProcessFile(const AFileName: String;
-      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-    function ReadJpegFile(const AFileName: string;
-      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-    function ReadTiffFile(const AFileName: string): boolean;
-    function ReadExifInfo(AFilename: String): boolean;
-    procedure ReadIPTCStrings(const AFilename: String; AList: TStrings); overload;
-    function ReadIPTCStrings(const AFilename: String): TStringList; overload;
-      deprecated {$IFDEF FPC} 'Use procedure instead' {$ENDIF};
-
-    // Thumbnail
-    function ExtractThumbnailJpeg(AStream: TStream): Boolean; overload;
-    {$IFNDEF dExifNoJpeg}
-    function ExtractThumbnailJpeg: TJpegImage; overload;
-    {$ENDIF}
-
-    // Status
-    function HasMetaData:boolean;
-    function HasEXIF: boolean;
-    function HasIPTC: boolean;
-    function HasComment: boolean;
-    function HasThumbnail: boolean;
-    property ErrStr: String read FErrStr;
-
-    // Collective output
-    procedure MetaDataToXML(AList: TStrings); overload;
-    function MetaDataToXML: TStringList; overload;
-      deprecated {$IFDEF FPC} 'Use procedure instead' {$ENDIF};
-
-    // Writing
-    procedure WriteEXIFJpeg(AJpeg: TStream; AFileName: String; AdjSize: Boolean = true); overload;
-    procedure WriteEXIFJpeg(AFileName, AOrigName: String; AdjSize: Boolean = true); overload;
-    procedure WriteEXIFJpeg(AFileName: String; AdjSize: Boolean = true); overload;
-    procedure WriteEXIFJpegTo(AFileName: String);
-   {$IFNDEF dExifNoJpeg}
-    procedure WriteEXIFJpeg(j:TJpegImage; fname, origName: String;
-      AdjSize: boolean = true);  overload;
-    procedure WriteEXIFJpeg(fname: String); overload;
-    procedure WriteEXIFJpeg(j:tjpegimage; fname:String; adjSize:boolean = true);  overload;
-   {$ENDIF}
-
-    // Basic properties
-    property FileName: String read FFilename;
-    property FileDatetime: TDateTime read FFileDateTime;
-    property FileSize: Int64 read FFileSize;
-    property Height: Integer read GetHeight write SetHeight;
-    property Width: Integer read GetWidth write SetWidth;
-    property XResolution: Integer read GetXResolution;
-    property YResolution: Integer read GetYResolution;
-    property ResolutionUnit: String read GetResolutionUnit;
-    property Comment: String read FComment write SetComment;  // Comment from COM segment
-
-    // Formatting
-    property DateTimeFormat: String read FDateTimeFormat write FDateTimeFormat;
-    property Decode: Boolean read FDecode write FDecode default true;
-
-  end; // TImgData
-
-const
-//--------------------------------------------------------------------------
-// JPEG markers consist of one or more= $FF bytes, followed by a marker
-// code byte (which is not an FF).  Here are the marker codes of interest
-// in this program.
-//--------------------------------------------------------------------------
-
-     M_SOF0 = $C0;            // Start Of Frame N
-     M_SOF1 = $C1;            // N indicates which compression process
-     M_SOF2 = $C2;            // Only SOF0-SOF2 are now in common use
-     M_SOF3 = $C3;
-     M_DHT  = $C4;            // Define Huffman Table
-     M_SOF5 = $C5;            // NB: codes C4 and CC are NOT SOF markers
-     M_SOF6 = $C6;
-     M_SOF7 = $C7;
-     M_SOF9 = $C9;
-     M_SOF10= $CA;
-     M_SOF11= $CB;
-     M_DAC  = $CC;            // Define arithmetic coding conditioning
-     M_SOF13= $CD;
-     M_SOF14= $CE;
-     M_SOF15= $CF;
-     M_SOI  = $D8;            // Start Of Image (beginning of datastream)
-     M_EOI  = $D9;            // End Of Image (end of datastream)
-     M_SOS  = $DA;            // Start Of Scan (begins compressed data)
-     M_DQT  = $DB;            // Define Quantization table
-     M_DNL  = $DC;            // Define number of lines
-     M_DRI  = $DD;            // Restart interoperability definition
-     M_DHP  = $DE;            // Define hierarchical progression
-     M_EXP  = $DF;            // Expand reference component
-     M_JFIF = $E0;            // Jfif marker                             224
-     M_EXIF = $E1;            // Exif marker                             225
-  M_EXIFEXT = $E2;            // Exif extended marker                    225
-     //  M_KODAK = $E3;           // Kodak marker  ???
-     M_IPTC = $ED;            // IPTC - Photoshop                        237
-    M_APP14 = $EE;            // Photoshop data:  App14
-     M_COM  = $FE;            // Comment                                 254
-
-    ProcessTable : array [0..29] of TTagEntry =
-    (( TID:0;TType:0;ICode: 0;Tag: M_SOF0;   Name:'SKIP';Desc: 'Baseline'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF1;   Name:'';Desc: 'Extended sequential'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF2;   Name:'';Desc: 'Progressive'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF3;   Name:'';Desc: 'Lossless'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DHT;    Name:'';Desc: 'Define Huffman table'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF5;   Name:'';Desc: 'Differential sequential'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF6;   Name:'';Desc: 'Differential progressive'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF7;   Name:'';Desc: 'Differential lossless'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF9;   Name:'';Desc: 'Extended sequential, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF10;  Name:'';Desc: 'Progressive, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF11;  Name:'';Desc: 'Lossless, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF13;  Name:'';Desc: 'Differential sequential, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DAC;    Name:'';Desc: 'Define arithmetic coding conditioning'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF14;  Name:'';Desc: 'Differential progressive, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOF15;  Name:'';Desc: 'Differential lossless, arithmetic coding'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOI;    Name:'';Desc: 'Start of Image'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_EOI;    Name:'';Desc: 'End of Image'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_SOS;    Name:'';Desc: 'Start of Scan'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DQT;    Name:'';Desc: 'Define quantization table'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DNL;    Name:'';Desc: 'Define number of lines'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DRI;    Name:'';Desc: 'Restart interoperability definition'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_DHP;    Name:'';Desc: 'Define hierarchical progression'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_EXP;    Name:'';Desc: 'Expand reference component'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_JFIF;   Name:'';Desc: 'JPG marker'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_EXIF;   Name:'';Desc: 'Exif Data'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_EXIFEXT; Name:'';Desc: 'Exif Extended Data'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_COM;    Name:'';Desc: 'Comment'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_IPTC;   Name:'';Desc: 'IPTC data'),
-     ( TID:0;TType:0;ICode: 0;Tag: M_APP14;  Name:'';Desc: 'Photoshop data'),
-     ( TID:0;TType:0;ICode: 0;Tag: 0;        Name:'';Desc: 'Unknown')
-    );
-
-const
-  dExifVersion: string = '1.04';
 
 var
   CurTagArray: TImageInfo = nil;
@@ -568,9 +352,6 @@ var
   ExifNonThumbnailLength : integer;
   ShowTags: integer;
   ExifTrace: integer = 0;
-{$IFDEF dEXIFpredeclare}
-  ImgData:timgData;
-{$ENDIF}
 
 function FindExifTagDefByID(ATagID: Word): PTagEntry;
 function FindGPSTagDefByID(ATagID: Word): PTagEntry;
@@ -584,7 +365,7 @@ function LookupType(idx: integer): String;
 implementation
 
 uses
-  dExifWrite, msData;
+  dMetadata, msData;
 
 const
 // Compression Type Constants
@@ -598,8 +379,7 @@ const
 { Many tags added based on Php4 source...
     http://lxr.php.net/source/php4/ext/exif/exif.c
 
-  See also: https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html
-}
+  See also: https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html  }
 var
  TagTable : array [0..ExifTagCnt-1] of TTagEntry =
 // TagTable : array of TTagEntry =
@@ -1180,34 +960,6 @@ begin
 end;
 
 
-
-{------------------------------------------------------------------------------}
-{                        TBasicMetaDataWriter                                  }
-{------------------------------------------------------------------------------}
-
-constructor TBasicMetadataWriter.Create(AImgData: TImgData);
-begin
-  FImgData := AImgData;
-  FErrLog := TStringList.Create;
-end;
-
-destructor TBasicMetadataWriter.Destroy;
-begin
-  FErrLog.Free;
-  inherited;
-end;
-
-procedure TBasicMetadataWriter.LogError(const AMsg: String);
-begin
-  FErrLog.Add(AMsg);
-end;
-
-procedure TBasicMetadataWriter.WriteToStream(AStream: TStream);
-begin
-  FErrLog.Clear;
-end;
-
-
 //------------------------------------------------------------------------------
 //                                 TEndInd
 //
@@ -1322,14 +1074,14 @@ end;
 {                            TImageInfo                                        }
 {------------------------------------------------------------------------------}
 
-constructor TImageInfo.Create(AParent: TImgData; buildCode: integer = GenAll);
+constructor TImageInfo.Create(AParent: TObject; buildCode: integer = GenAll);
 begin
   inherited Create;
+  FParent := AParent;
   LoadTagDescs(True);  // initialize global structures
   FITagCount := 0;
   buildList := BuildCode;
   ClearDirStack;
-  FParent := AParent;
 end;
 
 // These destructors provided by Keith Murray of byLight Technologies - Thanks!
@@ -1515,7 +1267,7 @@ begin
   if Result = 0 then
     Result := GetDateTimeModified;
   if Result = 0 then
-    Result := Parent.FileDatetime;
+    Result := TImgData(Parent).FileDatetime;
 end;
 
 function TImageInfo.GetDateTimeOriginal: TDateTime;
@@ -1643,6 +1395,11 @@ begin
   Result := LongInt(r);
 end;
 
+function TImageInfo.Decode: Boolean;
+begin
+  Result := TImgData(FParent).Decode;
+end;
+
 function TImageInfo.FormatNumber(ABuffer: PByte; ABufferSize: Integer;
   AFmt: integer; AFmtStr: String; ADecodeStr: String=''): String;
 var
@@ -1670,7 +1427,7 @@ begin
       FMT_SLONG:
         begin
           tmp := CvtInt(P, len);
-          if (ADecodeStr = '') or not Parent.Decode then
+          if (ADecodeStr = '') or not Decode then
             Result := Result + defIntFmt(tmp)
           else
             Result := Result + DecodeField(ADecodeStr, IntToStr(tmp));
@@ -1683,7 +1440,7 @@ begin
           tmp2 := CvtInt(P, 4);
           dec(P, 4);
           Result := Result + defFracFmt(tmp, tmp2);
-          if (ADecodeStr <> '') or not Parent.Decode then
+          if (ADecodeStr <> '') or not Decode then
             Result := Result + DecodeField(ADecodeStr, Result);
         end;
       FMT_SINGLE,
@@ -1695,7 +1452,7 @@ begin
       FMT_BINARY:
         if ABufferSize = 1 then begin
           tmp := CvtInt(P, 1);
-          if (ADecodeSTr = '') or not Parent.Decode then
+          if (ADecodeSTr = '') or not Decode then
             Result := Result + DefIntFmt(tmp)
           else
             Result := Result + DecodeField(ADecodeStr, IntToStr(tmp));
@@ -1907,8 +1664,6 @@ var
   lookupEntry, newEntry: TTagEntry;
   tmpTR: ansistring;
   tagID: word;
-
-  i: Integer;
 begin
   PushDirStack(DirStart, OffsetBase);
   numDirEntries := Get16u(DirStart);
@@ -1917,7 +1672,7 @@ begin
       Format('Directory: Start, entries = %d, %d', [DirStart, numDirEntries]);
   if (DirStart + 2 + numDirEntries*12) > (DirStart + OffsetBase + ExifLength) then
   begin
-    Parent.FErrStr := 'Illegally sized directory';
+    TImgData(FParent).SetError('Illegally sized directory');
     exit;
   end;
 
@@ -1951,7 +1706,7 @@ begin
     end
     else
       valuePtr := dirEntry + 8;
-    rawStr := Copy(parent.EXIFsegment^.Data, valuePtr, byteCount);
+    rawStr := Copy(TImgData(FParent).EXIFsegment^.Data, valuePtr, byteCount);
 
     fStr := '';
     if BuildList in [GenString, GenAll] then
@@ -1965,14 +1720,14 @@ begin
             fStr := '"' + StrBefore(rawStr, #0) + '"';
           FMT_STRING:
             begin
-              fStr := Copy(parent.EXIFsegment^.Data, valuePtr, byteCount);
+              fStr := Copy(TImgData(FParent).EXIFsegment^.Data, valuePtr, byteCount);
               if fStr[byteCount] = #0 then
                 Delete(fStr, byteCount, 1);
             end;
           else
             fStr := FormatNumber(@rawStr[1], Length(rawStr), tagFormat, FormatS, Code);
         end;
-        if ((tag > 0) or (lookupEntry.Name <> 'Unknown')) and Assigned(Callback) and Parent.Decode then
+        if ((tag > 0) or (lookupEntry.Name <> 'Unknown')) and Assigned(Callback) and Decode then
           fStr := Callback(fStr)
         else
           fStr := MakePrintable(fStr);
@@ -1986,7 +1741,7 @@ begin
         TAG_DATETIME_MODIFY,
         TAG_DATETIME_ORIGINAL,
         TAG_DATETIME_DIGITIZED:
-          fStr := FormatDateTime(Parent.DateTimeFormat, ExifDateToDateTime(fStr));
+          fStr := FormatDateTime(TImgData(FParent).DateTimeFormat, ExifDateToDateTime(fStr));
       end;
 
       // Update trace strings
@@ -2089,6 +1844,11 @@ begin
       end;
     end;
   end;
+
+  if (ATagType = ttExif) and
+     ((TImgData(FParent).ErrStr = '') or (TImgData(FParent).ErrStr = NO_ERROR))
+  then
+    Calc35Equiv();
 end;
 
 procedure TImageInfo.ProcessHWSpecific(AMakerBuff: ansistring;
@@ -2128,7 +1888,7 @@ begin
 
       // Adjustment needed by Olympus Cameras
       if ValuePtr + ByteCount > Length(AMakerBuff) then
-        rawStr := Copy(parent.DataBuff, OffsetVal + spOffset, ByteCount)
+        rawStr := Copy(TImgData(FParent).DataBuff, OffsetVal + spOffset, ByteCount)
       else
         rawStr := copy(AMakerBuff, ValuePtr, ByteCount);
 
@@ -2151,7 +1911,7 @@ begin
             fStr := '"' + rawStr + '"';
           else
             try
-              ds := siif(Parent.Decode, LookupCode(tag, TagTbl), '');
+              ds := siif(Decode, LookupCode(tag, TagTbl), '');
               if tagID < 0 then
                 fStr := FormatNumber(@rawStr[1], Length(rawStr), tagFormat, '', '')
               else
@@ -2162,7 +1922,7 @@ begin
         end;
 
         rawDefered := false;
-        if (tagID > 0) and Assigned(TagTbl[tagID].CallBack) and Parent.FDecode then
+        if (tagID > 0) and Assigned(TagTbl[tagID].CallBack) and Decode then
           fstr2 := TagTbl[tagID].CallBack(fstr)
         else
           fstr2 := MakePrintable(fstr);
@@ -2222,10 +1982,10 @@ begin
 
   except
      on E: Exception do
-       Parent.FErrStr := 'Error detected: ' + E.Message;
+       TImgData(FParent).SetError('Error detected: ' + E.Message);
   end;
 
-   SetDataBuff(parent.DataBuff);
+   SetDataBuff(TImgData(FParent).DataBuff);
 end;
 
 procedure TImageInfo.AddMSTag(ATagName: String; ARawStr: ansistring; AType: word);
@@ -2264,7 +2024,7 @@ begin
   srcStream := TMemoryStream.Create;
   destStream := TMemoryStream.Create;
   try
-    srcStream.LoadFromFile(Parent.FileName);
+    srcStream.LoadFromFile(TImgData(FParent).FileName);
     JpegScaleImage(srcStream, destStream, AThumbnailSize);
     destStream.Position := 0;
     LoadThumbnailFromStream(destStream);
@@ -2293,7 +2053,7 @@ procedure TImageInfo.ExtractThumbnail;
 begin
   if FThumbnailStartOffset > 0 then begin
     SetLength(FThumbnailBuffer, FThumbnailSize);
-    Move(Parent.ExifSegment^.Data[FThumbnailStartOffset + 9], FThumbnailBuffer[0], FThumbnailSize);
+    Move(TImgData(FParent).ExifSegment^.Data[FThumbnailStartOffset + 9], FThumbnailBuffer[0], FThumbnailSize);
   end else
     FThumbnailBuffer := nil;
 end;
@@ -2335,7 +2095,7 @@ begin
 
   if FThumbStart > 1 then begin
     newSize := FThumbStart - 6;
-    with parent do
+    with TImgData(FParent) do
     begin
       SetLength(ExifSegment^.Data, newSize);
       ExifSegment^.Size := newSize;
@@ -2366,7 +2126,9 @@ var
   FileDateTime: String;
   L: TStringList;
   W: Integer;
+  lParent: TImgData;
 begin
+  lParent := TImgData(FParent);
   W := ALabelWidth;
   L := TStringList.Create;
   try
@@ -2375,52 +2137,46 @@ begin
       Result := ''
     else
     *)
-    if Parent.ErrStr <> '<none>' then
+    if lParent.ErrStr <> NO_ERROR then
     begin
-      L.Add(Format('File Name:     %s', [ExtractFileName(parent.Filename)]));
-      L.Add(Format('Exif Error:    %s', [Parent.ErrStr]));
+      L.Add(Format('File Name:     %s', [ExtractFileName(lParent.Filename)]));
+      L.Add(Format('Exif Error:    %s', [lParent.ErrStr]));
       Result := L.Text;
     end else
     begin
-      FileDateTime := FormatDateTime(Parent.DateTimeFormat, Parent.FileDateTime);
+      FileDateTime := FormatDateTime(lParent.DateTimeFormat, lParent.FileDateTime);
 
-      L.Add(Format('%-*s %s',      [w, 'File name:', ExtractFileName(Parent.Filename)]));
-      L.Add(Format('%-*s %dkB',    [w, 'File size:', Parent.FileSize div 1024]));
+      L.Add(Format('%-*s %s',      [w, 'File name:', ExtractFileName(lParent.Filename)]));
+      L.Add(Format('%-*s %dkB',    [w, 'File size:', lParent.FileSize div 1024]));
       L.Add(Format('%-*s %s',      [w, 'File date:', FileDateTime]));
-      L.Add(Format('%-*s %s',      [w, 'Photo date:', FormatDateTime(Parent.DateTimeFormat, GetImgDateTime)]));
+      L.Add(Format('%-*s %s',      [w, 'Photo date:', FormatDateTime(lParent.DateTimeFormat, GetImgDateTime)]));
       L.Add(Format('%-*s %s (%s)', [w, 'Make (model):', CameraMake, CameraModel]));
       L.Add(Format('%-*s %d x %d', [w, 'Dimensions:', Width, Height]));
 
       if BuildList in [GenString,GenAll] then
       begin
         tmpStr := TagValueAsString['ExposureTime'];
-//        tmpStr := LookupTagVal('ExposureTime');
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]))
         else
         begin
-//          tmpStr := LookupTagVal('ShutterSpeedValue');
           tmpStr := TagValueAsstring['ShutterSpeedValue'];
           if tmpStr <> '' then
             L.Add(Format('%-*s %s', [w, 'Exposure time:', tmpStr]));
         end;
 
-//        tmpStr := LookupTagVal('FocalLength');
         tmpStr := TagValueAsString['FocalLength'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Focal length:', tmpStr]));
 
-//        tmpStr := LookupTagVal('FocalLengthIn35mm');
         tmpStr := TagValueAsString['FocalLengthIn35mm'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'Focal length (35mm):', tmpStr]));
 
-//        tmpStr := LookupTagVal('FNumber');
         tmpStr := TagValueAsString['FNumber'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'F number', tmpStr]));
 
-//        tmpStr := LookupTagVal('ISOSpeedRatings');
         tmpStr := TagValueAsString['ISOSpeedRatings'];
         if tmpStr <> '' then
           L.Add(Format('%-*s %s', [w, 'ISO:', tmpStr]));
@@ -2435,18 +2191,16 @@ begin
 end;
 
 function TImageInfo.ToShortString: String;
+var
+  lParent: TImgData;
 begin
-  {
-  if parent.ExifSegment = nil then
-    Result := ''
+  lParent := TImgData(FParent);
+  if lParent.ErrStr <> NO_ERROR then
+    Result := ExtractFileName(lParent.Filename) + ' Exif Error: ' + lParent.ErrStr
   else
-  }
-  if Parent.ErrStr <> '<none>' then
-    Result := ExtractFileName(parent.Filename) + ' Exif Error: '+Parent.ErrStr
-  else
-    Result := ExtractFileName(parent.Filename) + ' ' +
-              IntToStr(parent.FileSize div 1024) + 'kB '+
-              FormatDateTime(Parent.DateTimeFormat, GetImgDateTime) + ' ' +
+    Result := ExtractFileName(lParent.Filename) + ' ' +
+              IntToStr(lParent.FileSize div 1024) + 'kB '+
+              FormatDateTime(lParent.DateTimeFormat, GetImgDateTime) + ' ' +
               IntToStr(Width) + 'w ' + IntToStr(Height) + 'h '+
               siif(odd(FlashUsed),' Flash', '');
 end;
@@ -2455,27 +2209,6 @@ procedure TImageInfo.AdjExifSize(AHeight, AWidth: Integer);
 begin
   TagValue['ImageWidth'] :=  AWidth;
   TagValue['ImageLength'] := AHeight;
-end;
-
-
-//------------------------------------------------------------------------------
-//                            TImgData
-//------------------------------------------------------------------------------
-
-constructor TImgData.Create(buildCode: integer = GenAll);
-begin
-  inherited create;
-  FDateTimeFormat := ISO_DATETIME_FORMAT;
-  FDecode := true;
-  buildList := BuildCode;
-  Reset;
-end;
-
-destructor TImgdata.Destroy;
-begin
-  ExifObj.Free;
-  IptcObj.Free;
-  inherited;
 end;
 
 procedure TImageInfo.InternalGetBinaryTagValue(const ATag: TTagEntry;
@@ -2954,7 +2687,7 @@ begin
   begin
     if (ATag.Size=1) then begin
       Result := FormatNumber(@ATag.Raw[1], Length(ATag.Raw), ATag.TType, ATag.FormatS, ATag.Code);
-      if Assigned(ATag.Callback) and Parent.Decode then
+      if Assigned(ATag.Callback) and Decode then
         Result := ATag.Callback(Result);
     end else
     if ATag.Name = 'ExifVersion' then
@@ -2967,13 +2700,13 @@ begin
       Result := GetExifComment
     else begin
       Result := BinaryTagToStr(ATag);
-      if Assigned(ATag.Callback) and Parent.Decode then
+      if Assigned(ATag.Callback) and Decode then
         Result := ATag.Callback(Result);
     end;
   end else
   begin
     Result := FormatNumber(@ATag.Raw[1], Length(ATag.Raw), ATag.TType, ATag.FormatS, ATag.Code);
-    if Assigned(ATag.Callback) and Parent.Decode then
+    if Assigned(ATag.Callback) and Decode then
       Result := ATag.Callback(Result)
   end;
 end;
@@ -3809,1021 +3542,6 @@ begin
   AList.Add('   </EXIFdata>');
 end;
 
-
-//--------------------------------------------------------------------------
-// The following methods implement the outer parser which
-// decodes the segments.  Further parsing isthen passed on to
-// the TImageInfo (for EXIF) and TIPTCData objects
-//--------------------------------------------------------------------------
-Procedure TImgData.MakeIPTCSegment(buff: ansistring);
-var bl:integer;
-begin
-  bl := length(buff)+2;
-  if IPTCSegment = nil then
-  begin
-    inc(SectionCnt);
-    IPTCSegment := @(sections[SectionCnt]);
-  end;
-  IPTCSegment^.data := ansichar(bl div 256) + ansichar(bl mod 256) + buff;
-  IPTCSegment^.size := bl;
-  IPTCSegment^.dtype := M_IPTC;
-end;
-           (*
-Procedure TImgData.MakeCommentSegment(ABuffer: ansistring);
-var
-  w: word;
-begin
-  if CommentSegment = nil then
-  begin
-    inc(SectionCnt);
-    CommentSegment := @(Sections[SectionCnt]);
-  end;
-
-  CommentSegment^.DType := M_COM;
-  CommentSegment^.Size := Length(ABuffer) + 2;
-  w := NtoBE(word(CommentSegment^.Size));
-  Move(w, CommentSegment^.Data[1], 2);
-  Move(ABuffer[1], CommentSegment^.Data[3], Length(ABuffer));
-//  CommentSegment^.Data := AnsiChar(bl div 256)+ansichar(bl mod 256)+buff;
-end;
-
-Function TImgData.GetCommentSegment:ansistring;
-begin
-  result := '';
-  if CommentSegment <> nil then
-    result := copy(CommentSegment^.data,2,maxint);
-end;
-               *)
-(*
-function TImgData.SaveExif(var jfs2:tstream):longint;
-var cnt:longint;
-    buff:ansistring;
-begin
-  cnt:=0;
-  buff := #$FF#$D8;
-  jfs2.Write(pointer(buff)^,length(buff));
-  if ExifSegment <> nil then
-    with ExifSegment^ do
-    begin
-      buff := #$FF+AnsiChar(Dtype)+data;
-      cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
-    end
-  else
-    if HeaderSegment <> nil then
-      with HeaderSegment^ do
-      begin
-        buff := AnsiChar($FF)+AnsiChar(Dtype)+data;
-        // buff := #$FF+AnsiChar(Dtype)+#$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
-        cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
-      end
-    else if (cnt = 0) then
-    begin
-      // buff := AnsiChar($FF)+AnsiChar(Dtype)+data;
-      buff := #$FF+AnsiChar(M_JFIF)+#$00#$10'JFIF'#$00#$01#$02#$01#$01','#$01','#$00#$00;
-      cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
-    end;
-  if IPTCSegment <> nil then
-    with IPTCSegment^ do
-    begin
-      buff := AnsiChar($FF)+AnsiChar(Dtype)+data;
-      cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
-    end;
-  if CommentSegment <> nil then
-    with CommentSegment^ do
-    begin
-      buff := AnsiChar($FF)+AnsiChar(Dtype)+data;
-      cnt := cnt+jfs2.Write(pointer(buff)^,length(buff));
-    end;
-   result := cnt;
-end;
-*)
-
-function TImgData.SaveExif(AStream: TStream;
-  AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
-const
-  SOI_MARKER: array[0..1] of byte = ($FF, $D8);
-  JFIF_MARKER: array[0..1] of byte = ($FF, $E0);
-  JFIF: ansistring = 'JFIF'#0;
-var
-  APP0Segment: TJFIFSegment;
-  buff: AnsiString;
-  writer: TExifWriter;
-  a: Ansistring;
-  w: Word;
-begin
-  // Write Start-Of-Image segment (SOI)
-  AStream.WriteBuffer(SOI_MARKER, SizeOf(SOI_MARKER));
-
-  // No Exif --> write an APP0 segment
-  if not (mdkExif in AWriteMetadata) or (not HasExif) then begin
-    if HeaderSegment = nil then begin
-      APP0Segment.Length := NtoBE(SizeOf(APP0Segment) - 2);
-      Move(JFIF[1], APP0Segment.Identifier[0], Length(JFIF));
-      APP0Segment.JFIFVersion[0] := 1;
-      APP0Segment.JFIFVersion[1] := 2;
-      APP0Segment.DensityUnits := 1;         // inch
-      APP0Segment.XDensity := NtoBE(72);     // 72 ppi
-      APP0Segment.YDensity := NtoBE(72);
-      APP0Segment.ThumbnailWidth := 0;
-      APP0Segment.ThumbnailHeight := 0;
-      AStream.WriteBuffer(JFIF_MARKER, SizeOf(JFIF_MARKER));
-      AStream.WriteBuffer(APP0Segment, SizeOf(APP0Segment));
-    end else
-      with HeaderSegment^ do
-      begin
-        buff := chr($FF) + chr(Dtype) + Data;
-        AStream.WriteBuffer(buff[1], Length(buff));
-      end;
-  end else
-  begin
-    // EXIF --> Write APP1 segment
-    writer := TExifWriter.Create(self);
-    try
-      writer.BigEndian := MotorolaOrder;
-      writer.WriteExifHeader(AStream);
-      writer.WriteToStream(AStream);
-    finally
-      writer.Free;
-    end;
-  end;
-
-  // Write IPTCSegment
-  if (mdkIPTC in AWriteMetadata) and HasIPTC then
-    MakeIPTCSegment(IPTCObj.IPTCArrayToBuffer);      // Create IPTC segment from buffer
-    with IPTCSegment^ do
-    begin
-      buff := chr($FF) + chr(Dtype) + data;
-      AStream.Write(pointer(buff)^, Length(buff));
-    end;
-
-  // Write comment segment
-  if (mdkComment in AWriteMetadata) and HasComment then begin
-   {$IFDEF FPC}
-    {$IFDEF FPC+}
-    a := UTF8ToWinCP(FComment);
-   {$ELSE}
-     a := UTF8ToAnsi(FComment);
-    {$ENDIF}
-   {$ELSE}
-    a := AnsiString(FComment);
-   {$ENDIF}
-    SetLength(buff, 2 + 2 + Length(a));
-    buff[1] := ansichar($FF);
-    buff[2] := ansichar(M_COM);
-    w := NToBE(word(Length(a) + 2));  // Length of the segment, in Big Endian
-    Move(w, buff[3], SizeOf(w));
-    Move(a[1], buff[5], Length(a));
-    AStream.Write(buff[1], Length(buff));
-  end;
-
-  Result := AStream.Position;
-end;
-
-function TImgData.ExtractThumbnailBuffer: TBytes;
-begin
-  Result := nil;
-  if HasExif and ExifObj.HasThumbnail then
-    Result := ExifObj.ThumbnailBuffer;
-  {
-var
-  STARTmarker, STOPmarker: integer;
-  tb: ansistring;
-begin
-  result := nil;
-  if HasThumbnail then
-  begin
-    try
-      tb := copy(DataBuff, ExifObj.FThumbStart, ExifObj.FThumbLength);
-      STARTmarker := Pos(#$ff#$d8#$ff#$db, tb);
-      if Startmarker = 0 then
-        STARTmarker := Pos(#$ff#$d8#$ff#$c4, tb);
-      if STARTmarker <= 0 then
-        exit;
-      tb := copy(tb, STARTmarker, Length(tb));  // strip off thumb data block
-      // ok, this is fast and easy - BUT what we really need
-      // is to read the length bytes to do the extraction...
-      STOPmarker := Pos(#$ff#$d9, tb) + 2;
-      tb := copy(tb, 1, STOPmarker);
-      SetLength(Result, Length(tb));
-      Move(tb[1], Result[0], Length(Result));
-    except
-      // Result will nil...
-    end;
-  end;
-  }
-end;
-
-//{$IFDEF FPC}
-function TImgData.ExtractThumbnailJpeg(AStream: TStream): Boolean;
-var
-  b: TBytes;
-  p: Int64;
-begin
-  Result := false;
-  if (AStream <> nil) and HasExif and ExifObj.HasThumbnail then
-  begin
-    ExifObj.SaveThumbnailToStream(AStream);
-    Result := true;
-  end;
-  {
-  else
-  if (AStream <> nil) and HasThumbnail and (ExifObj.FThumbType = JPEG_COMP_TYPE) then
-  begin
-    b := ExtractThumbnailBuffer();
-    if b <> nil then begin
-      p := AStream.Position;
-      AStream.WriteBuffer(b[0], Length(b));
-      AStream.Position := p;
-      Result := true;
-    end;
-  end;
-  }
-end;
-
-{ A jpeg image has been written to a stream. The current EXIF data will be
-  merged with this stream and saved to the specified file.
-  If AdjSize is true TImgData's image width/height are replaced by the
-  values found in the stream.
-  NOTE: It is in the responsibility of the programmer to make sure that
-  AJpeg is a stream of a valid jpeg image. }
-procedure TImgData.WriteEXIFJpeg(AJpeg: TStream; AFileName: String;
-  AdjSize: Boolean = true);
-var
-  jms: TMemoryStream;
-  jfs: TFileStream;
-  w, h: Integer;
-  //NewExifBlock: boolean;
-begin
-  jfs := TFileStream.Create(AFilename, fmCreate or fmShareExclusive);
-  try
-    AJpeg.Position := 0;               // JPEG reader must be at begin of stream
-    if AdjSize and (EXIFobj <> nil) then begin
-      JPEGImageSize(AJpeg, w, h);
-      EXIFobj.AdjExifSize(h, w);       // Adjust EXIF to image size
-      AJpeg.Position := 0;             // Rewind stream
-    end;
-    //  SaveExif(jfs);
-    // If no exif block is here create a new one
-    //NewExifBlock:= (ExifObj = nil);
-    jms := TMemoryStream.Create;
-    try
-      jms.CopyFrom(AJpeg, AJpeg.Size);
-      MergeToStream(jms, jfs);
-    finally
-      jms.Free;
-    end;
-  finally
-    jfs.Free;
-  end;
-end;
-
-{ Replaces or adds the currently loaded EXIF data to the image in AOrigName
-  and saves as AFileName.
-  WARNING: This destroys the currently loaded exif data! }
-procedure TImgData.WriteEXIFJpeg(AFileName, AOrigName: String;
-  AdjSize: Boolean = true);
-var
-  js: TMemoryStream;
-begin
-  if AOrigName = '' then
-    exit;  // nothing to do --
-
-  js := TMemoryStream.Create;
-  try
-    js.LoadFromFile(AOrigName);
-    if ReadExifInfo(AOrigName) then
-      WriteEXIFJpeg(js, AFilename, AdjSize)
-    else
-      js.SaveToFile(AFilename);
-  finally
-    js.Free;
-  end;
-end;
-
-{ Write the current EXIF data into the existing jpeg file named AFileName.
-  NOTE: THis does not work if the specified file does not exist because this
-  is where the image data come from. }
-procedure TImgData.WriteEXIFJpeg(AFilename: String; AdjSize: Boolean = true);
-var
-  imgStream: TMemoryStream;
-begin
-  if not FileExists(AFileName) then
-    raise Exception.Create('Image file "' + AFilename + '" does not exist.');
-  imgStream := TMemoryStream.Create;
-  try
-    imgStream.LoadFromFile(AFileName);
-    WriteEXIFJpeg(imgstream, AFileName, AdjSize);
-  finally
-    imgStream.Free;
-  end;
-end;
-
-{ Writes Exif and image data of the currently loaded file to a file with
-  the specified name.
-  NOTE: This does not work if the exif data were created manaully because
-  there is no filename where to get the image data from. }
-procedure TImgData.WriteExifJpegTo(AFileName: String);
-var
-  imgStream: TMemoryStream;
-begin
-  if FFileName = '' then
-    raise Exception.Create('TImgData has no filename.');
-
-  imgStream := TMemoryStream.Create;
-  try
-    imgStream.LoadFromFile(FFileName);
-    WriteExifJpeg(imgStream, AFilename, false);
-  finally
-    imgStream.Free;
-  end;
-end;
-
-{$IFNDEF dExifNoJpeg}
-function TImgData.ExtractThumbnailJpeg: TJpegImage;
-var
-  ms: TMemoryStream;
-  b: TBytes;
-begin
-  Result := nil;
-  if HasExif and ExifObj.HasThumbnail then begin
-    ms := TMemoryStream.Create;
-    try
-      ExifObj.SaveThumbnailToStream(ms);
-      ms.Position := 0;
-      Result := TJpegImage.Create;
-      Result.LoadFromStream(ms);
-    finally
-      ms.Free;
-    end;
-  end;
-end;
-
-procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname, origName: String;
-  AdjSize: boolean = true);
-begin
-  if origName = '' then
-    origName := fname;
-  if not ReadExifInfo(origName) then
-  begin
-    j.SaveToFile(fname);
-    exit;
-  end;
-  WriteEXIFJpeg(j,fname,adjSize);
-end;
-
-procedure TImgData.WriteEXIFJpeg(fname: String);
-var
-  img: TJpegImage;
-begin
-  img := TJPEGImage.Create;
-  try
-    img.LoadFromFile(Filename);
-    WriteEXIFJpeg(img, fname, false);
-  finally
-    img.Free;
-  end;
-end;
-
-procedure TImgData.WriteEXIFJpeg(j: TJpegImage; fname: String;
-  AdjSize:boolean = true);
-var
-  jms: tmemorystream;
-  jfs: TFileStream;
-  NewExifBlock: Boolean;
-begin
-  NewExifBlock := (ExifObj = nil);
-
-  // to do: Create a new exif block here if AdjSize is true
-  if AdjSize and (EXIFobj <> nil) then
-    EXIFobj.AdjExifSize(j.height,j.width);
-
-  jms := tmemorystream.Create;
-  try  { Thanks to Erik Ludden... }
-    j.SaveToStream(jms);
-    jfs := TFileStream.Create(fname, fmCreate or fmShareExclusive);
-    try
-      MergeToStream(jms, jfs);
-    finally
-      jfs.Free;
-    end
-  finally
-    jms.Free;
-  end
-end;
-{$ENDIF}
-
-//procedure TImgData.MergeToStream(AInputStream, AOutputStream: TStream;
-//  AEnabledMeta: Byte = $FF; AFreshExifBlock: Boolean = false);
-procedure TImgData.MergeToStream(AInputStream, AOutputStream: TStream;
-  AWriteMetadata: TMetadataKinds = mdkAll);
-type
-  TSegmentHeader = packed record
-    Key: byte;
-    Marker: byte;
-    Size: Word;
-  end;
-var
-  header: TSegmentHeader;
-  n, count: Integer;
-  savedPos: Int64;
-begin
-  // Write the header segment and all segments modified by dEXIF
-  // to the beginning of the stream
-  AOutputStream.Position := 0;
-  SaveExif(AOutputStream, AWriteMetaData);
-
-  // Now write copy all segments which were not modified by dEXIF.
-  AInputStream.Position := 0;
-  while AInputStream.Position < AInputStream.Size do begin
-    savedPos := AInputStream.Position;  // just for debugging
-    n := AInputStream.Read(header, SizeOf(header));
-    if n <> Sizeof(header) then
-      raise Exception.Create('Defective JPEG structure: Incomplete segment header');
-    if header.Key <> $FF then
-       raise Exception.Create('Defective JPEG structure: $FF expected.');
-     header.Size := BEToN(header.Size);
-
-     // Save stream position before segment size value.
-     savedPos := AInputStream.Position - 2;
-     case header.Marker of
-       M_SOI:
-         header.Size := 0;
-       M_JFIF, M_EXIF, M_IPTC, M_COM:  // these segments were already written by SaveExif
-         ;
-       M_SOS:
-         begin
-           // this is the last segment before compressed data which don't have a marker
-           // --> just copy the rest of the file
-           count := AInputStream.Size - savedPos;
-           AInputStream.Position := savedPos;
-           AOutputStream.WriteBuffer(header, 2);
-           n := AOutputStream.CopyFrom(AInputStream, count);
-           if n <> count then
-             raise Exception.Create('Read/write error detected for compressed data.');
-           break;
-         end;
-       else
-         AInputstream.Position := AInputStream.Position - 4;  // go back to where the segment begins
-         n := AOutputStream.Copyfrom(AInputStream, header.Size + 2);
-         if n <> header.Size + 2 then
-           raise Exception.CreateFmt('Read/write error in segment $FF%.2x', [header.Marker]);
-     end;
-     AInputStream.Position := savedPos + header.Size;
-  end;
-end;
-
-function TImgData.FillInIptc:boolean;
-begin
-  if IPTCSegment = nil then
-    CreateIPTCObj
-  else
-    IPTCObj.ParseIPTCArray(IPTCSegment^.Data);
-    // To do: Here's a memory leak because ParseIPTCArray returns a StringList which is not destroyed!
-
-//    filename := FName;
-  result := IPTCObj.HasData();
-end;
-
-procedure TImgData.ClearSections;
-begin
-  ClearEXIF;
-  ClearIPTC;
-  ClearComments;
-end;
-
-procedure TImgData.ClearEXIF;
-begin
-  ExifSegment := nil;
-  FreeAndNil(ExifObj);
-end;
-
-procedure TImgData.ClearIPTC;
-begin
-  IPTCSegment := nil;
-//  HeaderSegment := nil;
-  FreeAndNil(IptcObj);
-end;
-
-procedure TImgData.ClearComments;
-begin
-  FComment := '';
-end;
-
-procedure TImgData.SetComment(const AValue: String);
-var
-  w: WideString;
-begin
-  // Check whether the provided string fits into a 64k segment
- {$IFDEF FPC}
-  w := UTF8Decode(AValue);
- {$ENDIF}
-  if Length(w) > Word($FFFF) - 4 then
-    raise Exception.CreateFmt('Comment too long, max %d characters', [Word($FFFF) - 4]);
-  FComment := AValue;
-end;
-
-function TImgData.ReadExifInfo(AFilename: String): boolean;
-begin
-  ProcessFile(AFilename);
-  result := HasMetaData();
-end;
-
-function TImgData.ProcessFile(const AFileName: string;
-  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-var
-  ext: string;
-begin
-  Reset;
-  Result := false;
-  if not FileExists(aFileName) then
-    exit;
-
-  SetFileInfo(AFileName);
-  try
-    FErrStr := 'Not an EXIF file';
-    ext := LowerCase(ExtractFileExt(filename));
-    if (ext = '.jpg') or (ext = '.jpeg') or (ext = '.jpe') then
-    begin
-      if not ReadJpegFile(FileName, AMetadataKinds) then
-        exit;
-    end else
-    if (ext = '.tif') or (ext = '.tiff') or (ext = '.nef') then
-    begin
-      if not ReadTiffFile(FileName) then
-        exit;
-    end else
-      exit;
-
-    FErrStr := '<none>';
-//    msAvailable := ReadMSData(Imageinfo);
-//    msName := gblUCMaker;
-    Result := true;
-  except
-    FErrStr := 'Illegal EXIF construction';
-  end;
-end;
-
-procedure TImgData.SetFileInfo(const AFileName: String);
-var
-  sr: TSearchRec;
-  stat: word;
-begin
-  stat := FindFirst(AFilename, faAnyFile, sr);
-  if stat = 0 then
-  begin
-    FFilename := AFilename;
-    FFileDateTime := FileDateToDateTime(sr.Time);
-    FFileSize := sr.Size;
-  end;
-  FindClose(sr);
-end;
-
-procedure TImgData.SetHeight(AValue: Integer);
-begin
-  CreateExifObj;
-  ExifObj.TagValue['ImageLength'] := AValue;
-  FHeight := AValue;
-end;
-
-procedure TImgData.SetWidth(AValue: Integer);
-begin
-  CreateExifObj;
-  ExifObj.TagValue['ImageWidth'] := AValue;
-  FWidth := AValue;
-end;
-
-function TImgData.CreateExifObj: TImageInfo;
-begin
-  ExifObj.Free;
-  ExifObj := TImageInfo.Create(self);
-  FErrStr := '<none>';
-  Result := ExifObj;
-end;
-
-function TImgData.CreateIPTCObj: TIPTCData;
-begin
-  IPTCObj.Free;
-  MakeIPTCSegment('');
-  IPTCobj := TIPTCdata.Create(self);
-  Result := IPTCObj;
-end;
-
-//--------------------------------------------------------------------------
-// Parse the marker stream until SOS or EOI is seen
-//--------------------------------------------------------------------------
-function TImgData.ReadJpegSections(AStream: TStream;
-  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-var
-  a, b: byte;
-  ll, lh, itemLen, marker: integer;
-  pw: PWord;
-  sa: ansistring;
-begin
-  a := GetByte(AStream);
-  b := GetByte(AStream);
-  if (a <> $ff) or (b <> M_SOI) then
-  begin
-    Result := false;
-    exit;
-  end;
-  SectionCnt := 0;
-  while SectionCnt < 20 do  // prevent overruns on bad data
-  begin
-    repeat
-      marker := GetByte(AStream);
-    until marker <> $FF;
-    inc(SectionCnt);
-    // Read the length of the section.
-    lh := GetByte(AStream);
-    ll := GetByte(AStream);
-    itemLen := (lh shl 8) or ll;
-    with Sections[SectionCnt] do
-    begin
-      DType := marker;
-      Size := itemLen;
-      SetLength(data, itemLen);
-      if itemLen > 0 then
-        begin
-          data[1] := ansichar(lh);
-          data[2] := ansichar(ll);
-        end;
-      try
-        AStream.Read(data[3], itemLen-2);
-      except
-        continue;
-      end;
-    end;
-    if (SectionCnt = 5) and not HasMetaData() then
-      break;  // no exif by 8th - let's not waste time
-    case marker of
-      M_SOS:
-        break;
-      M_EOI:
-        break;  // in case it's a tables-only JPEG stream
-      M_COM:
-        if mdkComment in AMetadataKinds then
-        begin
-          SetLength(sa, Sections[SectionCnt].Size - 2);
-          Move(Sections[SectionCnt].Data[3], sa[1], Length(sa));
-         {$IFDEF FPC}
-          {$IFDEF FPC3+}
-          FComment := WinCPToUTF8(sa);
-          {$ELSE}
-          FComment := AnsiToUTF8(sa);
-          {$ENDIF}
-         {$ELSE}
-          FComment := sa;
-         {$ENDIF}
-          dec(SectionCnt);  // No need to store the Comment segment any more
-        end;
-      M_IPTC:
-        begin // IPTC section
-          if (mdkIPTC in AMetadataKinds) then //and (IPTCSegment = nil) then
-          begin
-            IPTCSegment := @Sections[SectionCnt];
-            IPTCobj := TIPTCdata.Create(self);
-            IPTCobj.ParseIPTCArray(IPTCSegment^.Data);
-          end else
-            dec(SectionCnt);
-        end;
-      M_JFIF:
-        begin
-          // Regular jpegs always have this tag, exif images have the exif
-          // marker instead, althogh ACDsee will write images with both markers.
-          // This program will re-create this marker on absence of exif marker.
-          HeaderSegment := @sections[SectionCnt];
-        end;
-      M_EXIF:
-        begin
-          if (mdkEXIF in AMetadataKinds) and (SectionCnt <= 5) and (EXIFsegment = nil) then
-          begin
-            // Seen files from some 'U-lead' software with Vivitar scanner
-            // that uses marker 31 later in the file (no clue what for!)
-            EXIFsegment := @sections[SectionCnt];
-            EXIFobj := TImageInfo.Create(self,BuildList);
-            EXIFobj.TraceLevel := TraceLevel;
-            SetDataBuff(EXIFsegment^.data);
-            ProcessEXIF;
-          end else
-          begin
-            // Discard this section.
-            dec(SectionCnt);
-          end;
-        end;
-      M_SOF0:
-        with Sections[SectionCnt] do begin
-          pw := @data[4];
-          FHeight := BEToN(pw^);
-          pw := @data[6];
-          FWidth := BEToN(pw^);
-          dec(SectionCnt);
-        end;
-      {
-      M_SOF1..M_SOF15:
-        begin
-          // process_SOFn(Data, marker);
-        end;
-        }
-      else
-        dec(SectionCnt);  // Discard this section
-    end;  // case
-  end;
-  Result := HasMetaData();
-end;
-
-function TImgData.ReadJpegFile(const AFileName: string;
-  AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-var
-  fs: TFilestream;
-begin
-  ClearSections;
-  TiffFmt := false;  // default mode
-  fs := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
-  try
-    try
-      result := ReadJpegSections(fs, AMetadataKinds);
-    except
-      result := false;
-    end;
-  finally
-    fs.Free;
-  end;
-end;
-
-function TImgData.ReadTiffSections(AStream: TStream): boolean;
-var
-  itemLen: Integer;
-  fmt: string[2];
-begin
-  Result := true;
-  AStream.ReadBuffer(fmt[1], 2);
-  if (fmt <> 'II') and (fmt <> 'MM') then
-  begin
-    Result := false;
-    exit;
-  end;
-
-  SetLength(Sections[1].Data, 6);
-  AStream.Read(Sections[1].Data[1], 6);
-{
-  // length calculations are inconsistant for TIFFs
-  lh := byte(Sections[1].data[1]);
-  ll := byte(Sections[1].data[2]);
-
-  if MotorolaOrder
-    then itemlen := (lh shl 8) or ll
-    else itemlen := (ll shl 8) or lh;
-}
-//  itemlen := (ll shl 8) or lh;
-
-  itemLen := TiffReadLimit;
-
-  SetLength(Sections[1].Data, itemLen);
-  AStream.Read(Sections[1].Data[1], itemLen);
-
-  SectionCnt := 1;
-  EXIFsegment := @sections[1];
-
-  EXIFobj := TImageInfo.Create(self, BuildList);
-  EXIFobj.TraceLevel := TraceLevel;
-  ExifObj.TiffFmt := TiffFmt;
-  ExifObj.TraceStr := '';
-  EXIFsegment := @sections[SectionCnt];
-  ExifObj.DataBuff := Sections[1].Data;
-  ExifObj.parent.DataBuff :=  Sections[1].data;
-  ExifObj.MotorolaOrder := fmt = 'MM';
-  EXIFobj.ProcessExifDir(1, -7 , itemlen);
-  EXIFobj.Calc35Equiv();
-end;
-
-function TImgData.ReadTiffFile(const AFileName: string): boolean;
-var
-  fs: TFileStream;
-begin
-  TiffFmt := true;
-  ClearSections;
-  fs := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyWrite);
-  try
-    try
-      Result := ReadTiffSections(fs);
-    except
-      Result := false;
-    end;
-  finally
-    fs.Free;
-  end;
-  TiffFmt := false;
-end;
-
-Procedure TImgData.ProcessEXIF;
-var
-  hdr: ansistring;
-  offset: integer;
-begin
-  if ExifSegment = nil then
-    exit;
-
-  if not Assigned(ExifObj) then
-    ExifObj := TImageInfo.Create(self, BuildList);
-  hdr := copy(EXIFsegment^.Data, 3, Length(validExifHeader));
-  if hdr <> validExifHeader then
-  begin
-    FErrStr := 'Incorrect Exif header';
-    exit;
-  end;
-  if copy(EXIFsegment^.Data, 9, 2) = 'II' then
-    MotorolaOrder := false
-  else if copy(EXIFsegment^.Data, 9, 2) = 'MM' then
-    MotorolaOrder := true
-  else
-  begin
-    FErrStr := 'Invalid Exif alignment marker';
-    exit;
-  end;
-  ExifObj.TraceStr := '';
-  ExifObj.DataBuff := DataBuff;
-  ExifObj.MotorolaOrder := MotorolaOrder;
-
-  offset := Get32u(17-4);
-  if offset = 0
-    then ExifObj.ProcessExifDir(17, 9, EXIFsegment^.Size-6)
-    else ExifObj.ProcessExifDir(9+offset, 9, EXIFsegment^.Size-6);
-  if ErrStr <> '' then
-    ExifObj.Calc35Equiv();
-
-  ExifObj.ProcessThumbnail;
-end;
-
-procedure TImgData.Reset;
-begin
-  SectionCnt := 0;
-  ExifSegment := nil;
-  IPTCSegment := nil;
-  FComment := '';
-//  CommentSegment := nil;
-  HeaderSegment := nil;
-  FFilename := '';
-  FFileDateTime := 0;
-  FFileSize := 0;
-  FErrStr := '';
-  FreeAndNil(ExifObj);
-  FreeAndNil(IptcObj);
-  MotorolaOrder := false;
-end;
-
-function TImgData.GetHeight: Integer;
-begin
-  if (EXIFObj <> nil) and (ExifObj.Height > 0) then
-    Result := ExifObj.Height
-  else
-    Result := FHeight;
-end;
-
-function TImgData.GetResolutionUnit: String;
-const
-  RESOLUTION_UNIT: array[0..2] of string = ('none', 'inches', 'cm');
-var
-  v: variant;
-  b: Byte;
-begin
-  Result := '';
-  if ExifObj <> nil then begin
-    v := ExifObj.GetTagValue('ResolutionUnit');   // 1=none, 2=Inch, 3=cm
-    if not VarIsNull(v) and (v >= 1) and (v <= 3) then
-      Result := RESOLUTION_UNIT[byte(v)-1];
-  end;
-  if (Result = '') and (HeaderSegment <> nil) then begin
-    b := byte(HeaderSegment^.Data[10]);           // 0=none, 1=Inch, 2=cm
-    if (b <= 2) then
-      Result := RESOLUTION_UNIT[b];
-  end;
-end;
-
-function TImgData.GetWidth: Integer;
-begin
-  if (ExifObj <> nil) and (ExifObj.Width > 0) then
-    Result := ExifObj.Width
-  else
-    Result := FWidth;
-end;
-
-function TImgData.GetXResolution: Integer;
-var
-  v: variant;
-  pw: PWord;
-begin
-  Result := 0;
-  if (ExifObj <> nil) then begin
-    v := ExifObj.GetTagValue('XResolution');
-    if not VarIsNull(v) then
-      Result := v;
-  end;
-  if (Result <= 0) and (HeaderSegment <> nil) then begin
-    pw := @HeaderSegment^.Data[11];
-    Result := BEToN(pw^);
-  end;
-end;
-
-function TImgData.GetYResolution: Integer;
-var
-  v: variant;
-  pw: PWord;
-begin
-  Result := 0;
-  if ExifObj <> nil then begin
-    v := ExifObj.GetTagValue('YResolution');
-    if not VarIsNull(v) then
-      Result := v;
-  end;
-  if (Result <= 0) and (HeaderSegment <> nil) then begin
-    pw := @HeaderSegment^.Data[13];
-    Result := BEToN(pw^);
-  end;
-end;
-
-function TImgData.HasMetaData: boolean;
-begin
-  result := HasExif or HasComment or HasIPTC;
-end;
-
-function TImgData.HasEXIF: boolean;
-begin
-  result := Assigned(ExifObj); //ExifObj <> nl; //(EXIFsegment <> nil);
-end;
-
-function TImgData.HasThumbnail: boolean;
-begin
-  Result := Assigned(ExifObj) and ExifObj.HasThumbnail;
-end;
-
-function TImgData.HasIPTC: boolean;
-begin
-  result := (IPTCsegment <> nil);
-end;
-
-function TImgData.HasComment: boolean;
-begin
-  result := FComment <> '';
-end;
-
-// WARNING: The calling routine must destroy the returned stringlist!
-function TImgData.ReadIPTCStrings(const AFilename: String): TStringList;
-begin
-  Result := TStringList.Create;
-  ReadIPTCStrings(AFileName, Result);
-  if Result.Count = 0 then
-    FreeAndNil(Result);
-end;
-
-procedure TImgData.ReadIPTCStrings(const AFileName: String; AList: TStrings);
-begin
-  if ProcessFile(AFilename) and HasIPTC then
-    IPTCObj.ParseIPTCStrings(IPTCSegment^.Data, AList);
-end;
-
-// WARNING: The calling procedure must destroy the StringList created here!
-function TImgData.MetaDataToXML: TStringList;
-begin
-  Result := TStringList.Create;
-  MetaDataToXML(Result);
-end;
-
-procedure TImgData.MetaDataToXML(AList: TStrings);
-var
-  sr: TSearchRec;
-begin
-  Assert(AList <> nil, 'MetaDataToXML called with AList=nil.');
-
-  if FindFirst(Filename,faAnyFile, sr) <> 0 then
-  begin
-    FindClose(sr);
-    exit;
-  end;
-
-  AList.Add('<dImageFile>');
-  AList.Add('   <OSdata>');
-  AList.Add('      <name>' + ExtractFileName(sr.Name) + '</name>');
-  AList.Add('      <path>' + ExtractFilePath(Filename) + '</path>');
-  AList.Add('      <size>' + IntToStr(sr.Size) + '</size>');
-  AList.Add('      <date>' + DateToStr(FileDateToDateTime(sr.time)) + '</date>');
-  AList.Add('   </OSdata>');
-
-  if ExifObj <> nil then
-    ExifObj.EXIFArrayToXML(AList);
-
-  if IptcObj <> nil then
-    IptcObj.IPTCArrayToXML(AList);
-
-  AList.Add('</dImageFile>');
-end;
-
-{$IFDEF dEXIFpredeclare}
-
-initialization
-  ImgData := TImgData.create;
-finalization
-  ImgData.Free;
-{$ENDIF}
 
 end.
 

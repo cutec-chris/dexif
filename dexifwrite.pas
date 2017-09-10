@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils,
-  dGlobal, dUtils, dEXIF;
+  dGlobal, dUtils, dMetadata, dEXIF;
 
 type
   TExifWriter = class(TBasicMetadataWriter)

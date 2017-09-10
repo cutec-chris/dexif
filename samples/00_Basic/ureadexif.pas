@@ -36,7 +36,7 @@ var
 implementation
 
 uses
-  dGlobal, dEXIF;
+  dGlobal, dMetadata;
 
 {$R *.lfm}
 

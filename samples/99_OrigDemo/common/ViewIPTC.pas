@@ -30,7 +30,8 @@ uses
   Windows, Messages,
  {$ENDIF}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtCtrls, StdCtrls, ExtDlgs, ComCtrls, dEXIF, dIPTC, About;
+  ExtCtrls, StdCtrls, ExtDlgs, ComCtrls,
+  dMetadata, dEXIF, dIPTC, About;
 
 const
   ProgName = 'IPTCView';

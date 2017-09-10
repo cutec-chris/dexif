@@ -16,7 +16,7 @@ uses
  {$ENDIF}
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
   StdCtrls, Buttons, ComCtrls, ExtCtrls, Variants,
-  dGlobal, dExif, ImgList;
+  dGlobal, dMetadata, ImgList;
 
 type
 
@@ -74,7 +74,7 @@ implementation
 
 uses
   StrUtils, Math, IniFiles,
-  dUtils;
+  dUtils, dExif;
 
 const
   IMGINDEX_SUCCESS = 0;

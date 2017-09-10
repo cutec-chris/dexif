@@ -193,11 +193,12 @@ procedure InitITag(out ATag: ITag);
 implementation
 
 uses
-  dUtils, dEXIF;
-          (*
-var
-  Buffer: ansistring;
-            *)
+  dUtils, dMetadata, dEXIF;
+
+//------------------------------------------------------------------------------
+//                             TIPTCData
+//------------------------------------------------------------------------------
+
 constructor TIPTCdata.Create(AParent: TObject);
 begin
   inherited Create;
