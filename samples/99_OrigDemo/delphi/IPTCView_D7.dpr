@@ -11,7 +11,9 @@ uses
   dIPTC in '..\..\..\dIPTC.pas',
   dTags in '..\..\..\dTags.pas',
   dUtils in '..\..\..\dUtils.pas',
-  msData in '..\..\..\msData.pas';
+  msData in '..\..\..\msData.pas',
+  dIptcWrite in '..\..\..\diptcwrite.pas',
+  dMetadata in '..\..\..\dmetadata.pas';
 
 {$R *.RES}
 

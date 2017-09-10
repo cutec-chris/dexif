@@ -6,12 +6,14 @@ uses
   TagPickU in '..\common\TagPickU.pas' {TagPickDlg},
   About in '..\common\About.pas' {AboutBox},
   dEXIF in '..\..\..\dEXIF.pas',
-  dexifwrite in '..\..\..\dExifWrite.pas',
+  dExifWrite in '..\..\..\dExifWrite.pas',
   dGlobal in '..\..\..\dGlobal.pas',
   dIPTC in '..\..\..\dIPTC.pas',
   dTags in '..\..\..\dTags.pas',
   dUtils in '..\..\..\dUtils.pas',
-  msData in '..\..\..\msData.pas';
+  msData in '..\..\..\msData.pas',
+  diptcwrite in '..\..\..\diptcwrite.pas',
+  dmetadata in '..\..\..\dmetadata.pas';
 
 {$R *.RES}
 

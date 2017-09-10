@@ -971,7 +971,6 @@ begin
   with ATagEntry do begin
     TID := 0;          // TagTableID - EXIF use
     TType := 0;        // tag type
-    ICode := 0;        // iptc code
     Tag := 0;          // primary key
     Name := '';        // searchable
     Count := 1;        // elements of TType

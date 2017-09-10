@@ -40,10 +40,10 @@ type
   TTagEntry = record
     TID: integer;        // TagTableID - EXIF use
     TType: word;         // tag type  -- see FMT_XXXX constants
-    ICode: Word;         // iptc code
+//    ICode: Word;         // iptc code
     Tag: Word;           // primary key
     ParentID: Word;      // Tag ID of the parent folder
-    Count: Word;         // count of TType elements
+    Count: Word;     // count of TType elements
     Name: String;        // searchable
     Desc: String;        // translatable
     Code: String;        // decode capability
@@ -174,7 +174,7 @@ const
   ISO_DATETIME_FORMAT  = 'yyyy-mm-dd hh:nn:ss';
   EXIF_DATETIME_FORMAT = 'yyyy:mm:dd hh:nn:ss';
 
-  EmptyEntry: TTagEntry = (TID:0; TType:0; ICode:0; Tag:0; ParentID:0; Count:1;
+  EmptyEntry: TTagEntry = (TID:0; TType:0; Tag:0; ParentID:0; Count:1;
     Name:''; Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:nil);
 
   GpsFormat = gf_DMS_Short;

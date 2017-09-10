@@ -199,7 +199,7 @@ type
     function AddTagToThumbArray(ANewTag: iTag): integer;
     procedure Calc35Equiv;
     function CvtInt(ABuffer: Pointer; ABufferSize: Integer): Longint;
-    function Decode: Boolean; inline;
+    function Decode: Boolean; 
     function ExifDateToDateTime(ARawStr: ansistring): TDateTime;
     procedure ExtractThumbnail;
     function FormatNumber(ABuffer: PByte; ABufferSize: Integer;
@@ -385,370 +385,370 @@ var
 // TagTable : array of TTagEntry =
 // TagTable : TTagDefArray [0..ExifTagCnt] =
 // TagTable: TTagDefArray =
- ((TID:0; TType:2; ICode:2; Tag:$0001; Count:1; Name:'InteroperabilityIndex'  ),         {0}
-  (TID:0; TType:7; ICode:2; Tag:$0002; Count:1; Name:'InteroperabilityVersion';
+ ((TID:0; TType:2; Tag:$0001; Count:1; Name:'InteroperabilityIndex'  ),         {0}
+  (TID:0; TType:7; Tag:$0002; Count:1; Name:'InteroperabilityVersion';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4; Callback:VersionCallback),
-  (TID:0; TType:2; ICode:2; Tag:$000B; Count:1; Name:'ACDComment'             ),
-  (TID:0; TType:4; ICode:2; Tag:$00FE; Count:1; Name:'NewSubfileType'         ),
-  (TID:0; TType:3; ICode:2; Tag:$00FF; Count:1; Name:'SubfileType'            ),
-  (TID:0; TType:4; ICode:2; Tag:$0100; ParentID:$0000; Count:1; Name:'ImageWidth'),
-  (TID:0; TType:4; ICode:2; Tag:$0101; ParentID:$0000; Count:1; Name:'ImageLength'),
-  (TID:0; TType:3; ICode:2; Tag:$0102; ParentID:$0000; Count:3; Name:'BitsPerSample'),
-  (TID:0; TType:3; ICode:2; Tag:$0103; ParentID:$0000; Count:1; Name:'Compression';
+  (TID:0; TType:2; Tag:$000B; Count:1; Name:'ACDComment'             ),
+  (TID:0; TType:4; Tag:$00FE; Count:1; Name:'NewSubfileType'         ),
+  (TID:0; TType:3; Tag:$00FF; Count:1; Name:'SubfileType'            ),
+  (TID:0; TType:4; Tag:$0100; ParentID:$0000; Count:1; Name:'ImageWidth'),
+  (TID:0; TType:4; Tag:$0101; ParentID:$0000; Count:1; Name:'ImageLength'),
+  (TID:0; TType:3; Tag:$0102; ParentID:$0000; Count:3; Name:'BitsPerSample'),
+  (TID:0; TType:3; Tag:$0103; ParentID:$0000; Count:1; Name:'Compression';
     Desc:''; Code:'6:Jpeg,3:Uncompressed,1:TIFF'),
-  (TID:0; TType:3; ICode:2; Tag:$0106; ParentID:$0000; Count:1; Name:'PhotometricInterpretation';
+  (TID:0; TType:3; Tag:$0106; ParentID:$0000; Count:1; Name:'PhotometricInterpretation';
     Desc:''; Code:'1:Monochrome, 2:RGB, 6:YCbCr'),
-  (TID:0; TType:3; ICode:2; Tag:$010A; ParentID:$0000; Count:1; Name:'FillOrder'),         {10}
-  (TID:0; TType:2; ICode:2; Tag:$010D; ParentID:$0000; Count:1; Name:'DocumentName'),
-  (TID:0; TType:2; ICode:2; Tag:$010E; ParentID:$0000; Count:1; Name:'ImageDescription'),
-  (TID:0; TType:2; ICode:2; Tag:$010F; ParentID:$0000; Count:1; Name:'Make'),
-  (TID:0; TType:2; ICode:2; Tag:$0110; ParentID:$0000; Count:1; Name:'Model'),
-  (TID:0; TType:4; ICode:2; Tag:$0111; ParentID:$0000; Count:1; Name:'StripOffsets'),
-  (TID:0; TType:3; ICode:2; Tag:$0112; ParentID:$0000; Count:1; Name:'Orientation';
+  (TID:0; TType:3; Tag:$010A; ParentID:$0000; Count:1; Name:'FillOrder'),         {10}
+  (TID:0; TType:2; Tag:$010D; ParentID:$0000; Count:1; Name:'DocumentName'),
+  (TID:0; TType:2; Tag:$010E; ParentID:$0000; Count:1; Name:'ImageDescription'),
+  (TID:0; TType:2; Tag:$010F; ParentID:$0000; Count:1; Name:'Make'),
+  (TID:0; TType:2; Tag:$0110; ParentID:$0000; Count:1; Name:'Model'),
+  (TID:0; TType:4; Tag:$0111; ParentID:$0000; Count:1; Name:'StripOffsets'),
+  (TID:0; TType:3; Tag:$0112; ParentID:$0000; Count:1; Name:'Orientation';
     Desc:''; Code:'1:Horizontal (normal),2:Mirror horizontal,3:Rotate 180,'+
                   '4:Mirror vertical,5:Mirror horizontal and rotate 270 CW,'+
                   '6:Rotate 90 CW,7:Mirror horizontal and rotate 90 CW,'+
                   '8:Rotate 270 CW'),
-  (TID:0; TType:3; ICode:2; Tag:$0115; ParentID:$0000; Count:1; Name:'SamplesPerPixel'),
-  (TID:0; TType:4; ICode:2; Tag:$0116; ParentID:$0000; Count:1; Name:'RowsPerStrip'),
-  (TID:0; TType:4; ICode:2; Tag:$0117; ParentID:$0000; Count:1; Name:'StripByteCounts'),
-  (TID:0; TType:3; ICode:2; Tag:$0118; ParentID:$0000; Count:1; Name:'MinSampleValue'),         {20}
-  (TID:0; TType:3; ICode:2; Tag:$0119; ParentID:$0000; Count:1; Name:'MaxSampleValue'),
-  (TID:0; TType:5; ICode:2; Tag:$011A; ParentID:$0000; Count:1; Name:'XResolution'),
+  (TID:0; TType:3; Tag:$0115; ParentID:$0000; Count:1; Name:'SamplesPerPixel'),
+  (TID:0; TType:4; Tag:$0116; ParentID:$0000; Count:1; Name:'RowsPerStrip'),
+  (TID:0; TType:4; Tag:$0117; ParentID:$0000; Count:1; Name:'StripByteCounts'),
+  (TID:0; TType:3; Tag:$0118; ParentID:$0000; Count:1; Name:'MinSampleValue'),         {20}
+  (TID:0; TType:3; Tag:$0119; ParentID:$0000; Count:1; Name:'MaxSampleValue'),
+  (TID:0; TType:5; Tag:$011A; ParentID:$0000; Count:1; Name:'XResolution'),
 //    Desc:''; Code:''; Data:''; Raw:''; FormatS:'%f'),
-  (TID:0; TType:5; ICode:2; Tag:$011B; ParentID:$0000; Count:1; Name:'YResolution'),
+  (TID:0; TType:5; Tag:$011B; ParentID:$0000; Count:1; Name:'YResolution'),
 //    Desc:''; Code:''; Data:''; Raw:''; FormatS:'%f'),
-  (TID:0; TType:3; ICode:2; Tag:$011C; ParentID:$0000; Count:1; Name:'PlanarConfiguration'),
-  (TID:0; TType:2; ICode:2; Tag:$011D; ParentID:$0000; Count:1; Name:'PageName'),
-  (TID:0; TType:5; ICode:2; Tag:$011E; ParentID:$0000; Count:1; Name:'XPosition'),
-  (TID:0; TType:5; ICode:2; Tag:$011F; ParentID:$0000; Count:1; Name:'YPosition'),
-  (TID:0; TType:0; ICode:2; Tag:$0120; ParentID:$0000; Count:1; Name:'FreeOffsets'),
-  (TID:0; TType:0; ICode:2; Tag:$0121; ParentID:$0000; Count:1; Name:'FreeByteCounts'),
-  (TID:0; TType:3; ICode:2; Tag:$0122; ParentID:$0000; Count:1; Name:'GrayReponseUnit'),         {30}
-  (TID:0; TType:0; ICode:2; Tag:$0123; ParentID:$0000; Count:1; Name:'GrayReponseCurve'),
-  (TID:0; TType:0; ICode:2; Tag:$0124; ParentID:$0000; Count:1; Name:'T4Options'),
-  (TID:0; TType:0; ICode:2; Tag:$0125; ParentID:$0000; Count:1; Name:'T6Options'),
-  (TID:0; TType:3; ICode:2; Tag:$0128; ParentID:$0000; Count:1; Name:'ResolutionUnit';
+  (TID:0; TType:3; Tag:$011C; ParentID:$0000; Count:1; Name:'PlanarConfiguration'),
+  (TID:0; TType:2; Tag:$011D; ParentID:$0000; Count:1; Name:'PageName'),
+  (TID:0; TType:5; Tag:$011E; ParentID:$0000; Count:1; Name:'XPosition'),
+  (TID:0; TType:5; Tag:$011F; ParentID:$0000; Count:1; Name:'YPosition'),
+  (TID:0; TType:0; Tag:$0120; ParentID:$0000; Count:1; Name:'FreeOffsets'),
+  (TID:0; TType:0; Tag:$0121; ParentID:$0000; Count:1; Name:'FreeByteCounts'),
+  (TID:0; TType:3; Tag:$0122; ParentID:$0000; Count:1; Name:'GrayReponseUnit'),         {30}
+  (TID:0; TType:0; Tag:$0123; ParentID:$0000; Count:1; Name:'GrayReponseCurve'),
+  (TID:0; TType:0; Tag:$0124; ParentID:$0000; Count:1; Name:'T4Options'),
+  (TID:0; TType:0; Tag:$0125; ParentID:$0000; Count:1; Name:'T6Options'),
+  (TID:0; TType:3; Tag:$0128; ParentID:$0000; Count:1; Name:'ResolutionUnit';
     Desc:''; Code:'1:None specified,2:inches,3:cm'),
-  (TID:0; TType:3; ICode:2; Tag:$0129; ParentID:$0000; Count:2; Name:'PageNumber'),
-  (TID:0; TType:3; ICode:2; Tag:$012D; ParentID:$0000; Count:768; Name:'TransferFunction'),
-  (TID:0; TType:2; ICode:2; Tag:$0131; ParentID:$0000; Count:1; Name:'Software'),
-  (TID:0; TType:2; ICode:2; Tag:$0132; ParentID:$0000; Count:1; Name:'DateTime'),
-  (TID:0; TType:2; ICode:2; Tag:$013B; ParentID:$0000; Count:1; Name:'Artist'),
-  (TID:0; TType:2; ICode:2; Tag:$013C; ParentID:$0000; Count:1; Name:'HostComputer'),         {40}
-  (TID:0; TType:3; ICode:2; Tag:$013D; ParentID:$0000; Count:1; Name:'Predictor'),
-  (TID:0; TType:5; ICode:2; Tag:$013E; ParentID:$0000; Count:2; Name:'WhitePoint'),
-  (TID:0; TType:5; ICode:2; Tag:$013F; ParentID:$0000; Count:6; Name:'PrimaryChromaticities'),
-  (TID:0; TType:0; ICode:2; Tag:$0140; ParentID:$0000; Count:1; Name:'ColorMap'),
-  (TID:0; TType:3; ICode:2; Tag:$0141; ParentID:$0000; Count:2; Name:'HalfToneHints'),
-  (TID:0; TType:4; ICode:2; Tag:$0142; ParentID:$0000; Count:1; Name:'TileWidth'),
-  (TID:0; TType:4; ICode:2; Tag:$0143; ParentID:$0000; Count:1; Name:'TileLength'),
-  (TID:0; TType:0; ICode:2; Tag:$0144; ParentID:$0000; Count:1; Name:'TileOffsets'),
-  (TID:0; TType:0; ICode:2; Tag:$0145; ParentID:$0000; Count:1; Name:'TileByteCounts'),
-  (TID:0; TType:0; ICode:2; Tag:$014A; ParentID:$0000; Count:1; Name:'SubIFDs'),         {50}
-  (TID:0; TType:3; ICode:2; Tag:$014C; ParentID:$0000; Count:1; Name:'InkSet'),
-  (TID:0; TType:0; ICode:2; Tag:$014D; ParentID:$0000; Count:1; Name:'InkNames'),
-  (TID:0; TType:0; ICode:2; Tag:$014E; ParentID:$0000; Count:1; Name:'NumberOfInks'),
-  (TID:0; TType:0; ICode:2; Tag:$0150; ParentID:$0000; Count:1; Name:'DotRange'),
-  (TID:0; TType:2; ICode:2; Tag:$0151; ParentID:$0000; Count:1; Name:'TargetPrinter'),
-  (TID:0; TType:0; ICode:2; Tag:$0152; ParentID:$0000; Count:1; Name:'ExtraSample'),
-  (TID:0; TType:0; ICode:2; Tag:$0153; ParentID:$0000; Count:1; Name:'SampleFormat'),
-  (TID:0; TType:0; ICode:2; Tag:$0154; ParentID:$0000; Count:1; Name:'SMinSampleValue'),
-  (TID:0; TType:0; ICode:2; Tag:$0155; ParentID:$0000; Count:1; Name:'SMaxSampleValue'),
-  (TID:0; TType:0; ICode:2; Tag:$0156; ParentID:$0000; Count:1; Name:'TransferRange'),         {60}
-  (TID:0; TType:0; ICode:2; Tag:$0157; ParentID:$0000; Count:1; Name:'ClipPath'),
-  (TID:0; TType:0; ICode:2; Tag:$0158; ParentID:$0000; Count:1; Name:'XClipPathUnits'),
-  (TID:0; TType:0; ICode:2; Tag:$0159; ParentID:$0000; Count:1; Name:'YClipPathUnits'),
-  (TID:0; TType:0; ICode:2; Tag:$015A; ParentID:$0000; Count:1; Name:'Indexed'),
-  (TID:0; TType:0; ICode:2; Tag:$015B; ParentID:$0000; Count:1; Name:'JPEGTables'),
-  (TID:0; TType:0; ICode:2; Tag:$015F; ParentID:$0000; Count:1; Name:'OPIProxy'),
-  (TID:0; TType:0; ICode:2; Tag:$0200; ParentID:$0000; Count:1; Name:'JPEGProc'),
-  (TID:0; TType:4; ICode:2; Tag:$0201; ParentID:$0000; Count:1; Name:'JPEGInterchangeFormat';
+  (TID:0; TType:3; Tag:$0129; ParentID:$0000; Count:2; Name:'PageNumber'),
+  (TID:0; TType:3; Tag:$012D; ParentID:$0000; Count:768; Name:'TransferFunction'),
+  (TID:0; TType:2; Tag:$0131; ParentID:$0000; Count:1; Name:'Software'),
+  (TID:0; TType:2; Tag:$0132; ParentID:$0000; Count:1; Name:'DateTime'),
+  (TID:0; TType:2; Tag:$013B; ParentID:$0000; Count:1; Name:'Artist'),
+  (TID:0; TType:2; Tag:$013C; ParentID:$0000; Count:1; Name:'HostComputer'),         {40}
+  (TID:0; TType:3; Tag:$013D; ParentID:$0000; Count:1; Name:'Predictor'),
+  (TID:0; TType:5; Tag:$013E; ParentID:$0000; Count:2; Name:'WhitePoint'),
+  (TID:0; TType:5; Tag:$013F; ParentID:$0000; Count:6; Name:'PrimaryChromaticities'),
+  (TID:0; TType:0; Tag:$0140; ParentID:$0000; Count:1; Name:'ColorMap'),
+  (TID:0; TType:3; Tag:$0141; ParentID:$0000; Count:2; Name:'HalfToneHints'),
+  (TID:0; TType:4; Tag:$0142; ParentID:$0000; Count:1; Name:'TileWidth'),
+  (TID:0; TType:4; Tag:$0143; ParentID:$0000; Count:1; Name:'TileLength'),
+  (TID:0; TType:0; Tag:$0144; ParentID:$0000; Count:1; Name:'TileOffsets'),
+  (TID:0; TType:0; Tag:$0145; ParentID:$0000; Count:1; Name:'TileByteCounts'),
+  (TID:0; TType:0; Tag:$014A; ParentID:$0000; Count:1; Name:'SubIFDs'),         {50}
+  (TID:0; TType:3; Tag:$014C; ParentID:$0000; Count:1; Name:'InkSet'),
+  (TID:0; TType:0; Tag:$014D; ParentID:$0000; Count:1; Name:'InkNames'),
+  (TID:0; TType:0; Tag:$014E; ParentID:$0000; Count:1; Name:'NumberOfInks'),
+  (TID:0; TType:0; Tag:$0150; ParentID:$0000; Count:1; Name:'DotRange'),
+  (TID:0; TType:2; Tag:$0151; ParentID:$0000; Count:1; Name:'TargetPrinter'),
+  (TID:0; TType:0; Tag:$0152; ParentID:$0000; Count:1; Name:'ExtraSample'),
+  (TID:0; TType:0; Tag:$0153; ParentID:$0000; Count:1; Name:'SampleFormat'),
+  (TID:0; TType:0; Tag:$0154; ParentID:$0000; Count:1; Name:'SMinSampleValue'),
+  (TID:0; TType:0; Tag:$0155; ParentID:$0000; Count:1; Name:'SMaxSampleValue'),
+  (TID:0; TType:0; Tag:$0156; ParentID:$0000; Count:1; Name:'TransferRange'),         {60}
+  (TID:0; TType:0; Tag:$0157; ParentID:$0000; Count:1; Name:'ClipPath'),
+  (TID:0; TType:0; Tag:$0158; ParentID:$0000; Count:1; Name:'XClipPathUnits'),
+  (TID:0; TType:0; Tag:$0159; ParentID:$0000; Count:1; Name:'YClipPathUnits'),
+  (TID:0; TType:0; Tag:$015A; ParentID:$0000; Count:1; Name:'Indexed'),
+  (TID:0; TType:0; Tag:$015B; ParentID:$0000; Count:1; Name:'JPEGTables'),
+  (TID:0; TType:0; Tag:$015F; ParentID:$0000; Count:1; Name:'OPIProxy'),
+  (TID:0; TType:0; Tag:$0200; ParentID:$0000; Count:1; Name:'JPEGProc'),
+  (TID:0; TType:4; Tag:$0201; ParentID:$0000; Count:1; Name:'JPEGInterchangeFormat';
      Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),
-  (TID:0; TType:4; ICode:2; Tag:$0202; ParentID:$0000; Count:1; Name:'JPEGInterchangeFormatLength'),
-  (TID:0; TType:0; ICode:2; Tag:$0203; ParentID:$0000; Count:1; Name:'JPEGRestartInterval'),         {70}
-  (TID:0; TType:0; ICode:2; Tag:$0205; ParentID:$0000; Count:1; Name:'JPEGLosslessPredictors'),
-  (TID:0; TType:0; ICode:2; Tag:$0206; ParentID:$0000; Count:1; Name:'JPEGPointTransforms'),
-  (TID:0; TType:0; ICode:2; Tag:$0207; ParentID:$0000; Count:1; Name:'JPEGQTables'),
-  (TID:0; TType:0; ICode:2; Tag:$0208; ParentID:$0000; Count:1; Name:'JPEGDCTables'),
-  (TID:0; TType:0; ICode:2; Tag:$0209; ParentID:$0000; Count:1; Name:'JPEGACTables'),
-  (TID:0; TType:5; ICode:2; Tag:$0211; ParentID:$0000; Count:3; Name:'YCbCrCoefficients'),
-  (TID:0; TType:3; ICode:2; Tag:$0212; ParentID:$0000; Count:2; Name:'YCbCrSubSampling'),
-  (TID:0; TType:3; ICode:2; Tag:$0213; ParentID:$0000; Count:1; Name:'YCbCrPositioning';
+  (TID:0; TType:4; Tag:$0202; ParentID:$0000; Count:1; Name:'JPEGInterchangeFormatLength'),
+  (TID:0; TType:0; Tag:$0203; ParentID:$0000; Count:1; Name:'JPEGRestartInterval'),         {70}
+  (TID:0; TType:0; Tag:$0205; ParentID:$0000; Count:1; Name:'JPEGLosslessPredictors'),
+  (TID:0; TType:0; Tag:$0206; ParentID:$0000; Count:1; Name:'JPEGPointTransforms'),
+  (TID:0; TType:0; Tag:$0207; ParentID:$0000; Count:1; Name:'JPEGQTables'),
+  (TID:0; TType:0; Tag:$0208; ParentID:$0000; Count:1; Name:'JPEGDCTables'),
+  (TID:0; TType:0; Tag:$0209; ParentID:$0000; Count:1; Name:'JPEGACTables'),
+  (TID:0; TType:5; Tag:$0211; ParentID:$0000; Count:3; Name:'YCbCrCoefficients'),
+  (TID:0; TType:3; Tag:$0212; ParentID:$0000; Count:2; Name:'YCbCrSubSampling'),
+  (TID:0; TType:3; Tag:$0213; ParentID:$0000; Count:1; Name:'YCbCrPositioning';
     Desc:''; Code:'1:Centered,2:Co-sited'),
-  (TID:0; TType:5; ICode:2; Tag:$0214; ParentID:$0000; Count:6; Name:'ReferenceBlackWhite'),
-  (TID:0; TType:1; ICode:2; Tag:$02BC; ParentID:$0000; Count:1; Name:'ExtensibleMetadataPlatform'),     {80}
-  (TID:0; TType:0; ICode:2; Tag:$0301; ParentID:$0000; Count:1; Name:'Gamma'),
-  (TID:0; TType:0; ICode:2; Tag:$0302; ParentID:$0000; Count:1; Name:'ICCProfileDescriptor'),
-  (TID:0; TType:0; ICode:2; Tag:$0303; ParentID:$0000; Count:1; Name:'SRGBRenderingIntent'),
-  (TID:0; TType:0; ICode:2; Tag:$0304; ParentID:$0000; Count:1; Name:'ImageTitle'),
-  (TID:0; TType:2; ICode:2; Tag:$1000; ParentID:$0000; Count:1; Name:'RelatedImageFileFormat'),
-  (TID:0; TType:3; ICode:2; Tag:$1001; ParentID:$0000; Count:1; Name:'RelatedImageWidth'),
-  (TID:0; TType:3; ICode:2; Tag:$1002; ParentID:$0000; Count:1; Name:'RelatedImageHeight'),
-  (TID:0; TType:0; ICode:2; Tag:$5001; ParentID:$0000; Count:1; Name:'ResolutionXUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$5002; ParentID:$0000; Count:1; Name:'ResolutionYUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$5003; ParentID:$0000; Count:1; Name:'ResolutionXLengthUnit'),         {90}
-  (TID:0; TType:0; ICode:2; Tag:$5004; ParentID:$0000; Count:1; Name:'ResolutionYLengthUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$5005; ParentID:$0000; Count:1; Name:'PrintFlags'),
-  (TID:0; TType:0; ICode:2; Tag:$5006; ParentID:$0000; Count:1; Name:'PrintFlagsVersion'),
-  (TID:0; TType:0; ICode:2; Tag:$5007; ParentID:$0000; Count:1; Name:'PrintFlagsCrop'),
-  (TID:0; TType:0; ICode:2; Tag:$5008; ParentID:$0000; Count:1; Name:'PrintFlagsBleedWidth'),
-  (TID:0; TType:0; ICode:2; Tag:$5009; ParentID:$0000; Count:1; Name:'PrintFlagsBleedWidthScale'),
-  (TID:0; TType:0; ICode:2; Tag:$500A; ParentID:$0000; Count:1; Name:'HalftoneLPI'),
-  (TID:0; TType:0; ICode:2; Tag:$500B; ParentID:$0000; Count:1; Name:'HalftoneLPIUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$500C; ParentID:$0000; Count:1; Name:'HalftoneDegree'),
-  (TID:0; TType:0; ICode:2; Tag:$500D; ParentID:$0000; Count:1; Name:'HalftoneShape'),         {100}
-  (TID:0; TType:0; ICode:2; Tag:$500E; ParentID:$0000; Count:1; Name:'HalftoneMisc'),
-  (TID:0; TType:0; ICode:2; Tag:$500F; ParentID:$0000; Count:1; Name:'HalftoneScreen'),
-  (TID:0; TType:0; ICode:2; Tag:$5010; ParentID:$0000; Count:1; Name:'JPEGQuality'),
-  (TID:0; TType:0; ICode:2; Tag:$5011; ParentID:$0000; Count:1; Name:'GridSize'),
-  (TID:0; TType:0; ICode:2; Tag:$5012; ParentID:$0000; Count:1; Name:'ThumbnailFormat'),
-  (TID:0; TType:0; ICode:2; Tag:$5013; ParentID:$0000; Count:1; Name:'ThumbnailWidth'),
-  (TID:0; TType:0; ICode:2; Tag:$5014; ParentID:$0000; Count:1; Name:'ThumbnailHeight'),
-  (TID:0; TType:0; ICode:2; Tag:$5015; ParentID:$0000; Count:1; Name:'ThumbnailColorDepth'),
-  (TID:0; TType:0; ICode:2; Tag:$5016; ParentID:$0000; Count:1; Name:'ThumbnailPlanes'),
-  (TID:0; TType:0; ICode:2; Tag:$5017; ParentID:$0000; Count:1; Name:'ThumbnailRawBytes'),         {110}
-  (TID:0; TType:0; ICode:2; Tag:$5018; ParentID:$0000; Count:1; Name:'ThumbnailSize'),
-  (TID:0; TType:0; ICode:2; Tag:$5019; ParentID:$0000; Count:1; Name:'ThumbnailCompressedSize'),
-  (TID:0; TType:0; ICode:2; Tag:$501A; ParentID:$0000; Count:1; Name:'ColorTransferFunction'),
-  (TID:0; TType:0; ICode:2; Tag:$501B; ParentID:$0000; Count:1; Name:'ThumbnailData'),
-  (TID:0; TType:0; ICode:2; Tag:$5020; ParentID:$0000; Count:1; Name:'ThumbnailImageWidth'),
-  (TID:0; TType:0; ICode:2; Tag:$5021; ParentID:$0000; Count:1; Name:'ThumbnailImageHeight'),
-  (TID:0; TType:0; ICode:2; Tag:$5022; ParentID:$0000; Count:1; Name:'ThumbnailBitsPerSample'),
-  (TID:0; TType:0; ICode:2; Tag:$5023; ParentID:$0000; Count:1; Name:'ThumbnailCompression'),
-  (TID:0; TType:0; ICode:2; Tag:$5024; ParentID:$0000; Count:1; Name:'ThumbnailPhotometricInterp'),
-  (TID:0; TType:0; ICode:2; Tag:$5025; ParentID:$0000; Count:1; Name:'ThumbnailImageDescription'),      {120}
-  (TID:0; TType:2; ICode:2; Tag:$5026; ParentID:$0000; Count:1; Name:'ThumbnailEquipMake'),
-  (TID:0; TType:2; ICode:2; Tag:$5027; ParentID:$0000; Count:1; Name:'ThumbnailEquipModel'),
-  (TID:0; TType:0; ICode:2; Tag:$5028; ParentID:$0000; Count:1; Name:'ThumbnailStripOffsets'),
-  (TID:0; TType:0; ICode:2; Tag:$5029; ParentID:$0000; Count:1; Name:'ThumbnailOrientation'),
-  (TID:0; TType:0; ICode:2; Tag:$502A; ParentID:$0000; Count:1; Name:'ThumbnailSamplesPerPixel'),
-  (TID:0; TType:0; ICode:2; Tag:$502B; ParentID:$0000; Count:1; Name:'ThumbnailRowsPerStrip'),
-  (TID:0; TType:0; ICode:2; Tag:$502C; ParentID:$0000; Count:1; Name:'ThumbnailStripBytesCount'),
-  (TID:0; TType:0; ICode:2; Tag:$502D; ParentID:$0000; Count:1; Name:'ThumbnailResolutionX'),
-  (TID:0; TType:0; ICode:2; Tag:$502E; ParentID:$0000; Count:1; Name:'ThumbnailResolutionY'),
-  (TID:0; TType:0; ICode:2; Tag:$502F; ParentID:$0000; Count:1; Name:'ThumbnailPlanarConfig'),         {130}
-  (TID:0; TType:0; ICode:2; Tag:$5030; ParentID:$0000; Count:1; Name:'ThumbnailResolutionUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$5031; ParentID:$0000; Count:1; Name:'ThumbnailTransferFunction'),
-  (TID:0; TType:2; ICode:2; Tag:$5032; ParentID:$0000; Count:1; Name:'ThumbnailSoftwareUsed'),
-  (TID:0; TType:2; ICode:2; Tag:$5033; ParentID:$0000; Count:1; Name:'ThumbnailDateTime'),
-  (TID:0; TType:2; ICode:2; Tag:$5034; ParentID:$0000; Count:1; Name:'ThumbnailArtist'),
-  (TID:0; TType:0; ICode:2; Tag:$5035; ParentID:$0000; Count:1; Name:'ThumbnailWhitePoint'),
-  (TID:0; TType:0; ICode:2; Tag:$5036; ParentID:$0000; Count:1; Name:'ThumbnailPrimaryChromaticities'),
-  (TID:0; TType:0; ICode:2; Tag:$5037; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrCoefficients'),
-  (TID:0; TType:0; ICode:2; Tag:$5038; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrSubsampling'),
-  (TID:0; TType:0; ICode:2; Tag:$5039; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrPositioning'),  {140}
-  (TID:0; TType:0; ICode:2; Tag:$503A; ParentID:$0000; Count:1; Name:'ThumbnailRefBlackWhite'),
-  (TID:0; TType:2; ICode:2; Tag:$503B; ParentID:$0000; Count:1; Name:'ThumbnailCopyRight'),
-  (TID:0; TType:0; ICode:2; Tag:$5090; ParentID:$0000; Count:1; Name:'LuminanceTable'),
-  (TID:0; TType:0; ICode:2; Tag:$5091; ParentID:$0000; Count:1; Name:'ChrominanceTable'),
-  (TID:0; TType:0; ICode:2; Tag:$5100; ParentID:$0000; Count:1; Name:'FrameDelay'),
-  (TID:0; TType:0; ICode:2; Tag:$5101; ParentID:$0000; Count:1; Name:'LoopCount'),
-  (TID:0; TType:0; ICode:2; Tag:$5110; ParentID:$0000; Count:1; Name:'PixelUnit'),
-  (TID:0; TType:0; ICode:2; Tag:$5111; ParentID:$0000; Count:1; Name:'PixelPerUnitX'),
-  (TID:0; TType:0; ICode:2; Tag:$5112; ParentID:$0000; Count:1; Name:'PixelPerUnitY'),
-  (TID:0; TType:0; ICode:2; Tag:$5113; ParentID:$0000; Count:1; Name:'PaletteHistogram'),         {150}
-  (TID:0; TType:0; ICode:2; Tag:$800D; ParentID:$0000; Count:1; Name:'ImageID'),
-  (TID:0; TType:0; ICode:2; Tag:$80E3; ParentID:$0000; Count:1; Name:'Matteing'),   //* obsoleted by ExtraSamples */
-  (TID:0; TType:0; ICode:2; Tag:$80E4; ParentID:$0000; Count:1; Name:'DataType'),   //* obsoleted by SampleFormat */
-  (TID:0; TType:0; ICode:2; Tag:$80E5; ParentID:$0000; Count:1; Name:'ImageDepth'),
-  (TID:0; TType:0; ICode:2; Tag:$80E6; ParentID:$0000; Count:1; Name:'TileDepth'),
-  (TID:0; TType:3; ICode:2; Tag:$828D; ParentID:$0000; Count:2; Name:'CFARepeatPatternDim'),
-  (TID:0; TType:1; ICode:2; Tag:$828E; ParentID:$0000; Count:1; Name:'CFAPattern'),  //count: ???
-  (TID:0; TType:0; ICode:2; Tag:$828F; ParentID:$0000; Count:1; Name:'BatteryLevel'),
-  (TID:0; TType:2; ICode:2; Tag:$8298; ParentID:$0000; Count:1; Name:'Copyright'),
-  (TID:0; TType:5; ICode:2; Tag:$829A; ParentID:$8769; Count:1; Name:'ExposureTime';
+  (TID:0; TType:5; Tag:$0214; ParentID:$0000; Count:6; Name:'ReferenceBlackWhite'),
+  (TID:0; TType:1; Tag:$02BC; ParentID:$0000; Count:1; Name:'ExtensibleMetadataPlatform'),     {80}
+  (TID:0; TType:0; Tag:$0301; ParentID:$0000; Count:1; Name:'Gamma'),
+  (TID:0; TType:0; Tag:$0302; ParentID:$0000; Count:1; Name:'ICCProfileDescriptor'),
+  (TID:0; TType:0; Tag:$0303; ParentID:$0000; Count:1; Name:'SRGBRenderingIntent'),
+  (TID:0; TType:0; Tag:$0304; ParentID:$0000; Count:1; Name:'ImageTitle'),
+  (TID:0; TType:2; Tag:$1000; ParentID:$0000; Count:1; Name:'RelatedImageFileFormat'),
+  (TID:0; TType:3; Tag:$1001; ParentID:$0000; Count:1; Name:'RelatedImageWidth'),
+  (TID:0; TType:3; Tag:$1002; ParentID:$0000; Count:1; Name:'RelatedImageHeight'),
+  (TID:0; TType:0; Tag:$5001; ParentID:$0000; Count:1; Name:'ResolutionXUnit'),
+  (TID:0; TType:0; Tag:$5002; ParentID:$0000; Count:1; Name:'ResolutionYUnit'),
+  (TID:0; TType:0; Tag:$5003; ParentID:$0000; Count:1; Name:'ResolutionXLengthUnit'),         {90}
+  (TID:0; TType:0; Tag:$5004; ParentID:$0000; Count:1; Name:'ResolutionYLengthUnit'),
+  (TID:0; TType:0; Tag:$5005; ParentID:$0000; Count:1; Name:'PrintFlags'),
+  (TID:0; TType:0; Tag:$5006; ParentID:$0000; Count:1; Name:'PrintFlagsVersion'),
+  (TID:0; TType:0; Tag:$5007; ParentID:$0000; Count:1; Name:'PrintFlagsCrop'),
+  (TID:0; TType:0; Tag:$5008; ParentID:$0000; Count:1; Name:'PrintFlagsBleedWidth'),
+  (TID:0; TType:0; Tag:$5009; ParentID:$0000; Count:1; Name:'PrintFlagsBleedWidthScale'),
+  (TID:0; TType:0; Tag:$500A; ParentID:$0000; Count:1; Name:'HalftoneLPI'),
+  (TID:0; TType:0; Tag:$500B; ParentID:$0000; Count:1; Name:'HalftoneLPIUnit'),
+  (TID:0; TType:0; Tag:$500C; ParentID:$0000; Count:1; Name:'HalftoneDegree'),
+  (TID:0; TType:0; Tag:$500D; ParentID:$0000; Count:1; Name:'HalftoneShape'),         {100}
+  (TID:0; TType:0; Tag:$500E; ParentID:$0000; Count:1; Name:'HalftoneMisc'),
+  (TID:0; TType:0; Tag:$500F; ParentID:$0000; Count:1; Name:'HalftoneScreen'),
+  (TID:0; TType:0; Tag:$5010; ParentID:$0000; Count:1; Name:'JPEGQuality'),
+  (TID:0; TType:0; Tag:$5011; ParentID:$0000; Count:1; Name:'GridSize'),
+  (TID:0; TType:0; Tag:$5012; ParentID:$0000; Count:1; Name:'ThumbnailFormat'),
+  (TID:0; TType:0; Tag:$5013; ParentID:$0000; Count:1; Name:'ThumbnailWidth'),
+  (TID:0; TType:0; Tag:$5014; ParentID:$0000; Count:1; Name:'ThumbnailHeight'),
+  (TID:0; TType:0; Tag:$5015; ParentID:$0000; Count:1; Name:'ThumbnailColorDepth'),
+  (TID:0; TType:0; Tag:$5016; ParentID:$0000; Count:1; Name:'ThumbnailPlanes'),
+  (TID:0; TType:0; Tag:$5017; ParentID:$0000; Count:1; Name:'ThumbnailRawBytes'),         {110}
+  (TID:0; TType:0; Tag:$5018; ParentID:$0000; Count:1; Name:'ThumbnailSize'),
+  (TID:0; TType:0; Tag:$5019; ParentID:$0000; Count:1; Name:'ThumbnailCompressedSize'),
+  (TID:0; TType:0; Tag:$501A; ParentID:$0000; Count:1; Name:'ColorTransferFunction'),
+  (TID:0; TType:0; Tag:$501B; ParentID:$0000; Count:1; Name:'ThumbnailData'),
+  (TID:0; TType:0; Tag:$5020; ParentID:$0000; Count:1; Name:'ThumbnailImageWidth'),
+  (TID:0; TType:0; Tag:$5021; ParentID:$0000; Count:1; Name:'ThumbnailImageHeight'),
+  (TID:0; TType:0; Tag:$5022; ParentID:$0000; Count:1; Name:'ThumbnailBitsPerSample'),
+  (TID:0; TType:0; Tag:$5023; ParentID:$0000; Count:1; Name:'ThumbnailCompression'),
+  (TID:0; TType:0; Tag:$5024; ParentID:$0000; Count:1; Name:'ThumbnailPhotometricInterp'),
+  (TID:0; TType:0; Tag:$5025; ParentID:$0000; Count:1; Name:'ThumbnailImageDescription'),      {120}
+  (TID:0; TType:2; Tag:$5026; ParentID:$0000; Count:1; Name:'ThumbnailEquipMake'),
+  (TID:0; TType:2; Tag:$5027; ParentID:$0000; Count:1; Name:'ThumbnailEquipModel'),
+  (TID:0; TType:0; Tag:$5028; ParentID:$0000; Count:1; Name:'ThumbnailStripOffsets'),
+  (TID:0; TType:0; Tag:$5029; ParentID:$0000; Count:1; Name:'ThumbnailOrientation'),
+  (TID:0; TType:0; Tag:$502A; ParentID:$0000; Count:1; Name:'ThumbnailSamplesPerPixel'),
+  (TID:0; TType:0; Tag:$502B; ParentID:$0000; Count:1; Name:'ThumbnailRowsPerStrip'),
+  (TID:0; TType:0; Tag:$502C; ParentID:$0000; Count:1; Name:'ThumbnailStripBytesCount'),
+  (TID:0; TType:0; Tag:$502D; ParentID:$0000; Count:1; Name:'ThumbnailResolutionX'),
+  (TID:0; TType:0; Tag:$502E; ParentID:$0000; Count:1; Name:'ThumbnailResolutionY'),
+  (TID:0; TType:0; Tag:$502F; ParentID:$0000; Count:1; Name:'ThumbnailPlanarConfig'),         {130}
+  (TID:0; TType:0; Tag:$5030; ParentID:$0000; Count:1; Name:'ThumbnailResolutionUnit'),
+  (TID:0; TType:0; Tag:$5031; ParentID:$0000; Count:1; Name:'ThumbnailTransferFunction'),
+  (TID:0; TType:2; Tag:$5032; ParentID:$0000; Count:1; Name:'ThumbnailSoftwareUsed'),
+  (TID:0; TType:2; Tag:$5033; ParentID:$0000; Count:1; Name:'ThumbnailDateTime'),
+  (TID:0; TType:2; Tag:$5034; ParentID:$0000; Count:1; Name:'ThumbnailArtist'),
+  (TID:0; TType:0; Tag:$5035; ParentID:$0000; Count:1; Name:'ThumbnailWhitePoint'),
+  (TID:0; TType:0; Tag:$5036; ParentID:$0000; Count:1; Name:'ThumbnailPrimaryChromaticities'),
+  (TID:0; TType:0; Tag:$5037; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrCoefficients'),
+  (TID:0; TType:0; Tag:$5038; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrSubsampling'),
+  (TID:0; TType:0; Tag:$5039; ParentID:$0000; Count:1; Name:'ThumbnailYCbCrPositioning'),  {140}
+  (TID:0; TType:0; Tag:$503A; ParentID:$0000; Count:1; Name:'ThumbnailRefBlackWhite'),
+  (TID:0; TType:2; Tag:$503B; ParentID:$0000; Count:1; Name:'ThumbnailCopyRight'),
+  (TID:0; TType:0; Tag:$5090; ParentID:$0000; Count:1; Name:'LuminanceTable'),
+  (TID:0; TType:0; Tag:$5091; ParentID:$0000; Count:1; Name:'ChrominanceTable'),
+  (TID:0; TType:0; Tag:$5100; ParentID:$0000; Count:1; Name:'FrameDelay'),
+  (TID:0; TType:0; Tag:$5101; ParentID:$0000; Count:1; Name:'LoopCount'),
+  (TID:0; TType:0; Tag:$5110; ParentID:$0000; Count:1; Name:'PixelUnit'),
+  (TID:0; TType:0; Tag:$5111; ParentID:$0000; Count:1; Name:'PixelPerUnitX'),
+  (TID:0; TType:0; Tag:$5112; ParentID:$0000; Count:1; Name:'PixelPerUnitY'),
+  (TID:0; TType:0; Tag:$5113; ParentID:$0000; Count:1; Name:'PaletteHistogram'),         {150}
+  (TID:0; TType:0; Tag:$800D; ParentID:$0000; Count:1; Name:'ImageID'),
+  (TID:0; TType:0; Tag:$80E3; ParentID:$0000; Count:1; Name:'Matteing'),   //* obsoleted by ExtraSamples */
+  (TID:0; TType:0; Tag:$80E4; ParentID:$0000; Count:1; Name:'DataType'),   //* obsoleted by SampleFormat */
+  (TID:0; TType:0; Tag:$80E5; ParentID:$0000; Count:1; Name:'ImageDepth'),
+  (TID:0; TType:0; Tag:$80E6; ParentID:$0000; Count:1; Name:'TileDepth'),
+  (TID:0; TType:3; Tag:$828D; ParentID:$0000; Count:2; Name:'CFARepeatPatternDim'),
+  (TID:0; TType:1; Tag:$828E; ParentID:$0000; Count:1; Name:'CFAPattern'),  //count: ???
+  (TID:0; TType:0; Tag:$828F; ParentID:$0000; Count:1; Name:'BatteryLevel'),
+  (TID:0; TType:2; Tag:$8298; ParentID:$0000; Count:1; Name:'Copyright'),
+  (TID:0; TType:5; Tag:$829A; ParentID:$8769; Count:1; Name:'ExposureTime';
     Desc:'Exposure time'; Code:''; Data:''; Raw:''; FormatS:'%s sec'; Size:8; Callback:nil), //SSpeedCallback),   {160}
-  (TID:0; TType:5; ICode:2; Tag:$829D; ParentID:$8769; Count:1; Name:'FNumber';
+  (TID:0; TType:5; Tag:$829D; ParentID:$8769; Count:1; Name:'FNumber';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
-  (TID:0; TType:4; ICode:2; Tag:$83BB; ParentID:$0000; Count:1; Name:'IPTC/NAA';
+  (TID:0; TType:4; Tag:$83BB; ParentID:$0000; Count:1; Name:'IPTC/NAA';
     Desc:'IPTC/NAA'),
-  (TID:0; TType:0; ICode:2; Tag:$84E3; ParentID:$0000; Count:1; Name:'IT8RasterPadding'),
-  (TID:0; TType:0; ICode:2; Tag:$84E5; ParentID:$0000; Count:1; Name:'IT8ColorTable'),
-  (TID:0; TType:0; ICode:2; Tag:$8649; ParentID:$0000; Count:1; Name:'ImageResourceInformation'),
-  (TID:0; TType:4; ICode:2; Tag:$8769; ParentID:$0000; Count:1; Name:'ExifOffset';
+  (TID:0; TType:0; Tag:$84E3; ParentID:$0000; Count:1; Name:'IT8RasterPadding'),
+  (TID:0; TType:0; Tag:$84E5; ParentID:$0000; Count:1; Name:'IT8ColorTable'),
+  (TID:0; TType:0; Tag:$8649; ParentID:$0000; Count:1; Name:'ImageResourceInformation'),
+  (TID:0; TType:4; Tag:$8769; ParentID:$0000; Count:1; Name:'ExifOffset';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),
-  (TID:0; TType:0; ICode:2; Tag:$8773; ParentID:$0000; Count:1; Name:'InterColorProfile'),
-  (TID:0; TType:3; ICode:2; Tag:$8822; ParentID:$8769; Count:1; Name:'ExposureProgram';
+  (TID:0; TType:0; Tag:$8773; ParentID:$0000; Count:1; Name:'InterColorProfile'),
+  (TID:0; TType:3; Tag:$8822; ParentID:$8769; Count:1; Name:'ExposureProgram';
     Desc:''; Code:'0:Not denfined,1:Manual,2:Program AE,3:Aperture-priority AE,'+
                   '4:Shutter speed priority AE,5:Creative (slow speed),'+
                   '6:Action (high speed),7:Portrait,8:Landscape;9:Bulb'),
-  (TID:0; TType:2; ICode:2; Tag:$8824; ParentID:$8769; Count:1; Name:'SpectralSensitivity'),
-  (TID:0; TType:4; ICode:2; Tag:$8825; ParentID:$0000; Count:1; Name:'GPSInfo';
+  (TID:0; TType:2; Tag:$8824; ParentID:$8769; Count:1; Name:'SpectralSensitivity'),
+  (TID:0; TType:4; Tag:$8825; ParentID:$0000; Count:1; Name:'GPSInfo';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4),                                {170}
-  (TID:0; TType:3; ICode:2; Tag:$8827; ParentID:$8769; Count:1; Name:'ISOSpeedRatings'),   {171}
-  (TID:0; TType:0; ICode:2; Tag:$8828; ParentID:$8769; Count:1; Name:'OECF'),
-  (TID:0; TType:0; ICode:2; Tag:$8829; ParentID:$8769; Count:1; Name:'Interlace'),
-  (TID:0; TType:8; ICode:2; Tag:$882A; ParentID:$8769; Count:1; Name:'TimeZoneOffset'),
-  (TID:0; TType:3; ICode:2; Tag:$882B; ParentID:$8769; Count:1; Name:'SelfTimerMode'),
-  (TID:0; TType:7; ICode:2; Tag:$9000; ParentID:$8769; Count:1; Name:'ExifVersion';
+  (TID:0; TType:3; Tag:$8827; ParentID:$8769; Count:1; Name:'ISOSpeedRatings'),   {171}
+  (TID:0; TType:0; Tag:$8828; ParentID:$8769; Count:1; Name:'OECF'),
+  (TID:0; TType:0; Tag:$8829; ParentID:$8769; Count:1; Name:'Interlace'),
+  (TID:0; TType:8; Tag:$882A; ParentID:$8769; Count:1; Name:'TimeZoneOffset'),
+  (TID:0; TType:3; Tag:$882B; ParentID:$8769; Count:1; Name:'SelfTimerMode'),
+  (TID:0; TType:7; Tag:$9000; ParentID:$8769; Count:1; Name:'ExifVersion';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:4; Callback:VersionCallback),
-  (TID:0; TType:2; ICode:2; Tag:$9003; ParentID:$8769; Count:1; Name:'DateTimeOriginal'),
-  (TID:0; TType:2; ICode:2; Tag:$9004; ParentID:$8769; Count:1; Name:'DateTimeDigitized'),
-  (TID:0; TType:7; ICode:2; Tag:$9101; ParentID:$8769; Count:1; Name:'ComponentsConfiguration';
+  (TID:0; TType:2; Tag:$9003; ParentID:$8769; Count:1; Name:'DateTimeOriginal'),
+  (TID:0; TType:2; Tag:$9004; ParentID:$8769; Count:1; Name:'DateTimeDigitized'),
+  (TID:0; TType:7; Tag:$9101; ParentID:$8769; Count:1; Name:'ComponentsConfiguration';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:CompCfgCallBack),
-  (TID:0; TType:5; ICode:2; Tag:$9102; ParentID:$8769; Count:1; Name:'CompressedBitsPerPixel'),         {180}
-  (TID:0; TType:10;ICode:2; Tag:$9201; ParentID:$8769; Count:1; Name:'ShutterSpeedValue';
+  (TID:0; TType:5; Tag:$9102; ParentID:$8769; Count:1; Name:'CompressedBitsPerPixel'),         {180}
+  (TID:0; TType:10; Tag:$9201; ParentID:$8769; Count:1; Name:'ShutterSpeedValue';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; Callback:SSpeedCallBack),
-  (TID:0; TType:5; ICode:2; Tag:$9202; ParentID:$8769; Count:1; Name:'ApertureValue';
+  (TID:0; TType:5; Tag:$9202; ParentID:$8769; Count:1; Name:'ApertureValue';
     Desc:'Aperture value'; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
-  (TID:0; TType:10;ICode:2; Tag:$9203; ParentID:$8769; Count:1; Name:'BrightnessValue'),
-  (TID:0; TType:10;ICode:2; Tag:$9204; ParentID:$8769; Count:1; Name:'ExposureBiasValue'),
-  (TID:0; TType:5; ICode:2; Tag:$9205; ParentID:$8769; Count:1; Name:'MaxApertureValue';
+  (TID:0; TType:10;Tag:$9203; ParentID:$8769; Count:1; Name:'BrightnessValue'),
+  (TID:0; TType:10;Tag:$9204; ParentID:$8769; Count:1; Name:'ExposureBiasValue'),
+  (TID:0; TType:5; Tag:$9205; ParentID:$8769; Count:1; Name:'MaxApertureValue';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:'F%0.1f'),
-  (TID:0; TType:5; ICode:2; Tag:$9206; ParentID:$8769; Count:1; Name:'SubjectDistance'),
-  (TID:0; TType:3; ICode:2; Tag:$9207; ParentID:$8769; Count:1; Name:'MeteringMode';
+  (TID:0; TType:5; Tag:$9206; ParentID:$8769; Count:1; Name:'SubjectDistance'),
+  (TID:0; TType:3; Tag:$9207; ParentID:$8769; Count:1; Name:'MeteringMode';
     Desc:'';
     Code:'0:Unknown,1:Average,2:Center,3:Spot,4:Multi-spot,5:Multi-segment,6:Partial'),
-  (TID:0; TType:3; ICode:2; Tag:$9208; ParentID:$8769; Count:1; Name:'LightSource';
+  (TID:0; TType:3; Tag:$9208; ParentID:$8769; Count:1; Name:'LightSource';
     Desc:'';
     Code:'0:Unknown,1:Daylight,2:Fluorescent,3:Tungsten,10:Flash,17:Std A,18:Std B,19:Std C'),
-  (TID:0; TType:3; ICode:2; Tag:$9209; ParentID:$8769; Count:1; Name:'Flash';
+  (TID:0; TType:3; Tag:$9209; ParentID:$8769; Count:1; Name:'Flash';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:FlashCallBack),
-  (TID:0; TType:5; ICode:2; Tag:$920A; ParentID:$8769; Count:1; Name:'FocalLength';
+  (TID:0; TType:5; Tag:$920A; ParentID:$8769; Count:1; Name:'FocalLength';
     Desc:'Focal length'; Code:''; Data:''; Raw:''; FormatS:'%0.1f mm'), {190}
-  (TID:0; TType:0; ICode:2; Tag:$920B; ParentID:$8769; Count:1; Name:'FlashEnergy'),
-  (TID:0; TType:0; ICode:2; Tag:$920C; ParentID:$8769; Count:1; Name:'SpatialFrequencyResponse'),
-  (TID:0; TType:0; ICode:2; Tag:$920D; ParentID:$8769; Count:1; Name:'Noise'),
-  (TID:0; TType:0; ICode:2; Tag:$920E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution';
+  (TID:0; TType:0; Tag:$920B; ParentID:$8769; Count:1; Name:'FlashEnergy'),
+  (TID:0; TType:0; Tag:$920C; ParentID:$8769; Count:1; Name:'SpatialFrequencyResponse'),
+  (TID:0; TType:0; Tag:$920D; ParentID:$8769; Count:1; Name:'Noise'),
+  (TID:0; TType:0; Tag:$920E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution';
     Desc:''; code:''; Data:''; Raw:''; FormatS:'%f'; Size:0; CallBack:nil),
-  (TID:0; TType:0; ICode:2; Tag:$920F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution';
+  (TID:0; TType:0; Tag:$920F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:'%f'; Size:0; CallBack:nil),
-  (TID:0; TType:0; ICode:2; Tag:$9210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
+  (TID:0; TType:0; Tag:$9210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
     Desc:''; Code:'1:None specified,2:inches,3:cm'),
-  (TID:0; TType:4; ICode:2; Tag:$9211; ParentID:$8769; Count:1; Name:'ImageNumber'),
-  (TID:0; TType:2; ICode:2; Tag:$9212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
-  (TID:0; TType:2; ICode:2; Tag:$9213; ParentID:$8769; Count:1; Name:'ImageHistory'),
-  (TID:0; TType:3; ICode:2; Tag:$9214; ParentID:$8769; Count:2; Name:'SubjectLocation'),         {200}
-  (TID:0; TType:0; ICode:2; Tag:$9215; ParentID:$8769; Count:1; Name:'ExposureIndex'),
-  (TID:0; TType:0; ICode:2; Tag:$9216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID'),
-  (TID:0; TType:0; ICode:2; Tag:$9217; ParentID:$8769; Count:1; Name:'SensingMethod'),
-  (TID:0; TType:0; ICode:2; Tag:$923F; ParentID:$8769; Count:1; Name:'StoNits'),
-  (TID:0; TType:7; ICode:2; Tag:$927C; ParentID:$8769; Count:1; Name:'MakerNote'),
-  (TID:0; TType:7; ICode:2; Tag:$9286; ParentID:$8769; Count:1; Name:'UserComment'),
-  (TID:0; TType:2; ICode:2; Tag:$9290; ParentID:$8769; Count:1; Name:'SubSecTime'),
-  (TID:0; TType:2; ICode:2; Tag:$9291; ParentID:$8769; Count:1; Name:'SubSecTimeOriginal'),
-  (TID:0; TType:2; ICode:2; Tag:$9292; ParentID:$8769; Count:1; Name:'SubSecTimeDigitized'),
-  (TID:0; TType:0; ICode:2; Tag:$953C; ParentID:$0000; Count:1; Name:'ImageSourceData'),  // "Adobe Photoshop Document Data Block": 8BIM...  {210}
-  (TID:0; TType:0; ICode:2; Tag:$9C9B; ParentID:$0000; Count:1; Name:'Title';
+  (TID:0; TType:4; Tag:$9211; ParentID:$8769; Count:1; Name:'ImageNumber'),
+  (TID:0; TType:2; Tag:$9212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
+  (TID:0; TType:2; Tag:$9213; ParentID:$8769; Count:1; Name:'ImageHistory'),
+  (TID:0; TType:3; Tag:$9214; ParentID:$8769; Count:2; Name:'SubjectLocation'),         {200}
+  (TID:0; TType:0; Tag:$9215; ParentID:$8769; Count:1; Name:'ExposureIndex'),
+  (TID:0; TType:0; Tag:$9216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID'),
+  (TID:0; TType:0; Tag:$9217; ParentID:$8769; Count:1; Name:'SensingMethod'),
+  (TID:0; TType:0; Tag:$923F; ParentID:$8769; Count:1; Name:'StoNits'),
+  (TID:0; TType:7; Tag:$927C; ParentID:$8769; Count:1; Name:'MakerNote'),
+  (TID:0; TType:7; Tag:$9286; ParentID:$8769; Count:1; Name:'UserComment'),
+  (TID:0; TType:2; Tag:$9290; ParentID:$8769; Count:1; Name:'SubSecTime'),
+  (TID:0; TType:2; Tag:$9291; ParentID:$8769; Count:1; Name:'SubSecTimeOriginal'),
+  (TID:0; TType:2; Tag:$9292; ParentID:$8769; Count:1; Name:'SubSecTimeDigitized'),
+  (TID:0; TType:0; Tag:$953C; ParentID:$0000; Count:1; Name:'ImageSourceData'),  // "Adobe Photoshop Document Data Block": 8BIM...  {210}
+  (TID:0; TType:0; Tag:$9C9B; ParentID:$0000; Count:1; Name:'Title';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:xpTranslate),  // Win XP specific, Unicode
-  (TID:0; TType:0; ICode:2; Tag:$9C9C; ParentID:$0000; Count:1; Name:'Comments';
+  (TID:0; TType:0; Tag:$9C9C; ParentID:$0000; Count:1; Name:'Comments';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:xpTranslate),  // Win XP specific, Unicode
-  (TID:0; TType:0; ICode:2; Tag:$9C9D; ParentID:$0000; Count:1; Name:'Author';
+  (TID:0; TType:0; Tag:$9C9D; ParentID:$0000; Count:1; Name:'Author';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:xpTranslate),  // Win XP specific, Unicode
-  (TID:0; TType:0; ICode:2; Tag:$9C9E; ParentID:$0000; Count:1; Name:'Keywords';
+  (TID:0; TType:0; Tag:$9C9E; ParentID:$0000; Count:1; Name:'Keywords';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:xpTranslate),  // Win XP specific, Unicode
-  (TID:0; TType:0; ICode:2; Tag:$9C9F; ParentID:$0000; Count:1; Name:'Subject';
+  (TID:0; TType:0; Tag:$9C9F; ParentID:$0000; Count:1; Name:'Subject';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:xpTranslate),  // Win XP specific, Unicode
-  (TID:0; TType:0; ICode:2; Tag:$A000; ParentID:$8769; Count:1; Name:'FlashPixVersion'),
-  (TID:0; TType:3; ICode:2; Tag:$A001; ParentID:$8769; Count:1; Name:'ColorSpace';
+  (TID:0; TType:0; Tag:$A000; ParentID:$8769; Count:1; Name:'FlashPixVersion'),
+  (TID:0; TType:3; Tag:$A001; ParentID:$8769; Count:1; Name:'ColorSpace';
     Desc:''; Code:'0:sBW,1:sRGB'),
-  (TID:0; TType:3; ICode:2; Tag:$A002; ParentID:$8769; Count:1; Name:'ExifImageWidth'),
-  (TID:0; TType:3; ICode:2; Tag:$A003; ParentID:$8769; Count:1; Name:'ExifImageLength'),
-  (TID:0; TType:2; ICode:2; Tag:$A004; ParentID:$8769; Count:1; Name:'RelatedSoundFile'),         {220}
-  (TID:0; TType:0; ICode:2; Tag:$A005; ParentID:$8769; Count:1; Name:'InteroperabilityOffset'),
-  (TID:0; TType:5; ICode:2; Tag:$A20B; ParentID:$8769; Count:1; Name:'FlashEnergy'),    // TID:0;TType:0;ICode: 2;Tag: $920B in TIFF/EP
-  (TID:0; TType:0; ICode:2; Tag:$A20C; ParentID:$8769; Count:1; Name:'SpatialFrequencyResponse'),   // TID:0;TType:0;ICode: 2;Tag: $920C    -  -
-  (TID:0; TType:5; ICode:2; Tag:$A20E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution';
+  (TID:0; TType:3; Tag:$A002; ParentID:$8769; Count:1; Name:'ExifImageWidth'),
+  (TID:0; TType:3; Tag:$A003; ParentID:$8769; Count:1; Name:'ExifImageLength'),
+  (TID:0; TType:2; Tag:$A004; ParentID:$8769; Count:1; Name:'RelatedSoundFile'),         {220}
+  (TID:0; TType:0; Tag:$A005; ParentID:$8769; Count:1; Name:'InteroperabilityOffset'),
+  (TID:0; TType:5; Tag:$A20B; ParentID:$8769; Count:1; Name:'FlashEnergy'),    // TID:0;TType:0;ICode: 2;Tag: $920B in TIFF/EP
+  (TID:0; TType:0; Tag:$A20C; ParentID:$8769; Count:1; Name:'SpatialFrequencyResponse'),   // TID:0;TType:0;ICode: 2;Tag: $920C    -  -
+  (TID:0; TType:5; Tag:$A20E; ParentID:$8769; Count:1; Name:'FocalPlaneXResolution';
     Desc:''; code:''; Data:''; Raw:''; FormatS:'%f'; Size:0; CallBack:nil),
-  (TID:0; TType:5; ICode:2; Tag:$A20F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution';
+  (TID:0; TType:5; Tag:$A20F; ParentID:$8769; Count:1; Name:'FocalPlaneYResolution';
     Desc:''; code:''; Data:''; Raw:''; FormatS:'%f'; Size:0; CallBack:nil),
-  (TID:0; TType:3; ICode:2; Tag:$A210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
+  (TID:0; TType:3; Tag:$A210; ParentID:$8769; Count:1; Name:'FocalPlaneResolutionUnit';
     Desc:''; Code:'1:None specified,2:inches,3:cm'),      // TID:0;TType:0;ICode: 2;Tag: $9210    -  -
-  (TID:0; TType:0; ICode:2; Tag:$A211; ParentID:$8769; Count:1; Name:'ImageNumber'),
-  (TID:0; TType:0; ICode:2; Tag:$A212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
-  (TID:0; TType:0; ICode:2; Tag:$A213; ParentID:$8769; Count:1; Name:'ImageHistory'),
-  (TID:0; TType:3; ICode:2; Tag:$A214; ParentID:$8769; Count:2; Name:'SubjectLocation'),        {230}
-  (TID:0; TType:5; ICode:2; Tag:$A215; ParentID:$8769; Count:1; Name:'ExposureIndex'),
-  (TID:0; TType:0; ICode:2; Tag:$A216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID';
+  (TID:0; TType:0; Tag:$A211; ParentID:$8769; Count:1; Name:'ImageNumber'),
+  (TID:0; TType:0; Tag:$A212; ParentID:$8769; Count:1; Name:'SecurityClassification'),
+  (TID:0; TType:0; Tag:$A213; ParentID:$8769; Count:1; Name:'ImageHistory'),
+  (TID:0; TType:3; Tag:$A214; ParentID:$8769; Count:2; Name:'SubjectLocation'),        {230}
+  (TID:0; TType:5; Tag:$A215; ParentID:$8769; Count:1; Name:'ExposureIndex'),
+  (TID:0; TType:0; Tag:$A216; ParentID:$8769; Count:1; Name:'TIFF/EPStandardID';
     Desc:'TIFF/EPStandardID'),
-  (TID:0; TType:3; ICode:2; Tag:$A217; ParentID:$8769; Count:1; Name:'SensingMethod'; Desc:'';
+  (TID:0; TType:3; Tag:$A217; ParentID:$8769; Count:1; Name:'SensingMethod'; Desc:'';
     Code:'0:Unknown,1:Not defined,2:One-chip color area,3:Two-chip color area,'+
          '4:Three-chip color area,5:Color sequential area,7:Trilinear,'+
          '8:Color-sequential linear'),
-  (TID:0; TType:1; ICode:2; Tag:$A300; ParentID:$8769; Count:1; Name:'FileSource'; Desc:'';
+  (TID:0; TType:1; Tag:$A300; ParentID:$8769; Count:1; Name:'FileSource'; Desc:'';
     Code:'0:Unknown,1:Film scanner,2:Reflection print scanner,3:Digital camera'),
-  (TID:0; TType:7; ICode:2; Tag:$A301; ParentID:$8769; Count:1; Name:'SceneType';
+  (TID:0; TType:7; Tag:$A301; ParentID:$8769; Count:1; Name:'SceneType';
     Desc:''; Code:'0:Unknown,1:Directly Photographed'),
-  (TID:0; TType:7; ICode:2; Tag:$A302; ParentID:$8769; Count:1; Name:'CFAPattern'),
-  (TID:0; TType:3; ICode:2; Tag:$A401; ParentID:$8769; Count:1; Name:'CustomRendered';
+  (TID:0; TType:7; Tag:$A302; ParentID:$8769; Count:1; Name:'CFAPattern'),
+  (TID:0; TType:3; Tag:$A401; ParentID:$8769; Count:1; Name:'CustomRendered';
     Desc:''; Code:'0:Normal,1:Custom'),
-  (TID:0; TType:3; ICode:2; Tag:$A402; ParentID:$8769; Count:1; Name:'ExposureMode';
+  (TID:0; TType:3; Tag:$A402; ParentID:$8769; Count:1; Name:'ExposureMode';
     Desc:''; Code:'0:Auto,1:Manual,2:Auto bracket'),
-  (TID:0; TType:3; ICode:2; Tag:$A403; ParentID:$8769; Count:1; Name:'WhiteBalance';
+  (TID:0; TType:3; Tag:$A403; ParentID:$8769; Count:1; Name:'WhiteBalance';
     Desc:''; Code:'0:Auto,1:Manual'),
-  (TID:0; TType:5; ICode:2; Tag:$A404; ParentID:$8769; Count:1; Name:'DigitalZoomRatio'),        {240}
-  (TID:0; TType:3; ICode:2; Tag:$A405; ParentID:$8769; Count:1; Name:'FocalLengthIn35mmFilm';
+  (TID:0; TType:5; Tag:$A404; ParentID:$8769; Count:1; Name:'DigitalZoomRatio'),        {240}
+  (TID:0; TType:3; Tag:$A405; ParentID:$8769; Count:1; Name:'FocalLengthIn35mmFilm';
     Desc:'Focal Length in 35mm Film'; Code:''; Data:''; Raw:''; FormatS:'%.1f mm'),
-  (TID:0; TType:3; ICode:2; Tag:$A406; ParentID:$8769; Count:1; Name:'SceneCaptureType';
+  (TID:0; TType:3; Tag:$A406; ParentID:$8769; Count:1; Name:'SceneCaptureType';
     Desc:''; Code:'0:Standard,1:Landscape,2:Portrait,3:Night scene'),
-  (TID:0; TType:3; ICode:2; Tag:$A407; ParentID:$8769; Count:1; Name:'GainControl'; Desc:'';
+  (TID:0; TType:3; Tag:$A407; ParentID:$8769; Count:1; Name:'GainControl'; Desc:'';
     Code:'0:None,1:Low gain up,2:High gain up,3:Low gain down,4:High gain down'),
-  (TID:0; TType:3; ICode:2; Tag:$A408; ParentID:$8769; Count:1; Name:'Contrast';
+  (TID:0; TType:3; Tag:$A408; ParentID:$8769; Count:1; Name:'Contrast';
     Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
-  (TID:0; TType:3; ICode:2; Tag:$A409; ParentID:$8769; Count:1; Name:'Saturation';
+  (TID:0; TType:3; Tag:$A409; ParentID:$8769; Count:1; Name:'Saturation';
     Desc:''; Code:'0:Normal,1:Low,2:High'),
-  (TID:0; TType:3; ICode:2; Tag:$A40A; ParentID:$8769; Count:1; Name:'Sharpness';
+  (TID:0; TType:3; Tag:$A40A; ParentID:$8769; Count:1; Name:'Sharpness';
     Desc:''; Code:'0:Normal,1:Soft,2:Hard'),
-  (TID:0; TType:0; ICode:2; Tag:$A40B; ParentID:$8769; Count:1; Name:'DeviceSettingDescription'),
-  (TID:0; TType:3; ICode:2; Tag:$A40C; ParentID:$8769; Count:1; Name:'SubjectDistanceRange';    {250}
+  (TID:0; TType:0; Tag:$A40B; ParentID:$8769; Count:1; Name:'DeviceSettingDescription'),
+  (TID:0; TType:3; Tag:$A40C; ParentID:$8769; Count:1; Name:'SubjectDistanceRange';    {250}
     Desc:''; Code:'0:Unknown,1:Macro,2:Close view,3:Distant view'),
-  (TID:0; TType:2; ICode:2; Tag:$A420; ParentID:$8769; Count:1; Name:'ImageUniqueID';
+  (TID:0; TType:2; Tag:$A420; ParentID:$8769; Count:1; Name:'ImageUniqueID';
     Desc:'';  Code:'0:Close view,1:Distant view'),
-  (TID:0; TType:0; ICode:2; Tag:0;     ParentID:$0000; Count:1; Name:'Unknown')
+  (TID:0; TType:0; Tag:0;     ParentID:$0000; Count:1; Name:'Unknown')
 );
 
  GPSTable : array [0..GPSCnt-1] of TTagEntry = (
-  (TID:0; TType:1; ICode:2; Tag:$000; ParentID:$8825; Count:4; Name:'GPSVersionID';
+  (TID:0; TType:1; Tag:$000; ParentID:$8825; Count:4; Name:'GPSVersionID';
     Desc:''; Code:''; Data:''; RAw:''; FormatS:''; Size:0; CallBack:GpsVersionID),
-  (TID:0; TType:2; ICode:2; Tag:$001; ParentID:$8825; Count:2; Name:'GPSLatitudeRef'; Desc:''),
-  (TID:0; TType:5; ICode:2; Tag:$002; ParentID:$8825; Count:3; Name:'GPSLatitude';
+  (TID:0; TType:2; Tag:$001; ParentID:$8825; Count:2; Name:'GPSLatitudeRef'; Desc:''),
+  (TID:0; TType:5; Tag:$002; ParentID:$8825; Count:3; Name:'GPSLatitude';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$003; ParentID:$8825; Count:2; Name:'GPSLongitudeRef';Desc:''),
-  (TID:0; TType:5; ICode:2; Tag:$004; ParentID:$8825; Count:3; Name:'GPSLongitude';
+  (TID:0; TType:2; Tag:$003; ParentID:$8825; Count:2; Name:'GPSLongitudeRef';Desc:''),
+  (TID:0; TType:5; Tag:$004; ParentID:$8825; Count:3; Name:'GPSLongitude';
     Desc:''; Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:1; ICode:2; Tag:$005; ParentID:$8825; Count:1; Name:'GPSAltitudeRef'; Desc:'';
+  (TID:0; TType:1; Tag:$005; ParentID:$8825; Count:1; Name:'GPSAltitudeRef'; Desc:'';
     Code:'0:Above Sealevel,1:Below Sealevel'),
-  (TID:0; TType:5; ICode:2; Tag:$006; ParentID:$8825; Count:1; Name:'GPSAltitude'; Desc:'';
+  (TID:0; TType:5; Tag:$006; ParentID:$8825; Count:1; Name:'GPSAltitude'; Desc:'';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsAltitude),
-  (TID:0; TType:5; ICode:2; Tag:$007; ParentID:$8825; Count:3; Name:'GPSTimeStamp'; Desc:'';
+  (TID:0; TType:5; Tag:$007; ParentID:$8825; Count:3; Name:'GPSTimeStamp'; Desc:'';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:CvtTime),
-  (TID:0; TType:2; ICode:2; Tag:$008; ParentID:$8825; Count:1; Name:'GPSSatellites'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$009; ParentID:$8825; Count:2; Name:'GPSStatus';
+  (TID:0; TType:2; Tag:$008; ParentID:$8825; Count:1; Name:'GPSSatellites'; Desc:''),
+  (TID:0; TType:2; Tag:$009; ParentID:$8825; Count:2; Name:'GPSStatus';
     Desc:''; Code:'A:Active;V:Void'),
-  (TID:0; TType:2; ICode:2; Tag:$00A; ParentID:$8825; Count:2; Name:'GPSMeasureMode';
+  (TID:0; TType:2; Tag:$00A; ParentID:$8825; Count:2; Name:'GPSMeasureMode';
     Desc:''; Code:'2:2D,3:3D'),
-  (TID:0; TType:5; ICode:2; Tag:$00B; ParentID:$8825; Count:1; Name:'GPSDOP'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$00C; ParentID:$8825; Count:2; Name:'GPSSpeedRef';
+  (TID:0; TType:5; Tag:$00B; ParentID:$8825; Count:1; Name:'GPSDOP'; Desc:''),
+  (TID:0; TType:2; Tag:$00C; ParentID:$8825; Count:2; Name:'GPSSpeedRef';
     Desc:''; Code:'K:km/h,M:mph,N:knots'),
-  (TID:0; TType:5; ICode:2; Tag:$00D; ParentID:$8825; Count:1; Name:'GPSSpeed'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$00E; ParentID:$8825; Count:2; Name:'GPSTrackRef';
+  (TID:0; TType:5; Tag:$00D; ParentID:$8825; Count:1; Name:'GPSSpeed'; Desc:''),
+  (TID:0; TType:2; Tag:$00E; ParentID:$8825; Count:2; Name:'GPSTrackRef';
     Desc:''; Code:'M:Magnetic North,T:True North'),
-  (TID:0; TType:5; ICode:2; Tag:$00F; ParentID:$8825; Count:1; Name:'GPSTrack'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$010; ParentID:$8825; Count:2; Name:'GPSImageDirectionRef';
+  (TID:0; TType:5; Tag:$00F; ParentID:$8825; Count:1; Name:'GPSTrack'; Desc:''),
+  (TID:0; TType:2; Tag:$010; ParentID:$8825; Count:2; Name:'GPSImageDirectionRef';
     Desc:''; Code:'M:Magnetic North,T:True North'),
-  (TID:0; TType:5; ICode:2; Tag:$011; ParentID:$8825; Count:1; Name:'GPSImageDirection'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$012; ParentID:$8825; Count:1; Name:'GPSMapDatum'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$013; ParentID:$8825; Count:2; Name:'GPSDestLatitudeRef';
+  (TID:0; TType:5; Tag:$011; ParentID:$8825; Count:1; Name:'GPSImageDirection'; Desc:''),
+  (TID:0; TType:2; Tag:$012; ParentID:$8825; Count:1; Name:'GPSMapDatum'; Desc:''),
+  (TID:0; TType:2; Tag:$013; ParentID:$8825; Count:2; Name:'GPSDestLatitudeRef';
     Desc:''; Code:'N:North,S:South'),
-  (TID:0; TType:5; ICode:2; Tag:$014; ParentID:$8825; Count:3; Name:'GPSDestLatitude'; Desc:'';
+  (TID:0; TType:5; Tag:$014; ParentID:$8825; Count:3; Name:'GPSDestLatitude'; Desc:'';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$015; ParentID:$8825; Count:2; Name:'GPSDestLongitudeRef';
+  (TID:0; TType:2; Tag:$015; ParentID:$8825; Count:2; Name:'GPSDestLongitudeRef';
     Desc:''; Code: 'E:East,W:West'),
-  (TID:0; TType:5; ICode:2; Tag:$016; ParentID:$8825; Count:3; Name:'GPSDestLongitude'; Desc:'';
+  (TID:0; TType:5; Tag:$016; ParentID:$8825; Count:3; Name:'GPSDestLongitude'; Desc:'';
     Code:''; Data:''; Raw:''; FormatS:''; Size:0; CallBack:GpsPosn),
-  (TID:0; TType:2; ICode:2; Tag:$017; ParentID:$8825; Count:2; Name:'GPSDestBearingRef';
+  (TID:0; TType:2; Tag:$017; ParentID:$8825; Count:2; Name:'GPSDestBearingRef';
     Desc:''; Code:'M:Magnetic North,T:True North'),
-  (TID:0; TType:5; ICode:2; Tag:$018; ParentID:$8825; Count:1; Name:'GPSDestBearing'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$019; ParentID:$8825; Count:2; Name:'GPSDestDistanceRef';
+  (TID:0; TType:5; Tag:$018; ParentID:$8825; Count:1; Name:'GPSDestBearing'; Desc:''),
+  (TID:0; TType:2; Tag:$019; ParentID:$8825; Count:2; Name:'GPSDestDistanceRef';
     Desc:''; Code:'K:Kilometers,M:Miles,N:Nautic Miles'),
-  (TID:0; TType:5; ICode:2; Tag:$01A; ParentID:$8825; Count:1; Name:'GPSDestDistance'; Desc:''),
-  (TID:0; TType:7; ICode:2; Tag:$01B; ParentID:$8825; Count:1; Name:'GPSProcessingMode'; Desc:''),
-  (TID:0; TType:7; ICode:2; Tag:$01C; ParentID:$8825; Count:1; Name:'GPSAreaInformation'; Desc:''),
-  (TID:0; TType:2; ICode:2; Tag:$01D; ParentID:$8825; Count:7; Name:'GPSDateStamp'; Desc:''),
-  (TID:0; TType:3; ICode:2; Tag:$01E; ParentID:$8825; Count:1; Name:'GPSDifferential';
+  (TID:0; TType:5; Tag:$01A; ParentID:$8825; Count:1; Name:'GPSDestDistance'; Desc:''),
+  (TID:0; TType:7; Tag:$01B; ParentID:$8825; Count:1; Name:'GPSProcessingMode'; Desc:''),
+  (TID:0; TType:7; Tag:$01C; ParentID:$8825; Count:1; Name:'GPSAreaInformation'; Desc:''),
+  (TID:0; TType:2; Tag:$01D; ParentID:$8825; Count:7; Name:'GPSDateStamp'; Desc:''),
+  (TID:0; TType:3; Tag:$01E; ParentID:$8825; Count:1; Name:'GPSDifferential';
     Desc:''; Code:'0:No Correction,1:Differential Correction'),
-  (TID:0; TType:5; ICode:2; Tag:$01F; ParentID:$8825; Count:1; Name:'GPSHPositioningError'; Desc:'')
+  (TID:0; TType:5; Tag:$01F; ParentID:$8825; Count:1; Name:'GPSHPositioningError'; Desc:'')
   );
 
   tagInit : boolean = false;

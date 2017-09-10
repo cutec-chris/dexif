@@ -1,6 +1,8 @@
-unit dIPTCWrite;
+unit dIptcWrite;
 
-{$mode objfpc}{$H+}
+{$IFDEF FPC}
+  {$mode objfpc}{$H+}
+{$ENDIF}
 
 interface
 
@@ -9,6 +11,8 @@ uses
   dGlobal, dUtils, dMetadata, dIPTC;
 
 type
+  { Writer for the IPTC data (Adobe image resource blocks)
+    NOTE: Data must be written in Big-Endian format. }
   TIPTCWriter = class(TBasicMetadataWriter)
   private
     FIPTCSegmentStartPos: Int64;
@@ -26,6 +30,26 @@ type
   EIPTCWriter = class(Exception);
 
 implementation
+
+type
+  // http://search.cpan.org/dist/Image-MetaData-JPEG/lib/Image/MetaData/JPEG/Structures.pod#Structure_of_an_IPTC_data_block
+  TStandardIptcDataset = packed record
+    TagMarker: Byte;   // must be $1C
+    RecordNumber: Byte;  // this is the number before the colon in the tag listing
+    DatasetNumber: Byte; // this is the number after the colon in the tag listing ("Tag")
+    DataSize: Word;      // < 32768
+    // Data: variable
+  end;
+
+  TExtendedIptcDataset = packed record
+    TagMarker: Byte;       // must be $1C
+    RecordNumber: Byte;
+    DatasetNumber: byte;
+    SizeOfDatasize: word;  // Note highest bit is always set --> Number must be masked out
+    // Datasize: as many bytes as specified by SizeOfDatasize
+    // Data: as many bytes as specified by DataSize
+  end;
+
 
 constructor TIPTCWriter.Create(AImgData: TImgData);
 begin
@@ -82,8 +106,9 @@ procedure TIPTCWriter.WriteImageResourceBlock(AStream: TStream;
 const
   RESOURCE_MARKER: ansistring = '8BIM';
 var
+  b: Byte;
   w: Word;
-  len: DWord;
+  dw: DWord;
 begin
   // Resource marker: 8BIM
   AStream.WriteBuffer(RESOURCE_MARKER[1], Length(RESOURCE_MARKER));
@@ -94,29 +119,35 @@ begin
   AStream.WriteBuffer(w, SizeOf(w));
 
   // Resource name
-  if Length(AResourceName) = 0 then
-    AStream.WriteWord(0)
-  else begin
-    len := Length(AResourceName);
-    if len > 255 then
+  if Length(AResourceName) = 0 then begin
+    w := 0;
+    AStream.WriteBuffer(w, 2);
+  end else
+  begin
+    dw := Length(AResourceName);
+    if dw > 255 then
       raise Exception.Createfmt('Image resource name "%s" too long.', [AResourceName]);
-    if not odd(len) then begin
-      inc(len);
+    if not odd(dw) then begin
+      inc(dw);
       AResourceName := AResourceName + #0;
     end;
-    AStream.WriteByte(len);
-    AStream.WriteBuffer(AResourceName[1], len);
+    b := dw;
+    AStream.WriteBuffer(b, 1);
+    AStream.WriteBuffer(AResourceName[1], b);
   end;
 
   // Resource data
   if ABuffer <> nil then begin
     if odd(ABufferSize) then begin
       // Pad with zero to get even byte count
-      AStream.WriteDWord(NtoBE(ABufferSize+1));
+      dw := NtoBE(ABufferSize + 1);
+      AStream.WriteBuffer(dw, SizeOf(dw));
       AStream.WriteBuffer(ABuffer^, ABufferSize);
-      AStream.WriteByte(0);
+      b := 0;
+      AStream.WriteBuffer(b, 1);
     end else begin
-      AStream.WriteDWord(NtoBE(ABufferSize));
+      dw := NtoBE(ABufferSize);
+      AStream.WriteBuffer(dw, SizeOf(dw));
       AStream.WriteBuffer(ABuffer^, ABufferSize);
     end;
   end;
@@ -127,8 +158,9 @@ begin
   // Write the IPTC tags
   WriteIptcImageResourceBlock(AStream);
 
+  // wp: is this really needed?
   // Write the end-of-data marker
-  WriteEndOfDataResourceBlock(AStream);
+//  WriteEndOfDataResourceBlock(AStream);
 
   // If WriteToStream is called within a JPEG structure we must update the
   // size of the IPTC segment.

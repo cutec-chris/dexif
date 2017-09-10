@@ -157,14 +157,11 @@ end;
 procedure TIPTCform.AddControlSet(idx: integer; vName,vValue: String;
   MaxChars: integer);
 var
-//  newLabel: TLabel;
-  newLabel: TStaticText;
-  newEdit: TEdit;
+  x: Integer;
+
 begin
-//  newLabel := TLabel.Create(ScrollBox1);  // create new label
-  newLabel := TStaticText.Create(Scrollbox1);
-  newEdit := TEdit.Create(ScrollBox1);    // create new edit box
-  with newLabel do
+  { Create new label }
+  with {$IFDEF FPC}TStaticText{$ELSE}TLabel{$ENDIF}.Create(Scrollbox1) do
   begin
     Parent := ScrollBox1;
     Alignment := taRightJustify;
@@ -174,13 +171,16 @@ begin
     Width := 200;
     Font.Style := [fsBold];
     Caption := vName;
+    x := Left + Width + 8;
   end;
-  with newEdit do
+
+  { Create new edit box }
+  with TEdit.Create(Scrollbox1) do
   begin
     Parent := ScrollBox1;
     Anchors := [akTop,akLeft, akRight]; // expand when window resized
     Top := 7 + 30*idx;
-    Left := newLabel.Left + newLabel.Width + 8;
+    Left := x;
     Tag := idx;
     MaxLength := MaxChars;
     Width := Scrollbox1.ClientWidth - Left - 16;
