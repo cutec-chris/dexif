@@ -51,7 +51,7 @@ type
 implementation
 
 uses
-  dGlobal, dUtils, dEXIF
+  dGlobal, dUtils, dMetadata, dEXIF
 {$ifdef FPC}
 {$else}
   , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}

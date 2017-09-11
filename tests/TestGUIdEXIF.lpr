@@ -4,8 +4,8 @@ program TestGUIdEXIF;
 
 uses
   Interfaces, Forms, GuiTestRunner, dEXIF, dIPTC, msData, dUtils,
-  tstBasic, tstreadexif, tstwritereadexif, tstthumbnail, tstselfimage,
-  tstDeleteExif;
+  tstBasic, tstreadexif, tstwritereadexif, tstwritereadiptc,
+  tstthumbnail, tstselfimage, tstDeleteExif;
 
 {$R *.res}
 

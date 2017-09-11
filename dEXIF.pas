@@ -237,9 +237,6 @@ type
 
     // Manufacturer-specific
     procedure AddMSTag(ATagName: String; ARawStr: ansistring; AType: word);
-    procedure ProcessHWSpecific(AMakerBuff: ansistring;
-      TagTbl: array of TTagEntry; ADirStart, AMakerOffset: Longint;
-      spOffset: integer = 0);
 
     // Iterate through found tags
     procedure ResetIterator;
@@ -317,6 +314,9 @@ type
     // General processing, called internally
     procedure ProcessExifDir(DirStart, OffsetBase, ExifLength: LongInt;
       ATagType: TTagType = ttExif; APrefix: string=''; AParentID: word=0);
+    procedure ProcessHWSpecific(AMakerBuff: ansistring;
+      TagTbl: array of TTagEntry; ADirStart, AMakerOffset: Longint;
+      spOffset: integer = 0);
 
   public
     // Thumbnail

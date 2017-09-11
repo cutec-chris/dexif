@@ -5,7 +5,8 @@ unit tstThumbnail;
 interface
 
 uses
-  Classes, SysUtils, Graphics, fpcunit, testutils, testregistry, dEXIF;
+  Classes, SysUtils, Graphics, fpcunit, testutils, testregistry,
+  dMetadata, dEXIF;
 
 type
   TTstThumbnail_dEXIF= class(TTestCase)

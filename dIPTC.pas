@@ -63,8 +63,11 @@ type
     procedure SetCount(const AValue: integer);
     function GetTagElement(TagID: integer): ITag;
     procedure SetTagElement(TagID: integer; const Value: ITag);
+    function GetTagValueAsString(ATagName: String): String;
+    procedure SetTagValueAsString(ATagName, AValue: String);
     function GetTimeZoneStr: string;
     procedure SetDateTimePrim(TimeIn: TDateTime; prefix: string);
+
   protected
     FBuffer: ansistring;
     MaxTag: integer;
@@ -86,11 +89,13 @@ type
     procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
     procedure ParseIPTCArray(ABuffer: ansistring);
 
-    function LookupTag(ATagName: String): integer; virtual;
+    function LookupTag(ATagName: String): integer;
+    function LookupNextTag(AtagName: String; ATagIndex: Integer): Integer;
     function LookupTagByDesc(ATagDesc: String): integer;
 
     procedure RemoveTag(ATagName: String); virtual;
-    function AddTag(ATagName: String; ARawVal: ansistring = ''): integer; virtual;
+    function AddTag(ATagName: String; ARawVal: ansistring = '';
+      AForceNew: Boolean = false): integer; virtual;
     function AppendToTag(ATagName: String; ARawVal: ansistring): integer; virtual;
     function AddOrAppend(ATagName: String; ARawVal: ansistring): integer; virtual;
     function UpdateTagDesc(ATagName: String; AValue: string): integer;
@@ -108,6 +113,8 @@ type
     property ITagArray[TagID:integer]: ITag
         read GetTagElement write SetTagElement; default;
     property Count: integer read GetCount write SetCount;
+    property TagValueAsString[ATagName: String]: String
+        read GetTagValueAsString write SetTagValueAsString;
   end;
 
 const
@@ -133,53 +140,53 @@ var
   }
   IPTCTable : array [0..IPTCTAGCNT-1] of ITag = (
     ( TID:0; TType:2; Tag:$015A {1:90}; Count:1;     Name:'CodedCharacterSet';Desc:'Coded character set'; Code:''; Data:''; Raw:''; FormatS:''; Size:32),
-    ( TID:0; TType:3; Tag:$0200 {2: 0}; Count:1;     Name:'SKIP';             Desc:'Record Version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:2; Tag:$0203 {2: 3}; Count:1;     Name:'ObjectType';       Desc:'Object Type Ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
-    ( TID:0; TType:2; Tag:$0204 {2: 4}; Count:$FFFF; Name:'ObjectAttr';       Desc:'Object Attribute Ref';  Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:3; Tag:$0200 {2: 0}; Count:1;     Name:'SKIP';             Desc:'Record version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0203 {2: 3}; Count:1;     Name:'ObjectType';       Desc:'Object type ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:2; Tag:$0204 {2: 4}; Count:$FFFF; Name:'ObjectAttr';       Desc:'Object attribute ref';  Code:'';Data:'';Raw:'';FormatS:'';Size:67),
     ( TID:0; TType:2; Tag:$0205 {2: 5}; Count:1;     Name:'ObjectName';       Desc:'Object name';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:2; Tag:$0207 {2: 7}; Count:1;     Name:'EditStatus';       Desc:'Edit Status';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:2; Tag:$0208 {2: 8}; Count:1;     Name:'EditorialUpdate';  Desc:'Editorial Update';  Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$0207 {2: 7}; Count:1;     Name:'EditStatus';       Desc:'Edit status';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0208 {2: 8}; Count:1;     Name:'EditorialUpdate';  Desc:'Editorial update';  Code:'';Data:'';Raw:'';FormatS:'';Size:2),
     ( TID:0; TType:2; Tag:$020A {2:10}; Count:1;     Name:'Urgency';          Desc:'Urgency';      Code:'';Data:'';Raw:'';FormatS:'';Size:1),
-    ( TID:0; TType:2; Tag:$020C {2:12}; Count:$FFFF; Name:'SubRef';           Desc:'Subject Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:236),
+    ( TID:0; TType:2; Tag:$020C {2:12}; Count:$FFFF; Name:'SubRef';           Desc:'Subject reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:236),
     ( TID:0; TType:2; Tag:$020F {2:15}; Count:1;     Name:'Category';         Desc:'Category';     Code:'';Data:'';Raw:'';FormatS:'';Size:3),
     ( TID:0; TType:2; Tag:$0214 {2:20}; Count:$FFFF; Name:'SuppCategory';     Desc:'Supplemental category'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0216 {2:22}; Count:1;     Name:'FixtureID';        Desc:'Fixture ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0219 {2:25}; Count:$FFFF; Name:'Keywords';         Desc:'Keywords';     Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:2; Tag:$021A {2:26}; Count:$FFFF; Name:'ContentLocCode';   Desc:'Content Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
-    ( TID:0; TType:2; Tag:$021B {2:27}; Count:$FFFF; Name:'ContentLocName';   Desc:'Content Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size: 64),
-    ( TID:0; TType:2; Tag:$021E {2:30}; Count:1;     Name:'ReleaseDate';      Desc:'Release Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:2; Tag:$0223 {2:35}; Count:1;     Name:'ReleaseTime';      Desc:'Release Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:2; Tag:$0225 {2:37}; Count:1;     Name:'ExpireDate';       Desc:'Expiration Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:2; Tag:$0226 {2:38}; Count:1;     Name:'ExpireTime';       Desc:'Expiration Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:2; Tag:$0228 {2:40}; Count:1;     Name:'SpecialInstru';    Desc:'Special Instructions'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
-    ( TID:0; TType:2; Tag:$022A {2:42}; Count:1;     Name:'ActionAdvised';    Desc:'Action Advised'; Code:'';Data:'';Raw:'';FormatS:'';Size:2),
-    ( TID:0; TType:2; Tag:$022D {2:45}; Count:$FFFF; Name:'RefService';       Desc:'Reference Service'; Code:'';Data:'';Raw:'';FormatS:'';Size:10),
-    ( TID:0; TType:2; Tag:$022F {2:47}; Count:$FFFF; Name:'RefDate';          Desc:'Reference Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:2; Tag:$0232 {2:50}; Count:$FFFF; Name:'RefNumber';        Desc:'Reference Number'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$021A {2:26}; Count:$FFFF; Name:'ContentLocCode';   Desc:'Content location code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
+    ( TID:0; TType:2; Tag:$021B {2:27}; Count:$FFFF; Name:'ContentLocName';   Desc:'Content location name'; Code:'';Data:'';Raw:'';FormatS:'';Size: 64),
+    ( TID:0; TType:2; Tag:$021E {2:30}; Count:1;     Name:'ReleaseDate';      Desc:'Release date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0223 {2:35}; Count:1;     Name:'ReleaseTime';      Desc:'Release time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0225 {2:37}; Count:1;     Name:'ExpireDate';       Desc:'Expiration date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0226 {2:38}; Count:1;     Name:'ExpireTime';       Desc:'Expiration time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0228 {2:40}; Count:1;     Name:'SpecialInstruct';  Desc:'Special instructions'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
+    ( TID:0; TType:2; Tag:$022A {2:42}; Count:1;     Name:'ActionAdvised';    Desc:'Action advised'; Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$022D {2:45}; Count:$FFFF; Name:'RefService';       Desc:'Reference service'; Code:'';Data:'';Raw:'';FormatS:'';Size:10),
+    ( TID:0; TType:2; Tag:$022F {2:47}; Count:$FFFF; Name:'RefDate';          Desc:'Reference date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0232 {2:50}; Count:$FFFF; Name:'RefNumber';        Desc:'Reference number'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
     ( TID:0; TType:2; Tag:$0237 {2:55}; Count:1;     Name:'DateCreated';      Desc:'Date created'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
     ( TID:0; TType:2; Tag:$023C {2:60}; Count:1;     Name:'TimeCreated';      Desc:'Time created'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:2; Tag:$023E {2:62}; Count:1;     Name:'DigitizeDate';     Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
-    ( TID:0; TType:2; Tag:$023F {2:63}; Count:1;     Name:'DigitizeTime';     Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
-    ( TID:0; TType:2; Tag:$0241 {2:65}; Count:1;     Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$023E {2:62}; Count:1;     Name:'DigitizeDate';     Desc:'Digital creation date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$023F {2:63}; Count:1;     Name:'DigitizeTime';     Desc:'Digital creation time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0241 {2:65}; Count:1;     Name:'OriginatingProgram'; Desc:'Originating program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0246 {2:70}; Count:1;     Name:'ProgramVersion';   Desc:'Program version'; Code:'';Data:'';Raw:'';FormatS:'';Size: 10),
-    ( TID:0; TType:2; Tag:$024B {2:75}; Count:1;     Name:'ObjectCycle';      Desc:'Object Cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
+    ( TID:0; TType:2; Tag:$024B {2:75}; Count:1;     Name:'ObjectCycle';      Desc:'Object cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
     ( TID:0; TType:2; Tag:$0250 {2:80}; Count:$FFFF; Name:'ByLine';           Desc:'ByLine';       Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:2; Tag:$0255 {2:85}; Count:$FFFF; Name:'ByLineTitle';      Desc:'ByLine Title'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0255 {2:85}; Count:$FFFF; Name:'ByLineTitle';      Desc:'ByLine title'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$025A {2:90}; Count:1;     Name:'City';             Desc:'City';         Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$025C {2:92}; Count:1;     Name:'SubLocation';      Desc:'Sublocation';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$025F {2:95}; Count:1;     Name:'State';            Desc:'Province/State';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:2; Tag:$0264 {2:100};Count:1;     Name:'LocationCode';     Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
-    ( TID:0; TType:2; Tag:$0265 {2:101};Count:1;     Name:'LocationName';     Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
-    ( TID:0; TType:2; Tag:$0267 {2:103};Count:1;     Name:'TransmissionRef';  Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0264 {2:100};Count:1;     Name:'LocationCode';     Desc:'Country/primary location code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:2; Tag:$0265 {2:101};Count:1;     Name:'LocationName';     Desc:'Country/primary location name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0267 {2:103};Count:1;     Name:'TransmissionRef';  Desc:'Original transmission reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0269 {2:105};Count:1;     Name:'ImageHeadline';    Desc:'Image headline'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
     ( TID:0; TType:2; Tag:$026E {2:110};Count:1;     Name:'ImageCredit';      Desc:'Image credit';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0273 {2:115};Count:1;     Name:'Source';           Desc:'Source';        Code:'';Data:'';Raw:'';FormatS:'';Size:32),
-    ( TID:0; TType:2; Tag:$0274 {2:116};Count:1;     Name:'Copyright';        Desc:'Copyright Notice';  Code:'';Data:'';Raw:'';FormatS:'';Size:128),
+    ( TID:0; TType:2; Tag:$0274 {2:116};Count:1;     Name:'Copyright';        Desc:'Copyright notice';  Code:'';Data:'';Raw:'';FormatS:'';Size:128),
     ( TID:0; TType:2; Tag:$0276 {2:118};Count:$FFFF; Name:'Contact';          Desc:'Contact';       Code:'';Data:'';Raw:'';FormatS:'';Size:128),
     ( TID:0; TType:2; Tag:$0278 {2:120};Count:1;     Name:'ImageCaption';     Desc:'Image caption'; Code:'';Data:'';Raw:'';FormatS:'';Size:2000),
     ( TID:0; TType:2; Tag:$027A {2:122};Count:1;     Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
     ( TID:0; TType:2; Tag:$0282 {2:130};Count:1;     Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2),
-    ( TID:0; TType:2; Tag:$0283 {2:131};Count:1;     Name:'Orientation';      Desc:'Image Orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
+    ( TID:0; TType:2; Tag:$0283 {2:131};Count:1;     Name:'Orientation';      Desc:'Image orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
     ( TID:0; TType:2; Tag:$0287 {2:135};Count:1;     Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3),
     ( TID:0; TType:0; Tag:$080A {8:10}; Count:$FFFF; Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
    );
@@ -250,6 +257,32 @@ begin
   fITagArray[TagID] := Value;
 end;
 
+function TIptcData.GetTagValueAsString(ATagName: String): String;
+var
+  idx: integer;
+begin
+  idx := LookupTag(ATagName);
+  if idx >= 0 then begin
+    Result := ITagArray[idx].Data;
+    {
+    if ITagArray[idx].Count = MultiTagCount then
+      while true do begin
+        idx := LookupNextTag(ATagName, idx+1);
+        if idx > -1 then
+          Result := Result + MultiTagSep + ITagArray[idx].Data
+        else
+          exit;
+      end;
+      }
+  end else
+    Result := '';
+end;
+
+procedure TIptcData.SetTagValueAsString(ATagName, AValue: String);
+begin
+  AddOrAppend(ATagName, AValue);
+end;
+
 { Note: recordNo : datasetNo }
 function TIPTCData.ExtractTag(const ABuffer: ansistring; var AStart: Integer): iTag;
 var
@@ -273,16 +306,17 @@ begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
+          tmp.Raw := Copy(ABuffer, AStart, blen);
           case tmp.TType of
-            2: begin
-                 tmp.Raw := copy(ABuffer, AStart, blen);
-                 tmp.Data := copy(ABuffer, AStart, blen);
-               end;
-            3: begin
-                 w := PWord(@ABuffer[AStart])^;
-                 Move(w, tmp.Raw[1], 2);
-                 tmp.Data := IntToStr(BEToN(w));
-               end;
+            FMT_STRING, 0:
+              tmp.Data := RawToData(tmp.Raw, tmp.TType);
+            FMT_USHORT:
+              begin
+                w := PWord(@tmp.Raw[1])^;
+                tmp.Data := IntToStr(BEToN(w));
+              end;
+            else
+              raise Exception.Create('Tag type not supported.');
           end;
         end;
         break;
@@ -293,18 +327,24 @@ begin
       tmp.Name := 'Custom_' + IntToStr(datasetNo);
       tmp.Desc := 'Custom_' + IntToStr(datasetNo);
       tmp.Tag := tagID;
+      tmp.Raw := Copy(ABuffer, AStart, blen);
       case tmp.TType of
-        2: begin
-             tmp.Data := copy(ABuffer, AStart, blen);
-             tmp.Raw := copy(ABuffer, AStart, blen);
-             tmp.Size := 64; // length for unknown fields ?
-           end;
-        3: begin
-             w := PWord(@ABuffer[AStart])^;
-             Move(w, tmp.Raw[1], 2);
-             tmp.Data := IntToStr(BEToN(w));
-             tmp.Size := 2;
-           end;
+        FMT_STRING,
+        0:
+          begin
+            tmp.Data := RawToData(tmp.Raw, tmp.TType);
+            if Length(tmp.Raw) <= 64 then
+              tmp.Size := 64   // length for unknown fields ?
+            else
+              tmp.Size := Length(tmp.Raw);
+          end;
+        FMT_USHORT:
+          begin
+            w := PWord(@tmp.Raw[1])^;
+            tmp.Data := IntToStr(BEToN(w));
+          end;
+        else
+          raise Exception.Create('Tag type not supported.');
       end;
     end;
   end;
@@ -314,16 +354,23 @@ end;
 
 //  This function returns the index of a tag name in the tag buffer.
 function TIPTCdata.LookupTag(ATagName: String): Integer;
+begin
+  Result := LookupNextTag(ATagName, 0);
+end;
+
+function TIptcData.LookupNextTag(ATagName: String; ATagIndex: Integer): Integer;
 var
-  i: integer;
+  i: Integer;
 begin
   Result := -1;
-  ATagName := UpperCase(ATagName);
-  for i := 0 to Count-1 do
-    if UpperCase(iTagArray[i].Name) = ATagName then
+  if ATagIndex >= Count then
+    exit;
+  ATagName := Uppercase(ATagName);
+  for i:= ATagIndex to Count-1 do
+    if (UpperCase(iTagArray[i].Name) = ATagName) then
     begin
       Result := i;
-      break;
+      exit;
     end;
 end;
 
@@ -578,9 +625,10 @@ begin
     if ARawVal <> '' then begin
       dataVal := RawToData(ARawVal, fITagArray[idx].TType);
       fITagArray[idx].Data := NoDups(fITagArray[idx].Data, dataVal);
+      AddTag(ATagname, ARawVal, true);
     end;
   end else
-    idx := AddTag(ATagName, ARawVal); //NoDups('', ADataVal));
+    idx := AddTag(ATagName, ARawVal);
   result := idx;
 end;
 
@@ -608,35 +656,32 @@ var
   w: Word;
 begin
   case ATagType of
+    FMT_STRING, 0:
+      begin
+        Result := ARaw;   // to do: respect encoding
+        if Result[Length(Result)] = #0 then
+          Delete(Result, Length(Result), 1);
+      end;
     FMT_USHORT:
       begin
         w := BEtoN(PWord(@ARaw[1])^);
         Result := IntToStr(w);
-      end;
-    FMT_STRING:
-      begin
-        Result := ARaw;   // to do: respect encoding
       end;
     else
       raise Exception.Create('Tag type not supported.');
   end;
 end;
 
-function TIPTCdata.AddTag(ATagName: String; ARawVal: ansistring): integer;
+function TIPTCdata.AddTag(ATagName: String; ARawVal: ansistring = '';
+  AForceNew: Boolean = false): integer;
 var
   idx, defIdx: integer;
   newTag: itag;
 begin
   idx := LookupTag(ATagName);
-  if (idx >= 0) then
+  if AForceNew or (idx = -1) then
   begin
-    if ARawVal <> '' then begin
-      fITagArray[idx].Raw := ARawVal;
-      fITagArray[idx].Data := RawToData(ARawVal, fITagArray[idx].TType);
-    end;
-  end else
-  begin
-    defIdx := LookupTagDef(ATagname);
+    defIdx := LookupTagDef(ATagName);
     if defIdx < 0 then
     begin
       Result := -1;
@@ -646,6 +691,12 @@ begin
     newTag.Raw := ARawVal;
     newTag.Data := RawToData(ARawVal, newTag.TType);
     idx := AddTagToArray(newTag);
+  end else
+  begin
+    if ARawVal <> '' then begin
+      fITagArray[idx].Raw := ARawVal;
+      fITagArray[idx].Data := RawToData(ARawVal, fITagArray[idx].TType);
+    end;
   end;
   Result := idx;
 end;
@@ -712,7 +763,8 @@ begin
         SetLength(fITagArray[idx].Raw, 2);
         Move(w, fITagArray[idx].Raw[1], 2);
       end;
-    FMT_STRING:
+    FMT_STRING,
+    0:
       begin
         sa := ADataVal;
         fITagArray[idx].Raw := sa;   // To do: Fix encoding

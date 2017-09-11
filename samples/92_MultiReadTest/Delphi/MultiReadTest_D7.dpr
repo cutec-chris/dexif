@@ -5,9 +5,9 @@ program MultiReadTest;
 {$ENDIF}
 
 uses
-  {$IFDEF FPC}
+ {$IFDEF FPC}
   Interfaces,
-  {$ENDIF }
+ {$ENDIF}
   Forms,
   mrtmain in '..\common\mrtmain.pas',
   dEXIF in '..\..\..\dEXIF.pas',
@@ -16,7 +16,9 @@ uses
   dIPTC in '..\..\..\dIPTC.pas',
   dtags in '..\..\..\dtags.pas',
   dUtils in '..\..\..\dUtils.pas',
-  msData in '..\..\..\msData.pas';
+  msData in '..\..\..\msData.pas',
+  dIptcWrite in '..\..\..\diptcwrite.pas',
+  dMetadata in '..\..\..\dmetadata.pas';
 
 {$R *.res}
 

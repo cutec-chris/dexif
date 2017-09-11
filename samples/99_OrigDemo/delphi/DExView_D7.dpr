@@ -10,7 +10,9 @@ uses
   dGlobal in '..\..\..\dGlobal.pas',
   dTags in '..\..\..\dTags.pas',
   dUtils in '..\..\..\dUtils.pas',
-  About in '..\common\About.pas' {AboutBox};
+  About in '..\common\About.pas' {AboutBox},
+  dMetadata in '..\..\..\dmetadata.pas',
+  dIptcWrite in '..\..\..\diptcwrite.pas';
 
 {$R *.RES}
 begin

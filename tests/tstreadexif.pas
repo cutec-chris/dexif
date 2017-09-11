@@ -20,7 +20,7 @@ uses
   {$else}
      , TestFrameWork
   {$endif}
-  , dUtils, dEXIF;
+  , dUtils, dMetadata, dEXIF;
 
 const
   // Picture with EXIF data taken from SAMSUNG camera

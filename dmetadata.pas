@@ -698,19 +698,25 @@ begin
 
   SetFileInfo(AFileName);
   try
-    FErrStr := 'Not an EXIF file';
+//    FErrStr := 'Not an EXIF file';
     ext := LowerCase(ExtractFileExt(filename));
     if (ext = '.jpg') or (ext = '.jpeg') or (ext = '.jpe') then
     begin
-      if not ReadJpegFile(FileName, AMetadataKinds) then
+      if not ReadJpegFile(FileName, AMetadataKinds) then begin
+        FErrStr := 'Cannot read "' + AFileName + '"';
         exit;
+      end;
     end else
     if (ext = '.tif') or (ext = '.tiff') or (ext = '.nef') then
     begin
-      if not ReadTiffFile(FileName) then
+      if not ReadTiffFile(FileName) then begin
+        FErrStr := 'Cannot read "' + AFileName + '"';
         exit;
-    end else
+      end;
+    end else begin
+      FErrStr := 'File format not supported';
       exit;
+    end;
 
     FErrStr := NO_ERROR;
 //    msAvailable := ReadMSData(Imageinfo);

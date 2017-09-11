@@ -24,7 +24,7 @@ uses
   {$else}
      , Windows, Graphics, SysUtils, jpeg, TestFrameWork
   {$endif}
-     , DateUtils, dEXIF;
+     , DateUtils, dMetadata, dEXIF;
 
 const
   // Picture with EXIF data taken from CANON camera }

@@ -104,6 +104,8 @@
         <DCCReference Include="..\common\About.pas">
             <Form>AboutBox</Form>
         </DCCReference>
+        <DCCReference Include="..\..\..\diptcwrite.pas"/>
+        <DCCReference Include="..\..\..\dmetadata.pas"/>
         <None Include="InkNames">
             <ContainerId>File</ContainerId>
         </None>

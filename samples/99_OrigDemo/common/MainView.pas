@@ -381,18 +381,22 @@ begin
       Memo(ImgData.Comment);
     end;
 
-    if ImgData.IPTCSegment <> nil then
+    if ImgData.HasIPTC then
     begin
-      ts := ImgData.IptcObj.ParseIPTCStrings(ImgData.IPTCSegment^.Data);
-      if ts.Count > 0 then
-      begin
-        Memo(crlf + 'IPTC segment available' + crlf);
-        for i := 0 to ts.Count-1 do
+      ts := TStringList.Create;
+      try
+        ImgData.IptcObj.IPTCArrayToList(ts);
+        if ts.Count > 0 then
         begin
-          Memo(ts.strings[i]);
+          Memo(crlf + 'IPTC segment available' + crlf);
+          for i := 0 to ts.Count-1 do
+          begin
+            Memo(ts.strings[i]);
+          end;
         end;
+      finally
+        ts.Free;
       end;
-      ts.Free;
     end;
 
     if not ImgData.HasEXIF then
@@ -799,12 +803,12 @@ begin
         begin
           if ImgData.HasMetaData then
           begin
-            if  ImgData.HasEXIF then
+            if ImgData.HasEXIF then
               finfo := ImgData.ExifObj.toShortString()    // Just so you know:
             else
               finfo := s.name;
-            if ImgData.IPTCSegment <> nil then
-              finfo := finfo+' + IPTC';
+            if ImgData.HasIPTC then
+              finfo := finfo + ' + IPTC';
           end
           else
               finfo := s.name+' - No metadata';

@@ -43,7 +43,7 @@ type
 implementation
 uses
   Graphics, Variants,
-  dExif
+  dMetadata, dExif
 {$ifdef FPC}
 {$else}
   , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
