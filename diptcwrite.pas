@@ -13,14 +13,18 @@ uses
 type
   { Writer for the IPTC data (Adobe image resource blocks)
     NOTE: Data must be written in Big-Endian format. }
+
+  { TIPTCWriter }
+
   TIPTCWriter = class(TBasicMetadataWriter)
   private
     FIPTCSegmentStartPos: Int64;
-    procedure WriteEndOfDataResourceBlock(AStream: TStream);
-    procedure WriteIPTCImageResourceBlock(AStream: TStream);
   protected
-    procedure WriteImageResourceBlock(AStream: TStream; AResourceID: Integer;
-      AResourceName: String; ABuffer: Pointer; ABufferSize: DWord);
+    procedure WriteEndOfDataResourceBlock(AStream: TStream);
+    procedure WriteImageResourceBlockHeader(AStream: TStream; AResourceID: Integer;
+      AResourceName: String); //; ABuffer: Pointer; ABufferSize: DWord);
+    procedure WriteIPTCImageResourceBlock(AStream: TStream);
+    procedure WriteTag(AStream: TStream; ATag: TTagEntry);
   public
     constructor Create(AImgData: TImgData); override;
     procedure WriteIPTCHeader(AStream: TStream);
@@ -33,21 +37,13 @@ implementation
 
 type
   // http://search.cpan.org/dist/Image-MetaData-JPEG/lib/Image/MetaData/JPEG/Structures.pod#Structure_of_an_IPTC_data_block
-  TStandardIptcDataset = packed record
-    TagMarker: Byte;   // must be $1C
+  TIptcTag = packed record
+    TagMarker: Byte;     // must be $1C
     RecordNumber: Byte;  // this is the number before the colon in the tag listing
     DatasetNumber: Byte; // this is the number after the colon in the tag listing ("Tag")
-    DataSize: Word;      // < 32768
+    Size: Word;          // Size of data if < 32768, otherwise size of datalength element
+    // SizeOfDatasize: word --> if Size of data > 32767
     // Data: variable
-  end;
-
-  TExtendedIptcDataset = packed record
-    TagMarker: Byte;       // must be $1C
-    RecordNumber: Byte;
-    DatasetNumber: byte;
-    SizeOfDatasize: word;  // Note highest bit is always set --> Number must be masked out
-    // Datasize: as many bytes as specified by SizeOfDatasize
-    // Data: as many bytes as specified by DataSize
   end;
 
 
@@ -59,7 +55,7 @@ end;
 
 procedure TIptcWriter.WriteEndOfDataResourceBlock(AStream: TStream);
 begin
-  WriteImageResourceBlock(AStream, $0B04, '', nil, 0);
+  WriteImageResourceBlockHeader(AStream, $0B04, ''); //, nil, 0);
 end;
 
 //------------------------------------------------------------------------------
@@ -83,11 +79,24 @@ end;
 
 procedure TIPTCWriter.WriteIPTCImageResourceBlock(AStream: TStream);
 var
+  i: Integer;
+  tag: TTagEntry;
+begin
+  WriteImageResourceBlockHeader(AStream, $0404, '');
+
+  for i := 0 to FImgData.IptcObj.Count-1 do begin
+    tag := FImgData.IptcObj.ITagArray[i];
+    WriteTag(AStream, tag);
+  end;
+end;
+(*
+var
   buf: ansistring;  // to do: replace by TBytes or similar, but no string!
 begin
   buf := FImgData.IPTCobj.IPTCArrayToBuffer;
   WriteImageResourceBlock(AStream, $0404, '', @buf[1], Length(buf));
 end;
+*)
 
 { Adobe image resource block:
   Length    Description
@@ -100,9 +109,9 @@ end;
   4         Actual size of resource data that follows
   Variable  The resource data, described in the sections on the individual
             resource types. It is padded to make the size even }
-procedure TIPTCWriter.WriteImageResourceBlock(AStream: TStream;
-  AResourceID: Integer; AResourceName: String;
-  ABuffer: Pointer; ABufferSize: DWord);
+procedure TIPTCWriter.WriteImageResourceBlockHeader(AStream: TStream;
+  AResourceID: Integer; AResourceName: String);
+//  ABuffer: Pointer; ABufferSize: DWord);
 const
   RESOURCE_MARKER: ansistring = '8BIM';
 var
@@ -135,7 +144,7 @@ begin
     AStream.WriteBuffer(b, 1);
     AStream.WriteBuffer(AResourceName[1], b);
   end;
-
+                 (*
   // Resource data
   if ABuffer <> nil then begin
     if odd(ABufferSize) then begin
@@ -150,6 +159,65 @@ begin
       AStream.WriteBuffer(dw, SizeOf(dw));
       AStream.WriteBuffer(ABuffer^, ABufferSize);
     end;
+  end;             *)
+
+end;
+
+procedure TIptcWriter.WriteTag(AStream: TStream; ATag: TTagEntry);
+const
+  TAG_MARKER = $1C;
+var
+  iptcTag: TIptcTag;
+  w: Word;
+  dw: DWord;
+begin
+  iptcTag.TagMarker := TAG_MARKER;
+  iptcTag.RecordNumber := (ATag.Tag and $FF00) shr 8;
+  iptctag.DatasetNumber := (ATag.Tag and $00FF);
+  case ATag.TType of
+    FMT_USHORT:
+      begin
+        iptcTag.Size := 2;
+        AStream.WriteBuffer(iptcTag, SizeOf(iptcTag));
+        AStream.WriteBuffer(ATag.Raw[1], 2);
+      end;
+    FMT_STRING:
+      begin
+        if odd(Length(ATag.Raw)) then
+          ATag.Raw := ATag.Raw + #0;
+        w := Length(ATag.Raw);
+        if w < 32768 then begin
+          iptcTag.Size := NtoBE(w);
+          AStream.WriteBuffer(iptcTag, SizeOf(iptcTag));
+          AStream.WriteBuffer(ATag.Raw[1], w);
+        end else
+        if w < 65536 then begin
+          // Size is 2, but we must set highest bit to mark tag as being extended.
+          {$IFDEF ENDIAN_BIG}
+          iptcTag.Size := $8002;    // 80 is written first --> 8 is highest bit.
+          {$ELSE}
+          iptcTag.Size := $0082;    // 82 is written first --> 8 is highest bit.
+          {$ENDIF}
+          AStream.WriteBuffer(iptcTag, Sizeof(iptcTag));
+          w := NtoBE(w);
+          AStream.WriteBuffer(w, SizeOf(w));
+          AStream.WriteBuffer(ATag.Raw[1], w);
+        end else begin
+          // Size is 4, but we must set highest bit to mark tag as being extended.
+          {$IFDEF ENDIAN_BIG}
+          iptcTag.Size := $8004;    // 80 is written first --> 8 is highest bit.
+          {$ELSE}
+          iptcTag.Size := $0084;    // 84 is written first --> 8 is highest bit.
+          {$ENDIF}
+          AStream.WriteBuffer(iptcTag, SizeOf(iptcTag));
+          dw := NtoBE(w);
+          AStream.WriteBuffer(dw, SizeOf(dw));
+          AStream.WriteBuffer(ATag.Raw[1], Length(ATag.Raw));
+        end;
+      end;
+    else
+      // I've never seen other tag types than USHORT and STRING...
+      raise Exception.Create('Tag type not supported.');
   end;
 end;
 

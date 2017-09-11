@@ -251,9 +251,9 @@ begin
 //    Added in 1.02a to demonstrate use of custom fields:
 //      if these tags are found, then descriptions are altered,
 //      otherwise these statements have no effect
-      ImgData.IptcObj.UpdateTag('Custom_230','Image Notes');
-      ImgData.IptcObj.UpdateTag('Custom_231','History');
-      ImgData.IptcObj.UpdateTag('Custom_232','Camera Information');
+      ImgData.IptcObj.UpdateTagDesc('Custom_230','Image Notes');
+      ImgData.IptcObj.UpdateTagDesc('Custom_231','History');
+      ImgData.IptcObj.UpdateTagDesc('Custom_232','Camera Information');
       LoadDisplayFromArray()        // create controls based on found tags
     end
     else

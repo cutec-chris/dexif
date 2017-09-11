@@ -71,35 +71,31 @@ type
     FParent: TObject;
     fITagCount : integer;
     fITagArray: array of iTag;
-    function ExtractTag(const ABuffer: ansistring; var AStart: integer): iTag;
+    function ExtractTag(const ABuffer: ansistring; var AStart: integer): ITag;
+    function RawToData(ARaw: ansistring; ATagType: Byte): String;
   public
     constructor Create(AParent: TObject);
     procedure Reset;
     function HasData: boolean;
     function Clone(ASource: TIPTCData): TIPTCData;
 
-    function IPTCArrayToBuffer:ansistring;
+//    function IPTCArrayToBuffer:ansistring;
     procedure IPTCArrayToList(AList: TStrings);
-    procedure IPTCArrayToXML(AList: TStrings); overload;
-    function IPTCArrayToXML: TStringList; overload;
-      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
+    procedure IPTCArrayToXML(AList: TStrings);
 
     procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
-    function ParseIPTCStrings(buff: ansistring): TStringlist; overload;
-      deprecated {$IFDEF FPC}'Use procedure instead.'{$ENDIF};
     procedure ParseIPTCArray(ABuffer: ansistring);
 
-    function LookupTag(SearchStr: String): integer; virtual;
-    Function LookupTagDefn(AName: String): integer;
-    function LookupTagByDesc(SearchStr: String): integer;
+    function LookupTag(ATagName: String): integer; virtual;
+    function LookupTagByDesc(ATagDesc: String): integer;
 
     procedure RemoveTag(ATagName: String); virtual;
-    function AddTag(ATagName: String; ADataVal: ansistring = ''): integer; virtual;
-    function AppendToTag(ATagName: String; ADataVal: ansistring): integer; virtual;
-    function AddOrAppend(ATagName: String; ADataVal: ansistring): integer; virtual;
-    function UpdateTag(ATagName: String; ADataVal: ansistring): integer;
-    procedure SetTagByIdx(idx:integer; AValue:ansistring);
+    function AddTag(ATagName: String; ARawVal: ansistring = ''): integer; virtual;
+    function AppendToTag(ATagName: String; ARawVal: ansistring): integer; virtual;
+    function AddOrAppend(ATagName: String; ARawVal: ansistring): integer; virtual;
+    function UpdateTagDesc(ATagName: String; AValue: string): integer;
     function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
+    procedure SetTagByIdx(idx: Integer; ADataVal: String);
 
     class procedure ReadFileStrings(const AFilename: String; AList: TStrings);
 
@@ -188,6 +184,8 @@ var
     ( TID:0; TType:0; Tag:$080A {8:10}; Count:$FFFF; Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
    );
 
+function LookupTagDef(AName: String): integer;
+
 procedure IPTCWriteTransFile(const AFileName: String);
 function IPTCReadTransFile(const AFileName: String): boolean;
 
@@ -202,6 +200,22 @@ uses
 procedure InitITag(out ATag: ITag);
 begin
   InitTagEntry(TTagEntry(ATag));
+end;
+
+//  This function returns the index of a tag definition for a given tag name.
+function LookupTagDef(AName: string): integer;
+var
+  i:integer;
+begin
+  Result := -1;
+  for i := 0 to High(IptcTable) do
+  begin
+    if LowerCase(AName) = LowerCase(IPTCtable[i].Name) then
+    begin
+      Result := i;
+      break;
+    end;
+  end;
 end;
 
 
@@ -299,14 +313,14 @@ begin
 end;
 
 //  This function returns the index of a tag name in the tag buffer.
-function TIPTCdata.LookupTag(SearchStr: String): Integer;
+function TIPTCdata.LookupTag(ATagName: String): Integer;
 var
   i: integer;
 begin
-  SearchStr := UpperCase(SearchStr);
   Result := -1;
+  ATagName := UpperCase(ATagName);
   for i := 0 to Count-1 do
-    if UpperCase(iTagArray[i].Name) = SearchStr then
+    if UpperCase(iTagArray[i].Name) = ATagName then
     begin
       Result := i;
       break;
@@ -315,40 +329,18 @@ end;
 
 //  This function returns the index of a tag name in the tag buffer.
 //  It searches by the description which is most likely to be used as a label
-function TIPTCdata.LookupTagByDesc(SearchStr:string): integer;
+function TIPTCdata.LookupTagByDesc(ATagDesc: string): integer;
 var
   i: integer;
 begin
-  SearchStr := UpperCase(SearchStr);
+  ATagDesc := UpperCase(ATagDesc);
   Result := -1;
   for i := 0 to Count-1 do
-    if UpperCase(iTagArray[i].Desc) = SearchStr then
+    if UpperCase(iTagArray[i].Desc) = ATagDesc then
     begin
       Result := i;
       break;
     end;
-end;
-
-//  This function returns the index of a tag definition for a given tag name.
-function TIPTCdata.LookupTagDefn(AName: string): integer;
-var
-  i:integer;
-begin
-  Result := -1;
-  for i := 0 to IPTCTAGCNT-1 do
-  begin
-    if LowerCase(AName) = LowerCase(IPTCtable[i].Name) then
-    begin
-      Result := i;
-      break;
-    end;
-  end;
-end;
-
-function TIPTCdata.ParseIPTCStrings(buff: ansistring): TStringList;
-begin
-  Result := TStringList.Create;
-  ParseIPTCStrings(buff, Result);
 end;
 
 procedure TIPTCData.ParseIPTCStrings(buff: ansistring; AList: TStrings);
@@ -423,16 +415,17 @@ end;
 
 procedure TIptcData.IptcArrayToList(AList: TStrings);
 var
-  buf: ansistring;
+  i: Integer;
+  tag: ITag;
 begin
-  buf := IptcArrayToBuffer;
-  ParseIptcStrings(buf, AList);
-end;
-
-function TIPTCdata.IPTCArrayToXML: TStringList;
-begin
-  Result := TStringList.Create;
-  IPTCArrayToXML(Result);
+  for i:= 0 to Count-1 do begin
+    tag := ITagArray[i];
+    if (tag.Count = MultiTagCount) and (tag.Data = '') then
+      Continue;
+    AList.Add(tag.Desc + dExifDelim + tag.Data);
+  end;
+  //buf := IptcArrayToBuffer;
+//  ParseIptcStrings(buf, AList);
 end;
 
 procedure TIPTCData.IPTCArrayToXML(AList: TStrings);
@@ -452,7 +445,7 @@ begin
     end;
   AList.Add('   </ITPCdata>');
 end;
- 
+     (*
 function SplitMultiTag(code, tag:integer; buff:ansistring):ansistring;
 var
   tmps:ansistring;
@@ -474,7 +467,7 @@ begin
     result := result+MakeEntry(code,tag,tmps);
   end;
 end;
- 
+
 function TIPTCdata.IPTCArrayToBuffer: Ansistring;
 var
   buff: ansistring;
@@ -494,7 +487,7 @@ begin
     end;
   Result := buff;
 
-                         (*
+{
 // Photoshop requires the following headers:
   if not odd(length(buff)) then
     buff := buff+#0;
@@ -505,9 +498,9 @@ begin
  
 // Photoshop requires the following End-of-data marker:
   result := buff+'8BIM'#$04#$0B#0#0#0#0#0#0;
-  *)
+}
 end;
-
+ *)
 function TIPTCdata.Clone(ASource: TIPTCdata): TIPTCdata;
 begin
   Result := TIPTCdata.Create(FParent);
@@ -531,26 +524,29 @@ begin
   IPTCSegment^.DType := M_IPTC;
 end;
   *)
-function TIPTCdata.AddOrAppend(ATagName: String; ADataVal: ansistring): integer;
+function TIPTCdata.AddOrAppend(ATagName: String; ARawVal: ansistring): integer;
 var
-  i:integer;
+  idx: integer;
 begin
   Result := -1;
-  i := LookupTagDefn(ATagName);  // see if keyword is valid
-  if i >= 0 then
+  idx := LookupTagDef(ATagName);  // see if keyword is valid
+  if idx >= 0 then
   begin
-    if (IPTCTable[i].Count = MultiTagCount) then  // Multiple tag values
-      Result := AppendToTag(ATagName, ADataVal)
+    if (IPTCTable[idx].Count = MultiTagCount) then  // Multiple tag values
+      Result := AppendToTag(ATagName, ARawVal)
     else
-      Result := AddTag(ATagName, ADataVal);
+      Result := AddTag(ATagName, ARawVal);
   end;
 end;
 
-function noDups(exst, newstr: Ansistring): Ansistring;
+{ exstr and newstr are comma-separated lists of strings.
+  Adds the strings contained in newstr to exstr (ex = "existing") such that
+  exstr does not contain duplicates. }
+function noDups(exst, newstr: String): String;
 var
   lst,nlst: TStringList;
-  s:ansistring;
-  i:integer;
+  i: integer;
+  s: String;
 begin
   lst := TStringlist.Create;
   nlst := TStringlist.Create;
@@ -560,45 +556,45 @@ begin
     nlst.CommaText := newstr;
     for i := 0 to nlst.Count-1 do
     begin
-      s := AnsiString(trim(string(nlst[i])));
-      if (lst.IndexOf(s) < 0) then
-      begin
+      s := trim(nlst[i]);
+      if (lst.IndexOf(s) = -1) then
         lst.Add(s);
-      end;
     end;
-    result := AnsiString(lst.CommaText);
+    Result := lst.CommaText;
   finally
     nlst.Free;
     lst.Free;
   end;
 end;
 
-function TIPTCdata.AppendToTag(ATagName: String; ADataVal:ansistring): integer;
+function TIPTCdata.AppendToTag(ATagName: String; ARawVal:ansistring): integer;
 var
-  insPt: integer;   // INSertion PoinT  (array index)
+  idx: integer;
+  dataVal: String;
 begin
-  insPt := LookupTag(ATagName);
-  if (insPt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    if ADataval <> '' then
-      fITagArray[insPt].Data := NoDups(fITagArray[inspt].Data, ADataVal)
-  end
-  else
-    insPt := AddTag(ATagName, NoDups('', ADataVal));
-  result := insPt;
+    if ARawVal <> '' then begin
+      dataVal := RawToData(ARawVal, fITagArray[idx].TType);
+      fITagArray[idx].Data := NoDups(fITagArray[idx].Data, dataVal);
+    end;
+  end else
+    idx := AddTag(ATagName, ARawVal); //NoDups('', ADataVal));
+  result := idx;
 end;
 
-function TIPTCdata.UpdateTag(ATagName: String; ADataVal: ansistring): integer;
+function TIPTCdata.UpdateTagDesc(ATagName: String; AValue: String): integer;
 var
-  insPt: integer;   // INSertion PoinT
+  idx: integer;
 begin
-  insPt := LookupTag(ATagName);
-  if (insPt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    if ADataVal <> '' then
-      fITagArray[insPt].Desc := ADataVal
+    if AValue <> '' then
+      fITagArray[idx].Desc := AValue;
   end;
-  result := insPt;
+  result := idx;
 end;
 
 function TIptcData.GetMultiPartTag(ATagName: String): TStringList;
@@ -606,64 +602,82 @@ begin
   Result := TStringlist.Create;
   Result.CommaText := StringReplace(GetTag(ATagname), MultiTagSep, ',' ,[rfReplaceAll]);
 end;
- 
-function TIPTCdata.AddTag(ATagName: String; ADataVal: ansistring): integer;
+
+function TIptcData.RawToData(ARaw: ansistring; ATagType: Byte): String;
 var
-  insPt, defIdx: integer;
+  w: Word;
+begin
+  case ATagType of
+    FMT_USHORT:
+      begin
+        w := BEtoN(PWord(@ARaw[1])^);
+        Result := IntToStr(w);
+      end;
+    FMT_STRING:
+      begin
+        Result := ARaw;   // to do: respect encoding
+      end;
+    else
+      raise Exception.Create('Tag type not supported.');
+  end;
+end;
+
+function TIPTCdata.AddTag(ATagName: String; ARawVal: ansistring): integer;
+var
+  idx, defIdx: integer;
   newTag: itag;
 begin
-  insPt := LookupTag(ATagName);
-  if (inspt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    if ADataval <> '' then
-      fITagArray[inspt].Data := ADataval
+    if ARawVal <> '' then begin
+      fITagArray[idx].Raw := ARawVal;
+      fITagArray[idx].Data := RawToData(ARawVal, fITagArray[idx].TType);
+    end;
   end else
   begin
-    defIdx := LookupTagDefn(ATagname);
+    defIdx := LookupTagDef(ATagname);
     if defIdx < 0 then
     begin
       Result := -1;
       exit;  // not a defined node, do not insert
     end;
     newTag := IPTCTable[defIdx];
-    newTag.Raw := ADataVal;
-    newTag.Data := ADataVal;
-    insPt := AddTagToArray(newTag);
+    newTag.Raw := ARawVal;
+    newTag.Data := RawToData(ARawVal, newTag.TType);
+    idx := AddTagToArray(newTag);
   end;
-  Result := insPt;
+  Result := idx;
 end;
 
 procedure TIPTCdata.RemoveTag(ATagName: String);
 var
-  remPt,i: integer;
+  idx, i: integer;
 begin
-  remPt := LookupTag(ATagName);
-  if (remPt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    for i := remPt to fITagCount - 2 do
+    for i := idx to fITagCount - 2 do
       fITagArray[i] := fITagArray[i+1];
     dec(fITagCount);
   end;
 end;
  
 procedure TIPTCdata.Reset;
-var
-  i: Integer;
 begin
   Count := 0;
-  // clear out old data
-  for i:=0 to High(fITagArray) do
-    InitITag(fITagArray[i]);
+  SetLength(fITagArray, 0);
 end;
 
 function TIPTCdata.GetTag(ATagName: string; ADefaultVal: String=''): String;
 var
-  i: integer;
+  idx: integer;
 begin
-  Result := ADefaultVal;
-  i := LookupTag(ATagName);
-  if i >= 0 then
-    Result := ITagArray[i].Data;
+  idx := LookupTag(ATagName);
+  if idx >= 0 then
+    Result := ITagArray[idx].Data
+  else
+    Result := ADefaultVal;
 end;
 
 Function TIPTCdata.HasData: boolean;
@@ -685,10 +699,25 @@ begin
   end;
 end;
 
-procedure TIPTCdata.SetTagByIdx(idx: integer; AValue: ansistring);
+procedure TIPTCdata.SetTagByIdx(idx: integer; ADataVal: String);
+var
+  w: Integer;
+  sa: ansistring;
 begin
-  fITagArray[idx].Data := AValue;
-  fITagArray[idx].Raw := AValue;
+  fITagArray[idx].Data := ADataVal;
+  case FITagArray[idx].TType of
+    FMT_USHORT:
+      begin
+        w := StrToInt(ADataVal);
+        SetLength(fITagArray[idx].Raw, 2);
+        Move(w, fITagArray[idx].Raw[1], 2);
+      end;
+    FMT_STRING:
+      begin
+        sa := ADataVal;
+        fITagArray[idx].Raw := sa;   // To do: Fix encoding
+      end;
+  end;
 end;
 
 {$IFDEF MSWINDOWS}
