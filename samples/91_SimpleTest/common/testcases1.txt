@@ -1,0 +1,30 @@
+; IMPORTANT: This file must be stored in ANSI encoding
+; Use a TAB character between the two columns
+
+Comment	This text is in the COMMENT segment.
+Artist	Ansel Adams
+ImageDescription	A nice image
+UserComment	Nice comment!
+Make	My camera make
+Model	My camera model
+Copyright	(c) wp
+DateTimeOriginal	2017-01-01 09:00:00
+DateTimeDigitized	2017-01-01 12:00:00
+DateTime	2017-01-01 18:00:00
+ImageWidth	2000
+ImageLength	1000
+ExifImageWidth	2000
+ExifImageLength	1000
+Orientation	2
+FNumber	5.6
+ApertureValue	11
+MaxApertureValue	1.8
+ExposureBiasValue	-1
+ShutterSpeedValue	1/60
+ExposureTime	1/120
+ISOSpeedRatings	800
+ExposureProgram	1
+MeteringMode	3
+LightSource	3
+GPSLatitude	12° 34' 56" N
+GPSLongitude	1° 23' 45" E

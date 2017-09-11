@@ -9,7 +9,7 @@ Thanks,
 Gerry McGuire dEXIF author.
 
 ---------------------------------
-dEXIF is Copyright © 2001 - 2006 Gerry McGuire. All rights reserved.
+dEXIF is Copyright Â© 2001 - 2006 Gerry McGuire. All rights reserved.
 
 LICENSE
 

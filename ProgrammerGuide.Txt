@@ -1,7 +1,7 @@
 
          Programmer's Guide to dEXIF and dIPTC
 
-     Image Metadata Manipulators Written in Delphi.
+     Image Metadata Manipulators Written in Delphi/Lazarus
 
                       Gerry McGuire
 
@@ -9,18 +9,17 @@
 
          Copyright 2001-2006 - All Rights Reserved
 
-
+  Extended by Werner Pamler for an update to the Lazarus version
 
 Theory of Operation:
 
-An EXIF header is a multilevel binary structure with the
-following characteristics:  (Several details are glossed over
-here - a more complete specification can be found at
+An EXIF header is a multilevel binary structure with the following 
+characteristics:  (Several details are glossed over here - a more complete 
+specification can be found at
 http://www.pima.net/standards/iso/tc42/wg18/WG18_POW.htm )
 
-  * The image file is divided into sections.  These sections
-    are separated by a marker byte followed by a section
-    type byte.
+  * The image file is divided into sections. These sections are separated 
+    by a marker byte followed by a section type byte.
 
   * One of these sections is the "EXIF" section.  This section is used by
     the capturing device (camera) to record the various conditions and
@@ -76,12 +75,26 @@ http://www.pima.net/standards/iso/tc42/wg18/WG18_POW.htm )
 
      File --------> EXIF Buffer ---------> Tag list ----------> User
 
-     Therefore changes to the Tab list will not be written to a file.
-     There are two methods on the ExifObj (WriteThruInt and 
-     WriteThruString) that alter the EXIF buffer and changes can
-     be written to an image file. 
+     In contrast to the original version of dExif, the EXIF buffer is 
+     used only in a transient way during reading. User interaction occurs 
+     via the tag list, and the changed tags can be written back to file.
+     This has the advantage over the old buffer method that new tags can be
+     added easily, and tag data can be extended beyond their original size
+     in the file. 
+     
+     The old methods WriteThruInt and WriteThruString were removed.
 
+     
+Incompatible changes to the original version
+     
+     TImgData.CreateCommentSegment, .GetCommentSegment and .GetCommentStr are
+     protected now. Use the property TImgData.Comment to read and write 
+     a comment.
+     
+     TImageInfo.WriteThruInt and .WriteThruString were removed. Changing of
+     tags is done more naturally by using the properties of TImageInfo.
 
+     
 Sample Code:
 
 dEXIF handles the major sections by parsing the initial image header and
@@ -116,12 +129,12 @@ Sample Code [EXIF Section]:
        // One string with embedded (CR/LF) breaks.
        if ImgData.ProcessFile('filename.jpg') then
           if ImgData.HasExif then
-             MyString := ImgData.ExifObj.toLongString();
+             MyString := ImgData.ExifObj.ToLongString();
 
    Open a file, extract all EXIF data, interpreted (decoded) with
    all possible detail.
 
-       DexifDecode := true;      // true by default - translates literals
+       dExifDecode := true;      // true by default - translates literals
                                  // into something human-readable
        ImgData.TraceLevel := 1;  // set detail level for trace string
        // One string with embedded (CR/LF) breaks.
@@ -130,40 +143,72 @@ Sample Code [EXIF Section]:
                                  // Parse this to extract specific data
              MyTraceString := ImgData.ExifObj.TraceString  
 
-   Some of the More common fields are parsed already and placed in
-   the TImageInfo class.  ImageInfo is predeclared and is used by
-   the global read routines.  (This will change - I'm working on it!)
+   Some of the more common fields are accessible as properties of the
+   EXIFObj of the ImgData.
 
-    With ImgData do
-       if ProcessFile('filename.jpg') and HasExif then // Read in file
+       With ImgData do
+         if ProcessFile('filename.jpg') and HasExif then // Read in file
+         begin
+           // These first 3 are read from the OS
+           MyFileName := ExifObj.Filename;
+           FileDate   := ExifObj.FileDateTime;       // tDateTime
+           FileSize   := ExifObj.FileSize;           // longint
+           // These are extracted from the EXIF data of the image
+           Make       := ExifObj.CameraMake;         // string
+           Model      := ExifObj.CameraModel;        // string
+           DateTime   := ExifObj.DateTime;           // string
+           ImgDescr   := ExifObj.ImageDescription;   // string
+           ExifCmnt   := ExifObj.ExifComment;        // string
+           Author     := ExifObj.Author;             // string
+           Copyright  := ExifObj.Copyright;          // string
+           Height     := ExifObj.Height;             // integer
+           Width      := ExifObj.Width;              // integer
+           IsColor    := ExifObj.IsColor;            // integer
+           Process    := ExifObj.Process;            // integer
+           FlashUsed  := ExifObj.FlashUsed;          // integer
+           ImgDate    := ExifObj.DateTimeOriginal;   // TDateTime - when picture was taken
+                   // or ExifObj.DateTimeDigitized;  // ... when picture was digitized
+                   // or ExifOjb.DateTimeModified;   // ... when picture was modified
+                   // --- normally all three date/times are the same                 
+         end;
+         
+   Other EXIF field can be read by using the property TagValue and specifying
+   the name of the EXIF property - see https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html.
+   The return value of this property is a variant, i.e. it can be assigned to
+   most simple data types. If a tag not available then a NULL value is returned,
+   use VasIsNull() to check this.
+   
+     With ImgData do
+       if ProcessFile('filename.jpg') and HasExif then
        begin
-         // These first 3 are read from the OS
-         MyFileName := ExifObj.Filename;
-         FileDate   := ExifObj.FileDateTime;       // tDateTime;
-         FileSize   := ExifObj.FileSize;           // longint;
-         // These are extracted from the image
-         Make       := ExifObj.CameraMake;         // string[32];
-         Model      := ExifObj.CameraModel;        // string[40];
-         DateTime   := ExifObj.DateTime;           // string[20];
-         Height     := ExifObj.Height
-         Width      := ExifObj.Width;              // integer
-         YPos       := ExifObj.HPosn;              // integer
-         XPos       := ExifObj.WPosn;              // integer
-         IsColor    := ExifObj.IsColor;            // integer;
-         Process    := ExifObj.Process;            // integer;
-         FlashUsed  := ExifObj.FlashUsed;          // integer;
-         // These are derived (computed) values
-         FocalLength := ExifObj.FocalLength;       // real;
-         ExposureTime := ExifObj.ExposureTime;     // real;
-         ApertureFNumber := ExifObj.ApertureFNumber;    // real;
-         Distance   := ExifObj.Distance;           // real;
-         CCDWidth   := ExifObj.CCDWidth;           // real;
-         Comments   := ExifObj.Comments;           // string;
+         Orientation := ExifObj.TagValue['Orientation'];          // integer
+         ISO := ExifObj.TagValue['ISO'];                          // integer
+         SubjectDistance := ExifObj.TagValue['SubjectDistance'];  // double
+         TimeZone := ExifObj.TagValue['OffsetTimeOriginal'];      // string
+       end;         
+
+   Conversely, tag values can be modified like this. Here we add 1 hour
+   to the date/time when the picture was taken. This is a typical correction
+   for daylight-saving-time:
+   
+     with ImgData do
+       if ProcessFile('filename.jpg') and HasExif then
+       begin                                                     
+         imgDate := ExifObj.DateTimeOriginal;                     // TDateTime
+         oneHour := EncodeTime(1, 0, 0, 0);                       // TDateTime
+         ExifObj.DateTimeOriginal := imgDate + oneHour;
+         ExifObj.DateTimeDigitized := imgDate + oneHour;
+         ExifObj.DateTimeModified := imgDate + oneHour;
+         //or:
+         ExifObj.TagValue['DateTimeOriginal'] := ImgDate + oneHour;
+         // etc...
        end;
+       
+   Open a file, manipulate the image or its EXIF data and save to a new file 
+   adjusting the EXIF size for the new file:
 
-   Open a file, manipulate the image and save to a new file adjusting
-   the EXIF size for the new file:
-
+       // DELPHI ONLY
+       
        // var MyImage:TJpegImage;
        if ImgData.ProcessFile('FileName.jpg') then
        begin
@@ -171,6 +216,27 @@ Sample Code [EXIF Section]:
          // manipulate image here
          ImgData.WriteEXIF(MyImage,'NewFile.jpg');
        end;
+       
+   In order to avoid usage of the LCL in the Lazarus version the TJpegImage
+   cannot be used. Theefore, the method WriteEXIF was modified to read the
+   data from a stream:
+   
+       // LAZARUS-ONLY
+       
+       // var stream: TMemoryStream;
+       if ImgData.ProcessFile('Filename.jpg') then
+       begin
+         // manipulate image here
+         // ...
+         stream := TMemoryStream.Create;
+         try
+           stream.LoadfromFile('NewFile.jpg');
+           ImgData.WriteEXIF(stream, 'NewFile.jpg');
+         finally
+           stream.Free;
+         end;
+       end;
+           
 
    Open a file and save to a new file removing all metadata:
 
@@ -184,7 +250,7 @@ Sample Code [EXIF Section]:
 
 Sample Code [Comments Section]:
 
-   The comments section can hold upto 64k bytes of data.
+   The comments section can hold up to 64k bytes of data.
    Don't confuse it with the UserComments tag of the EXIF
    segament, which is fixed by the camera and is much shorter.
 
@@ -193,11 +259,11 @@ Sample Code [Comments Section]:
    contain binary data - it's not necessarily a string:
 
        ImgData.ProcessFile('filename.jpg');  // calls the EXIF parsing routine
-       if ImgData.CommentSection > 0 then    // there was a Comment Section
-          MyString := ImgData.GetCommentSegment();
+       if ImgData.HasComment then            // there was a Comment Section
+          MyString := ImgData.Comment;
 
    Open a file, do nothing other than add
-   a tstringlist to the comment section and save:
+   a TStringList to the comment section and save:
 
        ImgData.ProcessFile('filename.jpg');  // calls the EXIF parsing routine
                                              // The following call will overwrite

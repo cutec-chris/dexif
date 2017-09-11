@@ -14,9 +14,24 @@ with_exif_large.jpeg
   
 img_9438.jpg
   Originalname: img_9438.jpg
-  Source: 
-  Copyright: wp_xyz (wp-xyz)
-  License: 
+  Source: -
+  Author: Werner Pamler
+  License: no restrictions
+  Usage: Image with Exif (little endian) and thumbnail. Canon camera.
+  
+ExThBE_Nokia.jpg
+  Original name: ExThBE_Nokia.jpg
+  Source: -
+  Author: Werner Pamler
+  License: no restrictions
+  Usage: Image with Exif (big endian) and thumbnail. Nokia mobile phone.
+  
+ExThLE_Nikon.jpg
+  Original name: ExThLE_Nikon.jpg
+  Source: -
+  Author: Werner Pamler
+  License: no restrictions
+  Usage: Image with Exif (little endian) and thumbnail. Nikon camera
   
 
   

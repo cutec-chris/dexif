@@ -36,7 +36,8 @@ var
 implementation
 
 uses
-  dEXIF;
+  dGlobal, dEXIF;
+
 {$R *.lfm}
 
 { TForm1 }
@@ -56,9 +57,12 @@ begin
     try
       if ImgData.ProcessFile(MyFileName) then begin
         if ImgData.HasEXIF then begin
-          ValueListEditor1.InsertRow('Camera Make',ImgData.ExifObj.CameraMake,True);
-          ValueListEditor1.InsertRow('Camera Modell',ImgData.ExifObj.CameraModel,True);
-          ValueListEditor1.InsertRow('Picture DateTime',ImgData.ExifObj.DateTime,True);
+          ValueListEditor1.InsertRow('Camera Make',
+            ImgData.ExifObj.CameraMake,True);
+          ValueListEditor1.InsertRow('Camera Modell',
+            ImgData.ExifObj.CameraModel,True);
+          ValueListEditor1.InsertRow('Picture DateTime',
+            FormatDateTime(ISO_DATETIME_FORMAT, ImgData.ExifObj.GetImgDateTime),True);
         end
         else
           ValueListEditor1.InsertRow('No EXIF','No Data',True);

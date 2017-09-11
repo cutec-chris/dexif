@@ -1,11 +1,22 @@
 unit tstBasic;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
+
+{$I dExifTest.inc}
+
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, FileUtil;
+  Classes, SysUtils
+{$ifdef FPC}
+   , fpcunit, testutils, testregistry, FileUtil
+{$else}
+   , TestFrameWork
+{$endif}
+   ;
 
 const
   // Picture with EXIF Data
@@ -21,7 +32,11 @@ type
 
   TTsTBasic_dEXIF= class(TTestCase)
   private
+{$ifdef FPC}
   protected
+{$else}
+  public
+{$endif}
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -30,16 +45,23 @@ type
     procedure TstImgDataCanProcessFile;
     procedure TstImgDataDetectEXIF_True;
     procedure TstImgDataDetectEXIF_False;
+    procedure TstGpsFormat;
   end;
 
 implementation
 
 uses
- dEXIF;
+  dGlobal, dUtils, dEXIF
+{$ifdef FPC}
+{$else}
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
+{$endif}
+  ;
+
 
 procedure TTsTBasic_dEXIF.CheckForPicture;
 begin
-  CheckTrue(FileExists(co_DUTPicName01));
+  CheckTrue(FileExists(co_DUTPicName01), 'Test picture file does not exit');
 end;
 
 procedure TTsTBasic_dEXIF.TstImgDataCreate;
@@ -85,7 +107,54 @@ begin
   DUT.Free;
 end;
 
+procedure TTstBasic_dEXIF.TstGPSFormat;
+const
+  Expected: array[0..1] of Extended = (
+     12.345678,      //  12° 20' 44.44404"   =  12° 20.7407441'
+    -23.456789       // -23° 27' 24.440436"  = -23° 27.4073406'
+  );
+  NSEW: array[TGpsCoordType] of String = ('NS', 'EW');
+var
+  gf: TGpsFormat;
+  ct: TGpsCoordType;
+  expStr: String;
+  currstr: String;
+  current: Extended;
+  i, j: Integer;
+  decs: Integer;
+begin
+  // Format degree-minutes-seconds
+  gf := gf_DMS_Short;
+  decs := 3;
+  for ct := Low(TGpsCoordtype) to High(TGpsCoordType) do begin
+    for i:=0 to High(Expected) do begin
+      expStr := GpsToStr(Expected[i], ct, gf, decs);
+      current := StrToGps(expStr);
+      currStr := GpsToStr(current, ct, gf, decs);
+      CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
+    end;
+  end;
+
+  // Format degree-minutes
+  gf := gf_DM_Short;
+  decs := 9;
+  for ct := Low(TGpsCoordtype) to High(TGpsCoordType) do begin
+    for i:=0 to High(Expected) do begin
+      expStr := GpsToStr(Expected[i], ct, gf, decs);
+      current := StrToGps(expStr);
+      currStr := GpsToStr(current, ct, gf, decs);
+      CheckEquals(expstr, currstr, 'GPS mismatch (' + expstr + ')');
+    end;
+  end;
+end;
+
 procedure TTsTBasic_dEXIF.SetUp;
+{$ifndef FPC}
+  function CopyFile(f1,f2:string):boolean;
+  begin
+    Result:=  {$ifndef DELPHI7}Winapi.{$endif}Windows.CopyFile(PChar(f1),PChar(f2),true);
+  end;
+{$endif}
 begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
@@ -103,8 +172,8 @@ begin
   //  DeleteFile(co_DUTPicName02);
 end;
 
-initialization
 
-  RegisterTest(TTsTBasic_dEXIF);
+initialization
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTsTBasic_dEXIF{$ifndef FPC}.Suite{$endif});
 end.
 

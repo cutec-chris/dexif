@@ -4,12 +4,23 @@
 
 unit tstreadexif;
 
-{$mode objfpc}{$H+}
+{$ifdef FPC}
+  {$mode objfpc}{$H+}
+{$endif FPC}
+
+{$i dExifTest.inc}
+
 
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, dEXIF;
+  Classes, SysUtils
+  {$ifdef FPC}
+     , fpcunit, testutils, testregistry
+  {$else}
+     , TestFrameWork
+  {$endif}
+  , dUtils, dEXIF;
 
 const
   // Picture with EXIF data taken from SAMSUNG camera
@@ -28,11 +39,19 @@ type
   { TTsTBasic_dEXIF }
 
   TTstReadFile_dEXIF= class(TTestCase)
-  protected
-    FImgFileName: String;
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
     procedure SetUp; override;
     procedure TearDown; override;
-
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    FImgFileName: String;
     procedure StdFloatTest(const AFileName, ATestTag: String;
       const AExpectedResult: Double; ADecimals: Integer; const AMismatchMsg: String);
     procedure StdFloatFromStringTest(const AFilename, ATestTag: String;
@@ -56,9 +75,16 @@ type
   end;
 
   { Tests for image DUTPic01, taken by SAMSUNG camera }
+
+  { TTstReadFile_dEXIF_01 }
+
   TTstReadFile_dEXIF_01 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; override;
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_ApertureValue;
     procedure TstReadFile_Artist;
@@ -120,9 +146,16 @@ type
   end;
 
   { Tests for image DUTPic02, taken by CANON camera }
+
+  { TTstReadFile_dEXIF_02 }
+
   TTstReadFile_dEXIF_02 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; override;
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_Artist;
     procedure TstReadFile_ApertureValue;
@@ -184,12 +217,21 @@ type
   end;
 
   { Tests for image DUTPic03, taken by Casio camera, contains comment etc }
+
+  { TTstReadFile_dEXIF_03 }
+
   TTstReadFile_dEXIF_03 = class(TTstReadFile_dEXIF)
-  public
-    constructor Create; override;
+  {$ifdef FPC}
+    protected
+  {$else}
+    public
+  {$endif}
+    procedure SetUp; override;
   published
     procedure TstReadFile_Artist;
-    procedure TstReadFile_CommentExif;
+   {$IFNDEF DELPHI7}
+    procedure TstReadFile_CommentExif;   // Test must fail in D7 due to unicode characters
+   {$ENDIF}
     procedure TstReadFile_CommentSegment;
     procedure TstReadFile_ImageDescription;
   end;
@@ -197,7 +239,14 @@ type
 implementation
 
 uses
-  FileUtil, DateUtils, Math;
+   DateUtils, Math
+{$ifdef FPC}
+  , FileUtil
+{$else}
+  , {$ifndef DELPHI7}Winapi.Windows{$else}Windows{$endif}
+{$endif}
+  ;
+
 
 { Output of ExifTool for DUTPic01.jpeg:
 
@@ -536,94 +585,28 @@ begin
   end;
 end;
 
-{ dEXIF exports GPS coordinates as "d degrees m minutes s seconds" }
-procedure ExtractGPSPosition(InStr: String; out ADeg, AMin, ASec: Double);
-const
-   NUMERIC_CHARS = ['0'..'9', '.', ',', '-', '+'];
-var
-  p, p0: PChar;
-  n: Integer;
-  s: String;
-  res: Integer;
-begin
-  ADeg := NaN;
-  AMin := NaN;
-  ASec := NaN;
-
-  if InStr = '' then
-    exit;
-
-  // skip leading non-numeric characters
-  p := @InStr[1];
-  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
-    inc(p);
-
-  // extract first value: degrees
-  p0 := p;
-  n := 0;
-  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
-    if p^ = ',' then p^ := '.';
-    inc(p);
-    inc(n);
-  end;
-  SetLength(s, n);
-  Move(p0^, s[1], n);
-  val(s, ADeg, res);
-
-  // skip non-numeric characters between degrees and minutes
-  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
-    inc(p);
-
-  // extract second value: minutes
-  p0 := p;
-  n := 0;
-  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
-    if p^ = ',' then p^ := '.';
-    inc(p);
-    inc(n);
-  end;
-  SetLength(s, n);
-  Move(p0^, s[1], n);
-  val(s, AMin, res);
-
-  // skip non-numeric characters between minutes and seconds
-  while (p <> nil) and not (p^ in NUMERIC_CHARS) do
-    inc(p);
-
-  // extract third value: seconds
-  p0 := p;
-  n := 0;
-  while (p <> nil) and (p^ in NUMERIC_CHARS) do begin
-    if p^ = ',' then p^ := '.';
-    inc(p);
-    inc(n);
-  end;
-  SetLengtH(s, n);
-  Move(p0^, s[1], n);
-  val(s, ASec, res);
-end;
-
 
 { Preparation }
 
-{ Test ...01 will operate on image co_DUTPicName01 }
-constructor TTstReadFile_dEXIF_01.Create;
+procedure TTstReadFile_dEXIF_01.SetUp;
 begin
-  inherited;
+  inherited SetUp;
+  { Test ...01 will operate on image co_DUTPicName01 }
   FImgFileName := co_DUTPicName01;
 end;
 
-{ Test ...02 will operate on image co_DUTPicName02 }
-constructor TTstReadFile_dEXIF_02.Create;
+procedure TTstReadFile_dEXIF_02.SetUp;
 begin
-  inherited;
+  inherited SetUp;
+  { Test ...02 will operate on image co_DUTPicName02 }
   FImgFileName := co_DUTPicName02;
 end;
 
-{ Test ...03 will operate on image co_DUTPicName03 }
-constructor TTstReadFile_dEXIF_03.Create;
+
+procedure TTstReadFile_dEXIF_03.SetUp;
 begin
-  inherited;
+  inherited SetUp;
+  { Test ...03 will operate on image co_DUTPicName03 }
   FImgFileName := co_DUTPicName03;
 end;
 
@@ -631,6 +614,12 @@ end;
 { Test methods }
 
 procedure TTstReadFile_dEXIF.SetUp;
+{$ifndef FPC}
+  function CopyFile(f1,f2:string):boolean;
+  begin
+    Result:=  {$ifndef DELPHI7}Winapi.{$endif}Windows.CopyFile(PChar(f1),PChar(f2),true);
+  end;
+{$endif}
 begin
   if not FileExists(co_DUTPicName01) then
     if FileExists(co_TestPic01) then
@@ -668,7 +657,7 @@ begin
   try
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATagName);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATagName];
     ExtractGPSPosition(currStrValue, currDeg, currMin, currSec);
     if IsNaN(AExpectedDeg) and IsNaN(AExpectedMin) and IsNaN(AExpectedSec) then
       CheckTRUE(IsNaN(currDeg) and IsNaN(currMin) and IsNaN(currSec), AMismatchMsg)
@@ -708,7 +697,7 @@ begin
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
     currFloatValue := DUT.ExifObj.GetRawFloat(ATestTag);
     if IsNaN(AExpectedResult) then begin
-      currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+      currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
       CheckEquals('', currStrValue, AMismatchMsg);
     end else
     begin
@@ -735,7 +724,7 @@ begin
   try
     DUT.ProcessFile(AFileName);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
     if currStrValue = '' then
       currVal := 0.0
     else begin
@@ -781,7 +770,7 @@ begin
   try
     DUT.ProcessFile(AFilename);
     CheckTRUE(DUT.HasEXIF, 'TImgData cannot detect EXIF in file "'+AFileName+'"');
-    currStrValue := DUT.ExifObj.LookupTagVal(ATestTag);
+    currStrValue := DUT.ExifObj.TagValueAsString[ATestTag];
 
     // dEXIF strings sometimes are quoted...
     if (currStrValue <> '') and (currStrValue[1] = '"') then
@@ -937,14 +926,30 @@ begin
 end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_CommentExif;
+const
+ {$IFDEF FPC}
+  COMMENT_TEXT = 'This is an EXIF user comment with äöü';
+ {$ELSE}
+  COMMENT_TEXT = 'This is an EXIF user comment with ' + #228 + #246 + #252;
+ {$ENDIF}
 begin
-  Test_UserComment(FImgFileName, 'This is an EXIF user comment with äöü');
+  Test_UserComment(FImgFileName, COMMENT_TEXT);
 end;
 
+{$IFNDEF DELPHI7}
 procedure TTstReadFile_dEXIF_03.TstReadFile_CommentExif;
+const
+ {$IFDEF FPC}
+  CYRILLIC = 'Лев Николаевич Толсто́й';
+ {$ELSE}
+  CYRILLIC = #$041B#$0435#$0432#$0020#$041D#$0438#$043A +
+        #$043E#$043B#$0430#$0435#$0432#$0438#$0447#$0020 +
+        #$0422#$043E#$043B#$0441#$0442#$043E#$0301#$0439;
+ {$ENDIF}
 begin
-  Test_UserComment(FImgFileName, 'am Reinheimer Teich - Лев Николаевич Толсто́й - End of line.');
+  Test_UserComment(FImgFileName, 'am Reinheimer Teich - ' + CYRILLIC + ' - End of line.');
 end;
+{$ENDIF}
 
 
 { CommentSegment }
@@ -1002,19 +1007,19 @@ end;
 
 { Compression }
 
-procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
-    // Tag not specified --> -1
-end;
-
-procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
-begin
-  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
-    // "JPEG (old style)" --> 6.
-    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
-end;
-  }
+//procedure TTstReadFile_dEXIF_01.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', -1, 'Compression mismatch');
+//    // Tag not specified --> -1
+//end;
+//
+//procedure TTstReadFile_dEXIF_02.TstReadFile_Compression;
+//begin
+//  StdIntTest(FImgFileName, 'Compression', 6, 'Compression mismatch');
+//    // "JPEG (old style)" --> 6.
+//    // Other values at https://sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html#Compression
+//end;
+//  }
 
 
 { CustomRendered }
@@ -1046,7 +1051,7 @@ begin
       0: currValue := DUT.EXIFObj.GetImgDateTime;       // any date/time available
       1: currValue := DUT.EXIFObj.DateTimeOriginal;     // Tag "DateTimeOriginal"
       2: currValue := DUT.EXIFObj.DateTimeDigitized;    // Tag "DateTimeDigitized"
-      3: currValue := Dut.EXIFObj.DateTimeModify;       // Tag "DateTimeModify"
+      3: currValue := Dut.EXIFObj.DateTimeModified;     // Tag "DateTimeModified"
     end;
     CheckEquals(AExpectedDateTime, currValue, 'Date/time mismatch');
   finally
@@ -1597,7 +1602,7 @@ end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_Resolution;
 begin
-  Test_Resolution(FImgFileName, 180, 180, 'inch');
+  Test_Resolution(FImgFileName, 180, 180, 'inches');
 end;
 
 
@@ -1624,7 +1629,7 @@ begin
     // Tag not available --> -1
 end;
 
-procedure TTstReadFile_dEXIF_02.TstReadFile_SceneCaptureType;
+procedure TTstReadFile_dEXIF_02.TstReadfile_SceneCaptureType;
 begin
   StdIntTest(FImgFileName, 'SceneCaptureType', 0, 'Scene capture type mismatch');
     // "Standard"  --> 0
@@ -1750,9 +1755,9 @@ end;
 
 
 initialization
-  RegisterTest(TTstReadFile_dEXIF_01);
-  RegisterTest(TTstReadFile_dEXIF_02);
-  RegisterTest(TTstReadFile_dEXIF_03);
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_01{$ifndef FPC}.Suite{$endif});
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_02{$ifndef FPC}.Suite{$endif});
+  {$ifndef FPC}TestFramework.{$endif}RegisterTest(TTstReadFile_dEXIF_03{$ifndef FPC}.Suite{$endif});
 
 end.
 

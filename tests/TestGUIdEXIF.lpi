@@ -36,7 +36,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="11">
+    <Units Count="15">
       <Unit0>
         <Filename Value="TestGUIdEXIF.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -75,13 +75,32 @@
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\dglobal.pas"/>
+        <Filename Value="..\dGlobal.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dtags.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="dTags"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="..\dExif.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\dUtils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="tstthumbnail.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstThumbnail"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="tstdeleteexif.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstDeleteExif"/>
+      </Unit14>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -95,6 +114,11 @@
       <OtherUnitFiles Value=".."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Linking>
+      <Debugging>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="5">
