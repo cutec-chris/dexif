@@ -13,11 +13,14 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
-    BuCreateImage: TButton;
+    BuCreateImage1: TButton;
+    BuCreateImageAndSave: TButton;
     StaticText1: TStaticText;
+    procedure BuCreateImageAndSaveClick(Sender: TObject);
     procedure BuCreateImageClick(Sender: TObject);
   private
     procedure CreateEXIF(const ImgData: TImgData);
+    procedure ExifToStaticText(AImgData: TImgData; ATitle: String);
   public
 
   end;
@@ -29,7 +32,7 @@ implementation
 
 {$R *.lfm}
 
-procedure CreateGeenJpg(aFilename: String);
+procedure CreateGreenJpg(aFilename: String);
 const
   co_BMPWidht = 400;
   co_BMPHeigh = 250;
@@ -53,9 +56,34 @@ begin
    end;
 end;
 
+
 { TForm1 }
 const
   co_ImageName = 'dummy.jpg';
+
+procedure TForm1.BuCreateImageAndSaveClick(Sender: TObject);
+var
+  ImgData : TImgData;
+begin
+  if FileExists(co_ImageName) then
+    DeleteFile(co_ImageName);
+  CreateGreenJpg(co_ImageName);
+  ImgData:= TImgData.Create(GenAll);
+  try
+    CreateEXIF(ImgData);
+
+    imgData.WriteExifJpeg(co_ImageName);
+
+    ImgData.Reset;
+    ImgData.ProcessFile(co_ImageName);
+    if ImgData.HasExif then
+      ExifToStaticText(ImgData, 'Exif saved')
+    else
+      StaticText1.Caption := 'No EXIF found - something is wrong...';
+  finally
+    ImgData.Free;
+  end;
+end;
 
 procedure TForm1.BuCreateImageClick(Sender: TObject);
 var
@@ -63,45 +91,55 @@ var
 begin
   if FileExists(co_ImageName) then
     DeleteFile(co_ImageName);
-  CreateGeenJpg(co_ImageName);
+  CreateGreenJpg(co_ImageName);
   ImgData:= TImgData.Create(GenAll);
-  ImgData.ProcessFile(co_ImageName);
-  if not ImgData.HasEXIF then begin
-    // write a file with an empty exif
-    ImgData.WriteEXIFJpeg(co_ImageName);
-    // Reread the file
-    ImgData.reset;
-    ImgData.ProcessFile(co_ImageName);
+  try
+    CreateEXIF(ImgData);
+    if ImgData.HasExif then
+      ExifToStaticText(ImgData, 'Exif not saved')
+    else
+      StaticText1.Caption := 'No EXIF found - something is wrong...';
+  finally
+    ImgData.Free;
   end;
-  if not ImgData.HasEXIF then
-    showmessage('somethings goes wrong');
 end;
 
 procedure TForm1.CreateEXIF(const ImgData: TImgData);
 var
-  ImgInfo: TImageInfo;
-  Source: TImageInfo;
+  dt: TDateTime;
 begin
-  ImgInfo:= TImageInfo.Create(ImgData,GenAll);
-  with ImgInfo do begin
-    CameraMake      := 'Freepascal';
-    CameraModel     := 'Lazarus';
-    DateTime        := '';
-    Height          := ImgData.Height;
-    Width           := ImgData.Width;
-    FlashUsed       := 0;
-    Comments        := '';
-    MakerNote       := '';
-    TraceStr        := '';
-    msTraceStr      := '';
-    msAvailable     := False;
-    msName          := '';
+  dt := Now;
+  ImgData.CreateExifObj;
+  with ImgData.ExifObj do begin
+    CameraMake := 'Freepascal';
+    CameraModel := 'Lazarus';
+    DateTimeOriginal := dt;
+    DateTimeDigitized := dt;
+    DateTimeModified := dt;
+    Artist := 'af0815';
+    ImageDescription := 'This is the description of the image';
+    ExifComment := 'Ätsch!';
+    TagValue['Orientation'] := 1;
+    TagValue['FocalLength'] := 300;
+    TagValue['FNumber'] := 2.8;
   end;
-  if (ImgData.ExifObj = ImgInfo) then
-    ShowMessage('same object');
-  ImgData.ExifObj:= ImgInfo;
+  ImgData.Comment := 'This is in the COMMENT segment';
 end;
 
+procedure TForm1.ExifToStaticText(AImgData: TImgData; ATitle: String);
+var
+  s: String;
+begin
+  s := ATitle + LineEnding + LineEnding +
+    AImgData.ExifObj.ToLongString(0) + LineEnding +
+    'Orientation: ' + AImgData.ExifObj.TagValueAsString['Orientation'] + LineEnding +
+    'Artist: ' + AImgData.ExifObj.Artist + LineEnding +
+    'Exif comment: ' + AImgData.ExifObj.ExifComment + LineEnding +
+    'Image description: ' + AImgData.ExifObj.ImageDescription;
+  if AImgData.Comment <> '' then
+    s := s + LineEnding + LineEnding + AImgData.Comment;
+  StaticText1.Caption := s;
+end;
 
 end.
 

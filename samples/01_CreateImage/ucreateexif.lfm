@@ -3,34 +3,38 @@ object Form1: TForm1
   Height = 417
   Top = 0
   Width = 545
-  ActiveControl = BuCreateImage
   Caption = 'Form1'
   ClientHeight = 417
   ClientWidth = 545
   LCLVersion = '1.9.0.0'
-  object BuCreateImage: TButton
+  object StaticText1: TStaticText
+    Left = 0
+    Height = 313
+    Top = 104
+    Width = 545
+    Align = alBottom
+    Alignment = taCenter
+    Font.CharSet = ANSI_CHARSET
+    Font.Pitch = fpVariable
+    ParentFont = False
+    TabOrder = 0
+  end
+  object BuCreateImage1: TButton
     Left = 8
     Height = 25
     Top = 8
     Width = 112
-    Caption = 'Create Image'
+    Caption = 'Create only'
     OnClick = BuCreateImageClick
-    TabOrder = 0
-  end
-  object StaticText1: TStaticText
-    Left = 0
-    Height = 244
-    Top = 173
-    Width = 545
-    Align = alBottom
-    Alignment = taCenter
-    Caption = 'not working yet, pls wait'
-    Font.CharSet = ANSI_CHARSET
-    Font.Height = -32
-    Font.Name = 'Algerian'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentFont = False
     TabOrder = 1
+  end
+  object BuCreateImageAndSave: TButton
+    Left = 136
+    Height = 25
+    Top = 8
+    Width = 112
+    Caption = 'Create && save'
+    OnClick = BuCreateImageAndSaveClick
+    TabOrder = 2
   end
 end

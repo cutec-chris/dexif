@@ -36,7 +36,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="18">
+    <Units Count="17">
       <Unit0>
         <Filename Value="TestGUIdEXIF.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -103,19 +103,15 @@
         <UnitName Value="tstDeleteExif"/>
       </Unit14>
       <Unit15>
-        <Filename Value="tstwritereadiptc.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit15>
-      <Unit16>
         <Filename Value="..\dmetadata.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dMetadata"/>
-      </Unit16>
-      <Unit17>
+      </Unit15>
+      <Unit16>
         <Filename Value="..\diptcwrite.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dIptcWrite"/>
-      </Unit17>
+      </Unit16>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

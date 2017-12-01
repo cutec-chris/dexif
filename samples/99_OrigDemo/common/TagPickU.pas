@@ -158,7 +158,7 @@ begin
     if IPTCTable[idx].name <> 'SKIP' then
     begin
       if ((ImgData <> nil) and (ImgData.HasIPTC) and
-          (ImgData.IptcObj.lookupTag(IPTCTable[idx].name) >= 0))
+          (ImgData.IptcObj.LookupTag(IPTCTable[idx].name) >= 0))
         then dstList.Items.add(IPTCTable[idx].name)
         else srcList.Items.add(IPTCTable[idx].name);
     end;

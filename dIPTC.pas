@@ -283,7 +283,12 @@ begin
   AddOrAppend(ATagName, AValue);
 end;
 
-{ Note: recordNo : datasetNo }
+{ Note: recordNo : datasetNo
+  - 1 byte:  tag "marker" ($1C)  // has already been read by caller
+  - 1 byte:  record number
+  - 1 byte:  dataset number
+  - 2 bytes: datafield byte count
+}
 function TIPTCData.ExtractTag(const ABuffer: ansistring; var AStart: Integer): iTag;
 var
   bLen, tagId, i: integer;
@@ -426,27 +431,64 @@ begin
 end;
  
 Procedure TIPTCdata.ParseIPTCArray(ABuffer: Ansistring);
+const
+  RESOURCE_MARKER: ansistring = '8BIM';
+  MARKER_SIZE = 4;  // = Length(RESOURCE_MARKER);
+  IPTC_IMAGERESOURCEID = #04#04;
 var
   nextTag: ITag;
-  start, i, j: Integer;
+  start, i, j, k: Integer;
+  id: String[2];
+  len: Byte;
+  size: DWord;
+  marker, nam: String;
 begin
   Reset;
-  i := Pos('Photoshop 3.0', ABuffer) + 13;
-  for j := i to Length(ABuffer) do       // Look for first field marker
-    if (byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [1, 2, 8]) then
-      break;
+  i := Pos('Photoshop 3.0', ABuffer);
+  if i = 0 then
+    exit;
+  inc(i, 14);
 
-  start := j+1;
-  while (start < Length(ABuffer)-2) do   // Work through buffer
-  begin
-    nextTag := ExtractTag(ABuffer, start);   // Start is incremented by function
-//    if nextTag.Tag in IPTCMultiTags then
-    if nextTag.Count = MultiTagCount then    // MultiTagCount means: there can be multiple values
-    begin
-      AppendToTag(nextTag.Name, nextTag.Data)
+  j := Length(ABuffer);
+  while i <= Length(ABuffer) do begin
+    marker := Copy(ABuffer, i, MARKER_SIZE);
+    if marker <> RESOURCE_MARKER then
+      break;
+    j := i + MARKER_SIZE;
+    id := Copy(ABuffer, j, 2);
+    inc(j, 2);
+    len := ord(ABuffer[j]);
+    inc(j);
+    if len = 0 then begin
+      len := ord(ABuffer[j]);
+      inc(j);
+      nam := '';
+    end else begin
+      nam := Copy(ABuffer, j, len);
+      inc(j, len);
+    end;
+    nam := copy(ABuffer, j, 4);
+    inc(j, 4);
+    size := PDWord(@nam[1])^;
+    size := BEToN(size);
+
+    if id = IPTC_IMAGERESOURCEID then begin
+      // read IPTC tags
+      if not ((byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [1, 2, 8])) then
+        exit;
+      start := j + 1;
+      while (start < j + 1 + size) do begin
+        nextTag := ExtractTag(ABuffer, start);  // start is incremented by function
+        if nextTag.Count = MultiTagCount then   // MultiTagCount means: there can be multiple values
+          AppendToTag(nextTag.Name, nextTag.Data)
+        else
+          AddTagToArray(nextTag);
+      end;
+      exit;
     end
     else
-      AddTagToArray(nextTag);
+      inc(j, size);
+    i := j;
   end;
 end;
  
