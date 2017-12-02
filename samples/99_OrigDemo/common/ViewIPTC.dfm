@@ -53,7 +53,7 @@ object IPTCform: TIPTCform
     object lblDateTime: TLabel
       Left = 112
       Top = 12
-      Width = 81
+      Width = 10
       Height = 16
       Anchors = [akLeft, akTop, akRight]
       Font.Charset = DEFAULT_CHARSET

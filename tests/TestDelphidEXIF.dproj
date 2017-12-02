@@ -38,7 +38,7 @@
         <SanitizedProjectName>TestDelphidEXIF</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>3079</VerInfo_Locale>
-        <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
+        <DCC_DcuOutput>dcu\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_E>false</DCC_E>
         <DCC_N>false</DCC_N>
@@ -93,7 +93,6 @@
         <DCCReference Include="tstdeleteexif.pas"/>
         <DCCReference Include="..\diptcwrite.pas"/>
         <DCCReference Include="..\dmetadata.pas"/>
-        <DCCReference Include="tstwritereadiptc.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

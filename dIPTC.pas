@@ -441,7 +441,7 @@ var
   id: String[2];
   len: Byte;
   size: DWord;
-  marker, nam: String;
+  marker, nam: ansistring;
 begin
   Reset;
   i := Pos('Photoshop 3.0', ABuffer);

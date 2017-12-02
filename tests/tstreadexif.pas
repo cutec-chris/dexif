@@ -1132,7 +1132,7 @@ end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageLength;
 begin
-  StdIntTest(FImgFileName, 'ExifImageLength', 1832, 'Exif image length mismatch');
+  StdIntTest(FImgFileName, 'ExifImageLength', 200, 'Exif image length mismatch');
 end;
 
 
@@ -1146,7 +1146,7 @@ end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ExifImageWidth;
 begin
-  StdIntTest(FImgFileName, 'ExifImageWidth', 3264, 'Exif image width mismatch');
+  StdIntTest(FImgFileName, 'ExifImageWidth', 356, 'Exif image width mismatch');
 end;
 
 
@@ -1465,7 +1465,7 @@ end;
 
 procedure TTstReadFile_dEXIF_02.TstReadFile_ImageSize;
 begin
-  Test_ImageSize(FImgFileName, 3264, 1832);
+  Test_ImageSize(FImgFileName, 356, 200);
 end;
 
 (*

@@ -330,7 +330,7 @@ begin
 
     if ImgData.HasThumbnail then
     begin
-      ImgData.ExifObj.ProcessThumbnail;
+//      ImgData.ExifObj.ProcessThumbnail;
       dumpThumb;
 
       {$IFDEF FPC}
@@ -707,6 +707,8 @@ var
   i: integer;
   sh: string;
 begin
+  exit;  // Sections no longer supported
+  {
   Memo('---------------------------');
   Memo('File = '+ImgData.Filename);
   Memo('Section count = '+inttostr(ImgData.SectionCnt));
@@ -719,6 +721,7 @@ begin
 //    Memo(' Printable -> '+MakePrintable(
 //        copy(ImgData.Sections[i].data,1,100)));
   end;
+  }
 end;
 
 procedure TForm1.DumpThumb;

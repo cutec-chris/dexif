@@ -17,7 +17,6 @@ uses
   tstselfimage in 'tstselfimage.pas',
   tstwritereadexif in 'tstwritereadexif.pas',
   tstDeleteExif in 'tstdeleteexif.pas',
-  tstwritereadiptc in 'tstwritereadiptc.pas',
   dIptcWrite in '..\diptcwrite.pas',
   dMetadata in '..\dmetadata.pas';
 

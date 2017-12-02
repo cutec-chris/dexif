@@ -42,7 +42,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <DCC_UnitSearchPath>D:\Prog_Delphi\common\Components\3rdParty\TeeChart\Sources\Compiled\Delphi7\Lib;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Release>11</VerInfo_Release>
         <DCC_N>true</DCC_N>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -60,7 +59,7 @@
         <DCC_E>false</DCC_E>
         <DCC_F>false</DCC_F>
         <DCC_Description>TeeChart 2014 Components</DCC_Description>
-        <DCC_DcuOutput>D:\Prog_Lazarus\git\dexif-afriess-master\samples\99_OrigDemo\delphi\dcu\</DCC_DcuOutput>
+        <DCC_DcuOutput>dcu</DCC_DcuOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>

@@ -50,9 +50,9 @@
         <DCC_N>false</DCC_N>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=</VerInfo_Keys>
         <VerInfo_Locale>1031</VerInfo_Locale>
-        <DCC_UnitSearchPath>..\..;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\..;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_E>false</DCC_E>
-        <DCC_DcuOutput>D:\Prog_Lazarus\git\dexif-afriess-master\samples\99_OrigDemo\delphi\dcu\</DCC_DcuOutput>
+        <DCC_DcuOutput>dcu</DCC_DcuOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>

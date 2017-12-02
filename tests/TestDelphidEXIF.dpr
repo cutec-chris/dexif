@@ -18,8 +18,7 @@ uses
   tstwritereadexif in 'tstwritereadexif.pas',
   tstdeleteexif in 'tstdeleteexif.pas',
   diptcwrite in '..\diptcwrite.pas',
-  dmetadata in '..\dmetadata.pas',
-  tstwritereadiptc in 'tstwritereadiptc.pas';
+  dmetadata in '..\dmetadata.pas';
 
 //  tstreadexif in 'tstreadexif.pas',
 //  tstselfimage in 'tstselfimage.pas',

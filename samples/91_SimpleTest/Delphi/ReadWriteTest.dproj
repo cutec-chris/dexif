@@ -41,7 +41,6 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <DCC_UnitSearchPath>D:\Prog_Delphi\common\Components\3rdParty\TeeChart\Sources\Compiled\Delphi7\Lib;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_F>false</DCC_F>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DCC_E>false</DCC_E>
@@ -60,6 +59,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_AssertionsAtRuntime>false</DCC_AssertionsAtRuntime>
         <DCC_Description>TeeChart 2014 Components</DCC_Description>
+        <DCC_DcuOutput>dcu</DCC_DcuOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>

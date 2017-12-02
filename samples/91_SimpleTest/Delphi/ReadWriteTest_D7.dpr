@@ -9,7 +9,9 @@ uses
   dIPTC in '..\..\..\dIPTC.pas',
   dTags in '..\..\..\dTags.pas',
   dUtils in '..\..\..\dUtils.pas',
-  msData in '..\..\..\msData.pas';
+  msData in '..\..\..\msData.pas',
+  dMetadata in '..\..\..\dmetadata.pas',
+  dIptcWrite in '..\..\..\diptcwrite.pas';
 
 {$R *.res}
 

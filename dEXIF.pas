@@ -3488,7 +3488,6 @@ begin
   tmp := GetRawInt('FocalPlaneYResolution');
   if (tmp <= 0) then
     exit;
-
   CCDHeight := Height * fpu / tmp;
 
   if CCDWidth*CCDHeight <= 0 then  // if either is zero
