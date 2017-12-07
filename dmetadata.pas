@@ -61,10 +61,6 @@ type
     procedure MergeToStream(AInputStream, AOutputStream: TStream;
       AWriteMetadata: TMetadataKinds = mdkAll);
     procedure ProcessEXIF;
-    function ReadJpegSections(AStream: TStream;
-      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
-    function ReadTiffSections(AStream: TStream): boolean;
-    function SaveExif(AStream: TStream; AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
 
   public
     Sections: array[1..21] of TSection;
@@ -77,6 +73,10 @@ type
     IptcObj: TIPTCData;
     TraceLevel: integer;
 
+    function ReadJpegSections(AStream: TStream;
+      AMetadataKinds: TMetadataKinds = mdkAll): boolean;
+    function ReadTiffSections(AStream: TStream): boolean;
+    function SaveExif(AStream: TStream; AWriteMetadata: TMetadataKinds = mdkAll): LongInt;
     procedure Reset;
 //    procedure MakeIPTCSegment(buff: ansistring);
     procedure ClearSections;

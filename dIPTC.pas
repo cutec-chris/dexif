@@ -36,6 +36,9 @@ uses
  {$IFDEF MSWINDOWS}
   windows,
  {$ENDIF}
+ {$IFDEF UNIX}
+  unix,unixutil,
+ {$endif}
   dglobal;
 
 const
