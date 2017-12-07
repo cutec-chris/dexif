@@ -2344,7 +2344,7 @@ begin
           r.Numerator := LongInt(r.Numerator);
           r.Denominator := LongInt(r.Denominator);
         end;
-        Result :=  Double(r.Numerator / r.Denominator);
+        Result :=  r.Numerator / r.Denominator;
       end;
     {
     FMT_BINARY:
