@@ -1,49 +1,5 @@
 unit dIPTC;
-
-{----------------------------------------
-Revision: 1.6 check in time: 2009-02-05 23:01:40 by Stefan
-Workfile edit time: 2009-02-05 22:50:46
-Labeled by Stefan as 'Stefan s Komponenten 2009-03-23'
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-  - AnsiUpperCase, AnsiLowerCase 
-  - ExtractFileName/Ext 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt 
-- ErrStr wieder von String auf AnsiString
-----------------------------------------
-Revision: 1.5 check in time: 2009-02-05 22:20:31 by Stefan
-Workfile edit time: 2009-02-05 15:36:20
-Vorbereitung zur Migration nach Delphi 2009 
-- Explizite Typecast auf AnsiString für Funktionsaufrufe von 
-  - trim 
-  - IntToStr, IntToHex 
-- Explizite Typecast auf String für Parameter bei Funktionsaufrufen von 
-  - trim 
-  - StrToInt
-----------------------------------------
-Revision: 1.4 check in time: 2009-02-05 20:26:54 by Stefan
-Workfile edit time: 2009-02-04 17:14:18
-Vorbereitung zur Migration nach Delphi 2009 
-- String -> AnsiString 
-- Char -> AnsiChar 
-- Char() -> AnsiChar() 
-- Uppercase -> AnsiUppercase 
-- Lowercase -> AnsiLowercase
-----------------------------------------
-Revision: 1.3 check in time: 2008-01-02 18:23:38 by Stefan
-Workfile edit time: 2008-01-02 18:22:51
-+ QVCS-Header hinzugefügt 
-- Unbenutzte Variablendeklarationen entfernt
-----------------------------------------
-Revision: 1.2 check in time: 2006-05-26 19:51:47 by Stefan
-Workfile edit time: 2006-04-20 08:24:48
-Labeled by Stefan as 'dEXIF 1.03d 2006-04-20'
-dEXIF 1.03d 2006-04-20 }
-
+////////////////////////////////////////////////////////////////////////////////
 // unit IPTC - Copyright 2001-2006, Gerry McGuire
 //--------------------------------------------------------------------------
 // Program to pull the IPTC (Photoshop) information out of various
@@ -62,41 +18,34 @@ dEXIF 1.03d 2006-04-20 }
 // enter one line in the IPTCTable and increment the TagCnt constant.
 //--------------------------------------------------------------------------
 
+{$IFDEF FPC}
+ {$MODE Delphi}
+ {$WARN 3177 off : Some fields coming after "$1" were not initialized}
+{$ENDIF}
+
+{$I dExif.inc}
+
+
 interface
-  uses classes, sysutils
-  {$IFNDEF DELPHI}
-  {$DEFINE dExifNoJpeg}
-  {$ENDIF}
-  {$IFNDEF dExifNoJpeg}
-  ,jpeg
-  {$ENDIF}
-  {$IFDEF WINDOWS}
-  ,windows
-  {$ENDIF}
-  ;
 
-const dIPTCVersion: ansistring = '1.03d';
-      TagArrayGrowth = 25;
+uses
+  classes, sysutils,
+ {$IFNDEF FPC}
+  {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
+ {$ENDIF}
+ {$IFDEF MSWINDOWS}
+  windows,
+ {$ENDIF}
+ {$IFDEF UNIX}
+  unix,unixutil,
+ {$endif}
+  dglobal;
+
+const
+  dIPTCVersion: ansistring = '1.04';
+  TagArrayGrowth = 25;
+
 type
-
-  StrFunct = function (instr:ansistring):ansistring;
-
-  TTagEntry = record
-    TID: integer;        // TagTableID - EXIF use
-    TType: word;         // tag type
-    ICode: Word;         // iptc code
-    Tag: word;           // primary key
-    Name:ansistring;        // searchable
-    Desc:ansistring;        // translatable
-    Code:ansistring;        // decode capability
-    Data:ansistring;        // display value
-    Raw:ansistring;         // unprocessed value
-    PRaw: integer;       // pointer to unprocessed
-    FormatS:ansistring;      // Format string
-    Size: integer;       // used by ITPC module
-    CallBack: StrFunct;  // formatting string
-  end;
-
   TTagDefArray = array of TTagEntry;
 
   {
@@ -113,130 +62,182 @@ type
 
   TIPTCdata = class
   private
-    function getTimeZoneStr:ansistring;
-  protected
-    MaxTag: integer;
-    parent: tobject;
-    fITagCount : integer;
-    fITagArray: array of iTag;
+    function GetCount: integer;
+    procedure SetCount(const AValue: integer);
     function GetTagElement(TagID: integer): ITag;
     procedure SetTagElement(TagID: integer; const Value: ITag);
-    function GetCount: integer;
-    procedure SetCount(const Value: integer);
-    procedure SetDateTimePrim(TimeIn: TDateTime; prefix:ansistring);
+    function GetTagValueAsString(ATagName: String): String;
+    procedure SetTagValueAsString(ATagName, AValue: String);
+    function GetTimeZoneStr: string;
+    procedure SetDateTimePrim(TimeIn: TDateTime; prefix: string);
+
+  protected
+    FBuffer: ansistring;
+    MaxTag: integer;
+    FParent: TObject;
+    fITagCount : integer;
+    fITagArray: array of iTag;
+    function ExtractTag(const ABuffer: ansistring; var AStart: integer): ITag;
+    function RawToData(ARaw: ansistring; ATagType: Byte): String;
   public
-//    Filename :ansistring;
-    constructor Create(p:tobject);
+    constructor Create(AParent: TObject);
     procedure Reset;
-    property ITagArray[TagID:integer]: ITag
-        read GetTagElement write SetTagElement; default;
-    property Count : integer read GetCount write SetCount;
     function HasData: boolean;
-    Function Clone(source:TIPTCdata):TIPTCdata;
-    Function ParseIPTCStrings(buff:ansistring):tstringlist;
-    Procedure ParseIPTCArray; overload;
-    Procedure ParseIPTCArray(buff:ansistring);  overload;
-    function IPTCArrayToBuffer:ansistring;
-    function IPTCArrayToXML:tstringlist;
+    function Clone(ASource: TIPTCData): TIPTCData;
 
-    function LookupTag(SearchStr:ansistring):integer; virtual;
-    Function LookupTagDefn(item:ansistring): integer;
-    function LookupTagByDesc(SearchStr:ansistring): integer;
+//    function IPTCArrayToBuffer:ansistring;
+    procedure IPTCArrayToList(AList: TStrings);
+    procedure IPTCArrayToXML(AList: TStrings);
 
-    procedure RemoveTag( tagstr:ansistring ); virtual;
-    function AddTag(tagstr:ansistring; dataval:ansistring = ''):integer; virtual;
-    function AppendToTag(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function AddOrAppend(tagstr:ansistring; dataval:ansistring):integer; virtual;
-    function UpdateTag(tagstr, dataval:ansistring): integer;
-    procedure SetTagByIdx(idx:integer; val:ansistring);
-    function GetTag(tagstr:ansistring; defval:ansistring=''):ansistring; virtual;
-    function ReadFile(fname:ansistring):boolean; virtual;
-    function ReadFileStrings(fname:ansistring):tstringlist;
-    function AddTagToArray(nextTag: iTag): integer;
+    procedure ParseIPTCStrings(buff: ansistring; AList: TStrings); overload;
+    procedure ParseIPTCArray(ABuffer: ansistring);
+
+    function LookupTag(ATagName: String): integer;
+    function LookupNextTag(AtagName: String; ATagIndex: Integer): Integer;
+    function LookupTagByDesc(ATagDesc: String): integer;
+
+    procedure RemoveTag(ATagName: String); virtual;
+    function AddTag(ATagName: String; ARawVal: ansistring = '';
+      AForceNew: Boolean = false): integer; virtual;
+    function AppendToTag(ATagName: String; ARawVal: ansistring): integer; virtual;
+    function AddOrAppend(ATagName: String; ARawVal: ansistring): integer; virtual;
+    function UpdateTagDesc(ATagName: String; AValue: string): integer;
+    function GetTag(ATagName: String; ADefaultVal: string=''): string; virtual;
+    procedure SetTagByIdx(idx: Integer; ADataVal: String);
+
+    class procedure ReadFileStrings(const AFilename: String; AList: TStrings);
+
+    function AddTagToArray(ANewTag: iTag): integer;
     function GetDateTime: TDateTime;
     procedure SetDateTime(TimeIn: TDateTime);
-    procedure SetDateTimeExt(TimeIn: TDateTime; prefix:ansistring);
-    function GetMultiPartTag(tagName:ansistring):tstringlist;
-    procedure WriteFile(fname:ansistring;origname:ansistring = ''); overload;
-{$IFNDEF dExifNoJpeg}
-    procedure WriteFile(fname:ansistring;memImage:tjpegimage); overload;
-{$ENDIF}
+    procedure SetDateTimeExt(TimeIn: TDateTime; APrefix:ansistring);
+    function GetMultiPartTag(ATagName: String): TStringList;
+
+    property ITagArray[TagID:integer]: ITag
+        read GetTagElement write SetTagElement; default;
+    property Count: integer read GetCount write SetCount;
+    property TagValueAsString[ATagName: String]: String
+        read GetTagValueAsString write SetTagValueAsString;
   end;
 
-const IPTCTAGCNT = 49;
-      MultiTagSep: ansistring = ',';
+const
+  IptcTagCnt = 50;
+  MultiTagSep: ansistring = ',';
+  MultiTagCount = $FFFF;
 
 var
   rawDefered : boolean = false;
   defaultTimeZone:ansistring = '_0000';
-  IPTCMultiTags: set of byte = [20,25];
-  IPTCTable : array [0..IPTCTAGCNT-1] of ITag =
-    (( TID:0;TType:0;ICode: 2; Tag:  0; Name:'SKIP';         Desc:'Record Version';Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  3; Name:'ObjectType';   Desc:'Object Type Ref';Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:67),
-     ( TID:0;TType:0;ICode: 2; Tag:  4; Name:'ObjectAttr';   Desc:'Object Attribute Ref';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:67),
-     ( TID:0;TType:0;ICode: 2; Tag:  5; Name:'ObjectName';   Desc:'Object name';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  7; Name:'EditStatus';   Desc:'Edit Status';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag:  8; Name:'EditorialUpdate';  Desc:'Editorial Update';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2),
-     ( TID:0;TType:0;ICode: 2; Tag: 10; Name:'Urgency';      Desc:'Urgency';      Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1),
-     ( TID:0;TType:0;ICode: 2; Tag: 12; Name:'SubRef';       Desc:'Subject Reference';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:236),
-     ( TID:0;TType:0;ICode: 2; Tag: 15; Name:'Category';     Desc:'Category';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:3),
-     ( TID:0;TType:0;ICode: 2; Tag: 20; Name:'SuppCategory'; Desc:'Supplemental category'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 22; Name:'FixtureID';    Desc:'Fixture ID';   Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 25; Name:'Keywords';     Desc:'Keywords';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:64),
-     ( TID:0;TType:0;ICode: 2; Tag: 26; Name:'ContentLocCode'; Desc:'Content Location Code'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 3),
-     ( TID:0;TType:0;ICode: 2; Tag: 27; Name:'ContentLocName'; Desc:'Content Location Name'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 64),
-     ( TID:0;TType:0;ICode: 2; Tag: 30; Name:'ReleaseDate';  Desc:'Release Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 35; Name:'ReleaseTime';  Desc:'Release Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 37; Name:'ExpireDate';  Desc:'Expiration Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 38; Name:'ExpireTime';  Desc:'Expiration Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 40; Name:'SpecialInstru'; Desc:'Special Instructions'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:256),
-     ( TID:0;TType:0;ICode: 2; Tag: 42; Name:'ActionAdvised'; Desc:'Action Advised'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2),
-     ( TID:0;TType:0;ICode: 2; Tag: 45; Name:'RefService';    Desc:'Reference Service'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:10),
-     ( TID:0;TType:0;ICode: 2; Tag: 47; Name:'RefDate';  Desc:'Reference Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 50; Name:'RefNumber';    Desc:'Reference Number'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 55; Name:'DateCreated';  Desc:'Date created'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 60; Name:'TimeCreated';  Desc:'Time created'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 62; Name:'DigitizeDate';  Desc:'Digital Creation Date'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:8),
-     ( TID:0;TType:0;ICode: 2; Tag: 63; Name:'DigitizeTime';  Desc:'Digital Creation Time'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:11),
-     ( TID:0;TType:0;ICode: 2; Tag: 65; Name:'OriginatingProgram'; Desc:'Originating Program'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 32),
-     ( TID:0;TType:0;ICode: 2; Tag: 70; Name:'ProgramVersion'; Desc:'Program version'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 10),
-     ( TID:0;TType:0;ICode: 2; Tag: 75; Name:'ObjectCycle';  Desc:'Object Cycle'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1),
-     ( TID:0;TType:0;ICode: 2; Tag: 80; Name:'ByLine';       Desc:'ByLine';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 85; Name:'ByLineTitle';  Desc:'ByLine Title'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 90; Name:'City';         Desc:'City';         Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 92; Name:'SubLocation';  Desc:'Sublocation';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag: 95; Name:'State';        Desc:'Province/State';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:100; Name:'LocationCode'; Desc:'Country/Primary Location Code'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size: 3),
-     ( TID:0;TType:0;ICode: 2; Tag:101; Name:'LocationName'; Desc:'Country/Primary Location Name'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:   64),
-     ( TID:0;TType:0;ICode: 2; Tag:103; Name:'TransmissionRef'; Desc:'Original Transmission Reference';     Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:   32),
-     ( TID:0;TType:0;ICode: 2; Tag:105; Name:'ImageHeadline'; Desc:'Image headline'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:256),
-     ( TID:0;TType:0;ICode: 2; Tag:110; Name:'ImageCredit';  Desc:'Image credit';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:115; Name:'Source';       Desc:'Source';        Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:116; Name:'Copyright';    Desc:'Copyright Notice';  Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:128),
-     ( TID:0;TType:0;ICode: 2; Tag:118; Name:'Contact';      Desc:'Contact';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:128),
-     ( TID:0;TType:0;ICode: 2; Tag:120; Name:'ImageCaption'; Desc:'Image caption'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2000),
-     ( TID:0;TType:0;ICode: 2; Tag:122; Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:32),
-     ( TID:0;TType:0;ICode: 2; Tag:130; Name:'ImageType';    Desc:'Image type';    Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2 ),
-     ( TID:0;TType:0;ICode: 2; Tag:131; Name:'Orientation';  Desc:'Image Orientation'; Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:1 ),
-     ( TID:0;TType:0;ICode: 2; Tag:135; Name:'LangID';       Desc:'Language ID';   Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:3 ),
-     ( TID:0;TType:0;ICode: 8; Tag:10;  Name:'Subfile';      Desc:'Subfile';       Code:'';Data:'';Raw:'';PRaw:0;FormatS:'';Size:2 )
-    );
 
-procedure IPTCWriteTransFile(fname:ansistring);
-function IPTCReadTransFile(fname:ansistring):boolean;
+  { In its specification a tag is identified by two 1-byte: its record number
+    and its dataset number, written as a pair separated by a color, e.g, 2:3
+    -- record 2, dataset 3 (--> "ObjectTape")
+
+    Since TTagEntry reserves two bytes for "Tag" we combine both values into
+    the element tag = RecordNo shl 8 + DatasetNo
+
+    Source of dataset and record numbers:
+    https://sno.phy.queensu.ca/~phil/exiftool/TagNames/IPTC.html
+
+    If Count = $FFFF then the tag can have multiple values.
+  }
+  IPTCTable : array [0..IPTCTAGCNT-1] of ITag = (
+    ( TID:0; TType:2; Tag:$015A {1:90}; Count:1;     Name:'CodedCharacterSet';Desc:'Coded character set'; Code:''; Data:''; Raw:''; FormatS:''; Size:32),
+    ( TID:0; TType:3; Tag:$0200 {2: 0}; Count:1;     Name:'SKIP';             Desc:'Record version';Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0203 {2: 3}; Count:1;     Name:'ObjectType';       Desc:'Object type ref';Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:2; Tag:$0204 {2: 4}; Count:$FFFF; Name:'ObjectAttr';       Desc:'Object attribute ref';  Code:'';Data:'';Raw:'';FormatS:'';Size:67),
+    ( TID:0; TType:2; Tag:$0205 {2: 5}; Count:1;     Name:'ObjectName';       Desc:'Object name';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0207 {2: 7}; Count:1;     Name:'EditStatus';       Desc:'Edit status';  Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0208 {2: 8}; Count:1;     Name:'EditorialUpdate';  Desc:'Editorial update';  Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$020A {2:10}; Count:1;     Name:'Urgency';          Desc:'Urgency';      Code:'';Data:'';Raw:'';FormatS:'';Size:1),
+    ( TID:0; TType:2; Tag:$020C {2:12}; Count:$FFFF; Name:'SubRef';           Desc:'Subject reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:236),
+    ( TID:0; TType:2; Tag:$020F {2:15}; Count:1;     Name:'Category';         Desc:'Category';     Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:2; Tag:$0214 {2:20}; Count:$FFFF; Name:'SuppCategory';     Desc:'Supplemental category'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0216 {2:22}; Count:1;     Name:'FixtureID';        Desc:'Fixture ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0219 {2:25}; Count:$FFFF; Name:'Keywords';         Desc:'Keywords';     Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$021A {2:26}; Count:$FFFF; Name:'ContentLocCode';   Desc:'Content location code'; Code:'';Data:'';Raw:'';FormatS:'';Size: 3),
+    ( TID:0; TType:2; Tag:$021B {2:27}; Count:$FFFF; Name:'ContentLocName';   Desc:'Content location name'; Code:'';Data:'';Raw:'';FormatS:'';Size: 64),
+    ( TID:0; TType:2; Tag:$021E {2:30}; Count:1;     Name:'ReleaseDate';      Desc:'Release date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0223 {2:35}; Count:1;     Name:'ReleaseTime';      Desc:'Release time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0225 {2:37}; Count:1;     Name:'ExpireDate';       Desc:'Expiration date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0226 {2:38}; Count:1;     Name:'ExpireTime';       Desc:'Expiration time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0228 {2:40}; Count:1;     Name:'SpecialInstruct';  Desc:'Special instructions'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
+    ( TID:0; TType:2; Tag:$022A {2:42}; Count:1;     Name:'ActionAdvised';    Desc:'Action advised'; Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$022D {2:45}; Count:$FFFF; Name:'RefService';       Desc:'Reference service'; Code:'';Data:'';Raw:'';FormatS:'';Size:10),
+    ( TID:0; TType:2; Tag:$022F {2:47}; Count:$FFFF; Name:'RefDate';          Desc:'Reference date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0232 {2:50}; Count:$FFFF; Name:'RefNumber';        Desc:'Reference number'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$0237 {2:55}; Count:1;     Name:'DateCreated';      Desc:'Date created'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$023C {2:60}; Count:1;     Name:'TimeCreated';      Desc:'Time created'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$023E {2:62}; Count:1;     Name:'DigitizeDate';     Desc:'Digital creation date'; Code:'';Data:'';Raw:'';FormatS:'';Size:8),
+    ( TID:0; TType:2; Tag:$023F {2:63}; Count:1;     Name:'DigitizeTime';     Desc:'Digital creation time'; Code:'';Data:'';Raw:'';FormatS:'';Size:11),
+    ( TID:0; TType:2; Tag:$0241 {2:65}; Count:1;     Name:'OriginatingProgram'; Desc:'Originating program'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0246 {2:70}; Count:1;     Name:'ProgramVersion';   Desc:'Program version'; Code:'';Data:'';Raw:'';FormatS:'';Size: 10),
+    ( TID:0; TType:2; Tag:$024B {2:75}; Count:1;     Name:'ObjectCycle';      Desc:'Object cycle'; Code:'';Data:'';Raw:'';FormatS:'';Size:1),
+    ( TID:0; TType:2; Tag:$0250 {2:80}; Count:$FFFF; Name:'ByLine';           Desc:'ByLine';       Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0255 {2:85}; Count:$FFFF; Name:'ByLineTitle';      Desc:'ByLine title'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025A {2:90}; Count:1;     Name:'City';             Desc:'City';         Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025C {2:92}; Count:1;     Name:'SubLocation';      Desc:'Sublocation';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$025F {2:95}; Count:1;     Name:'State';            Desc:'Province/State';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0264 {2:100};Count:1;     Name:'LocationCode';     Desc:'Country/primary location code'; Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:2; Tag:$0265 {2:101};Count:1;     Name:'LocationName';     Desc:'Country/primary location name'; Code:'';Data:'';Raw:'';FormatS:'';Size:64),
+    ( TID:0; TType:2; Tag:$0267 {2:103};Count:1;     Name:'TransmissionRef';  Desc:'Original transmission reference';     Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0269 {2:105};Count:1;     Name:'ImageHeadline';    Desc:'Image headline'; Code:'';Data:'';Raw:'';FormatS:'';Size:256),
+    ( TID:0; TType:2; Tag:$026E {2:110};Count:1;     Name:'ImageCredit';      Desc:'Image credit';  Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0273 {2:115};Count:1;     Name:'Source';           Desc:'Source';        Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0274 {2:116};Count:1;     Name:'Copyright';        Desc:'Copyright notice';  Code:'';Data:'';Raw:'';FormatS:'';Size:128),
+    ( TID:0; TType:2; Tag:$0276 {2:118};Count:$FFFF; Name:'Contact';          Desc:'Contact';       Code:'';Data:'';Raw:'';FormatS:'';Size:128),
+    ( TID:0; TType:2; Tag:$0278 {2:120};Count:1;     Name:'ImageCaption';     Desc:'Image caption'; Code:'';Data:'';Raw:'';FormatS:'';Size:2000),
+    ( TID:0; TType:2; Tag:$027A {2:122};Count:1;     Name:'ImageCaptionWriter'; Desc:'Image caption writer'; Code:'';Data:'';Raw:'';FormatS:'';Size:32),
+    ( TID:0; TType:2; Tag:$0282 {2:130};Count:1;     Name:'ImageType';        Desc:'Image type';    Code:'';Data:'';Raw:'';FormatS:'';Size:2),
+    ( TID:0; TType:2; Tag:$0283 {2:131};Count:1;     Name:'Orientation';      Desc:'Image orientation'; Code:'';Data:'';Raw:'';FormatS:''; Size:1),
+    ( TID:0; TType:2; Tag:$0287 {2:135};Count:1;     Name:'LangID';           Desc:'Language ID';   Code:'';Data:'';Raw:'';FormatS:'';Size:3),
+    ( TID:0; TType:0; Tag:$080A {8:10}; Count:$FFFF; Name:'Subfile';          Desc:'Subfile';       Code:'';Data:'';Raw:'';FormatS:'';Size:2)
+   );
+
+function LookupTagDef(AName: String): integer;
+
+procedure IPTCWriteTransFile(const AFileName: String);
+function IPTCReadTransFile(const AFileName: String): boolean;
+
+procedure InitITag(out ATag: ITag);
+
 
 implementation
 
-uses dEXIF;
+uses
+  dUtils, dMetadata, dEXIF;
 
-var
-  buffer:ansistring;
-
-constructor TIPTCdata.Create(p:tobject);
+procedure InitITag(out ATag: ITag);
 begin
-  inherited create;
+  InitTagEntry(TTagEntry(ATag));
+end;
+
+//  This function returns the index of a tag definition for a given tag name.
+function LookupTagDef(AName: string): integer;
+var
+  i:integer;
+begin
+  Result := -1;
+  for i := 0 to High(IptcTable) do
+  begin
+    if LowerCase(AName) = LowerCase(IPTCtable[i].Name) then
+    begin
+      Result := i;
+      break;
+    end;
+  end;
+end;
+
+
+//------------------------------------------------------------------------------
+//                             TIPTCData
+//------------------------------------------------------------------------------
+
+constructor TIPTCdata.Create(AParent: TObject);
+begin
+  inherited Create;
   fITagCount := 0;
-  parent := p;
+  FParent := AParent;
 end;
 
 function TIPTCdata.GetCount: integer;
@@ -244,14 +245,14 @@ begin
   result := fITagCount;
 end;
 
-procedure TIPTCdata.SetCount(const Value: integer);
+procedure TIPTCdata.SetCount(const AValue: integer);
 begin
-  fITagCount := value;
+  fITagCount := AValue;
 end;
 
 function TIPTCdata.GetTagElement(TagID: integer): ITag;
 begin
-  result := fITagArray[TagID]
+  Result := fITagArray[TagID]
 end;
 
 procedure TIPTCdata.SetTagElement(TagID: integer; const Value: ITag);
@@ -259,186 +260,284 @@ begin
   fITagArray[TagID] := Value;
 end;
 
-Function ExtractTag(var start:integer):iTag;
-var blen,x,tagId,code,i:integer;
-    tmp:iTag;
+function TIptcData.GetTagValueAsString(ATagName: String): String;
+var
+  idx: integer;
 begin
-  FillChar(tmp,sizeof(iTag),0);
-  code := byte(buffer[start]);
-  tagId := byte(buffer[start+1]);     // should be #$1C
-  blen := (byte(buffer[start+2]) shl 8 ) or byte(buffer[start+3]);
-  x := blen;
-  inc(start,4);                      // skip length bytes
-  if code in [2,8] then
+  idx := LookupTag(ATagName);
+  if idx >= 0 then begin
+    Result := ITagArray[idx].Data;
+    {
+    if ITagArray[idx].Count = MultiTagCount then
+      while true do begin
+        idx := LookupNextTag(ATagName, idx+1);
+        if idx > -1 then
+          Result := Result + MultiTagSep + ITagArray[idx].Data
+        else
+          exit;
+      end;
+      }
+  end else
+    Result := '';
+end;
+
+procedure TIptcData.SetTagValueAsString(ATagName, AValue: String);
+begin
+  AddOrAppend(ATagName, AValue);
+end;
+
+{ Note: recordNo : datasetNo
+  - 1 byte:  tag "marker" ($1C)  // has already been read by caller
+  - 1 byte:  record number
+  - 1 byte:  dataset number
+  - 2 bytes: datafield byte count
+}
+function TIPTCData.ExtractTag(const ABuffer: ansistring; var AStart: Integer): iTag;
+var
+  bLen, tagId, i: integer;
+  tmp: iTag;
+  recordNo, datasetNo: byte;
+  w: Word;
+begin
+  InitITag(tmp);
+  recordNo := byte(ABuffer[AStart]);
+  datasetNo := byte(ABuffer[AStart+1]);
+  bLen := (byte(ABuffer[AStart+2]) shl 8) or byte(ABuffer[AStart+3]);
+  inc(AStart, 4);                     // skip length bytes
+  if recordNo in [1, 2, 8] then
   begin
+    tagID := recordNo shl 8 or datasetNo;
     tmp.Tag := 65534;
-    for i := 0 to IPTCTAGCNT-1 do
-      if (IPTCTable[i].Tag = tagid) and
-         (IPTCTable[i].ICode = code) then
+    for i := 0 to IptcTagCnt - 1 do
+      if (IPTCTable[i].Tag = tagID) then
       begin
         if IPTCTable[i].name <> 'SKIP' then
         begin
           tmp := IPTCTable[i];
-          tmp.Data := copy(buffer,start,x);
+          tmp.Raw := Copy(ABuffer, AStart, blen);
+          case tmp.TType of
+            FMT_STRING, 0:
+              tmp.Data := RawToData(tmp.Raw, tmp.TType);
+            FMT_USHORT:
+              begin
+                w := PWord(@tmp.Raw[1])^;
+                tmp.Data := IntToStr(BEToN(w));
+              end;
+            else
+              raise Exception.Create('Tag type not supported.');
+          end;
         end;
         break;
       end;
+
     if tmp.Tag = 65534 then
     begin
-      tmp.name := 'Custom_'+AnsiString(inttostr(tagid));
-      tmp.Desc := 'Custom_'+AnsiString(inttostr(tagid));
-      tmp.Tag := tagid;
-      tmp.ICode := code;
-      tmp.Data := copy(buffer,start,x);
-      tmp.Size := 64; // length for unknown fields ?
+      tmp.Name := 'Custom_' + IntToStr(datasetNo);
+      tmp.Desc := 'Custom_' + IntToStr(datasetNo);
+      tmp.Tag := tagID;
+      tmp.Raw := Copy(ABuffer, AStart, blen);
+      case tmp.TType of
+        FMT_STRING,
+        0:
+          begin
+            tmp.Data := RawToData(tmp.Raw, tmp.TType);
+            if Length(tmp.Raw) <= 64 then
+              tmp.Size := 64   // length for unknown fields ?
+            else
+              tmp.Size := Length(tmp.Raw);
+          end;
+        FMT_USHORT:
+          begin
+            w := PWord(@tmp.Raw[1])^;
+            tmp.Data := IntToStr(BEToN(w));
+          end;
+        else
+          raise Exception.Create('Tag type not supported.');
+      end;
     end;
   end;
-  start := start+x+1;
-  result := tmp;
+  AStart := AStart + blen + 1;
+  Result := tmp;
 end;
 
-//  This function returns the index of a tag name
-//  in the tag buffer.
-Function TIPTCdata.LookupTag(SearchStr:ansistring):integer;
-var i: integer;
+//  This function returns the index of a tag name in the tag buffer.
+function TIPTCdata.LookupTag(ATagName: String): Integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Name)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
+  Result := LookupNextTag(ATagName, 0);
 end;
 
-//  This function returns the index of a tag name
-//  in the tag buffer. It searches by the description
-//  which is most likely to be used as a label
-Function TIPTCdata.LookupTagByDesc(SearchStr:ansistring):integer;
-var i: integer;
+function TIptcData.LookupNextTag(ATagName: String; ATagIndex: Integer): Integer;
+var
+  i: Integer;
 begin
- SearchStr := AnsiString(AnsiUpperCase(SearchStr));
- result := -1;
- for i := 0 to Count-1 do
-   if AnsiString(AnsiUpperCase(iTagArray[i].Desc)) = SearchStr then
-   begin
-     result := i;
-     break;
-   end;
-end;
-
-//  This function returns the index of a tag definition
-//  for a given tag name.
-function TIPTCdata.LookupTagDefn(item:ansistring): integer;
-var i:integer;
-begin
-  result := -1;
-  for i := 0 to IPTCTAGCNT-1 do
-  begin
-    if AnsiString(AnsiLowerCase(item)) = AnsiString(AnsiLowerCase(IPTCtable[i].Name)) then
+  Result := -1;
+  if ATagIndex >= Count then
+    exit;
+  ATagName := Uppercase(ATagName);
+  for i:= ATagIndex to Count-1 do
+    if (UpperCase(iTagArray[i].Name) = ATagName) then
     begin
-      result := i;
+      Result := i;
+      exit;
+    end;
+end;
+
+//  This function returns the index of a tag name in the tag buffer.
+//  It searches by the description which is most likely to be used as a label
+function TIPTCdata.LookupTagByDesc(ATagDesc: string): integer;
+var
+  i: integer;
+begin
+  ATagDesc := UpperCase(ATagDesc);
+  Result := -1;
+  for i := 0 to Count-1 do
+    if UpperCase(iTagArray[i].Desc) = ATagDesc then
+    begin
+      Result := i;
       break;
     end;
-  end;
 end;
 
-Function TIPTCdata.ParseIPTCStrings(buff:ansistring):tstringlist;
-var ts:tstringlist;
-    tmpItem:itag;
-    start,i,j:Integer;
+procedure TIPTCData.ParseIPTCStrings(buff: ansistring; AList: TStrings);
+var
+  tmpItem: itag;
+  start, i, j: Integer;
 begin
-  ts := tstringlist.Create;
-  buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
-  for j := i to length(buffer) do       // Look for first field marker
-    if ( byte(buffer[j]) = $1C) and
-       ( byte(buffer[j+1]) in [2,8]) then
+  Assert(AList <> nil, 'TIPTCData.ParseIPTCStrings called with AList=nil');
+  //FBuffer := buff;
+  i := Pos('Photoshop 3.0', buff) + 13;
+  for j := i to Length(buff) do       // Look for first field marker
+    if (byte(buff[j]) = $1C) and (byte(buff[j+1]) in [1, 2, 8]) then
       break;
   start := j+1;
-  while (start < length(buffer)-2) do   // Work through buffer
+  while (start < Length(buff)-2) do   // Work through buffer
   begin
-    tmpItem := ExtractTag(start);
+    tmpItem := ExtractTag(buff, start);
     if tmpItem.Name <> '' then         // Empty fields are masked out
-      ts.Add(tmpItem.Desc+DexifDelim+tmpItem.Data);
+      AList.Add(tmpItem.Desc + DexifDelim + tmpItem.Data);
   end;
-  result := ts;
 end;
  
-function TIPTCdata.AddTagToArray(nextTag:iTag):integer;
+function TIPTCdata.AddTagToArray(ANewTag: iTag): Integer;
 begin
-  if nextTag.tag <> 0 then     // Empty fields are masked out
+  if ANewTag.Tag and $00FF <> 0 then     // Empty fields are masked out
   begin
     if fITagCount >= MaxTag-1 then
     begin
-      inc(MaxTag,TagArrayGrowth);
-      SetLength(fITagArray,MaxTag);
+      inc(MaxTag, TagArrayGrowth);
+      SetLength(fITagArray, MaxTag);
     end;
-    fITagArray[fITagCount] := nextTag;
+    fITagArray[fITagCount] := ANewTag;
     inc(fITagCount);
   end;
   result := fITagCount-1;
 end;
  
-Procedure TIPTCdata.ParseIPTCArray;
+Procedure TIPTCdata.ParseIPTCArray(ABuffer: Ansistring);
+const
+  RESOURCE_MARKER: ansistring = '8BIM';
+  MARKER_SIZE = 4;  // = Length(RESOURCE_MARKER);
+  IPTC_IMAGERESOURCEID = #04#04;
+var
+  nextTag: ITag;
+  start, i, j, k: Integer;
+  id: String[2];
+  len: Byte;
+  size: DWord;
+  marker, nam: ansistring;
 begin
-  ParseIPTCArray(timgdata(parent).IPTCsegment^.data);
-end;
+  Reset;
+  i := Pos('Photoshop 3.0', ABuffer);
+  if i = 0 then
+    exit;
+  inc(i, 14);
 
-Procedure TIPTCdata.ParseIPTCArray(buff:ansistring);
-var nextTag:itag;
-    start,i,j:Integer;
-begin
-  reset;
-  buffer := buff;
-  i := Pos('Photoshop 3.0',buff)+13;
-  for j := i to length(buffer) do       // Look for first field marker
-    if ( byte(buffer[j]) = $1C) and
-       ( byte(buffer[j+1]) in [2,8]) then
+  j := Length(ABuffer);
+  while i <= Length(ABuffer) do begin
+    marker := Copy(ABuffer, i, MARKER_SIZE);
+    if marker <> RESOURCE_MARKER then
       break;
-  start := j+1;
-  while (start < length(buffer)-2) do   // Work through buffer
-  begin
-    nextTag := ExtractTag(start);       // Start is incremented by function
-    if nextTag.Tag in IPTCMultiTags then
-    begin
-      AppendToTag(nextTag.Name,nextTag.Data)
+    j := i + MARKER_SIZE;
+    id := Copy(ABuffer, j, 2);
+    inc(j, 2);
+    len := ord(ABuffer[j]);
+    inc(j);
+    if len = 0 then begin
+      len := ord(ABuffer[j]);
+      inc(j);
+      nam := '';
+    end else begin
+      nam := Copy(ABuffer, j, len);
+      inc(j, len);
+    end;
+    nam := copy(ABuffer, j, 4);
+    inc(j, 4);
+    size := PDWord(@nam[1])^;
+    size := BEToN(size);
+
+    if id = IPTC_IMAGERESOURCEID then begin
+      // read IPTC tags
+      if not ((byte(ABuffer[j]) = $1C) and (byte(ABuffer[j+1]) in [1, 2, 8])) then
+        exit;
+      start := j + 1;
+      while (start < j + 1 + size) do begin
+        nextTag := ExtractTag(ABuffer, start);  // start is incremented by function
+        if nextTag.Count = MultiTagCount then   // MultiTagCount means: there can be multiple values
+          AppendToTag(nextTag.Name, nextTag.Data)
+        else
+          AddTagToArray(nextTag);
+      end;
+      exit;
     end
     else
-      AddTagToArray(nextTag);
+      inc(j, size);
+    i := j;
   end;
 end;
  
-function MakeEntry(code,tag:integer;data:ansistring):ansistring;
-var buff,sLen:ansistring;
+function MakeEntry(code,tag: integer; data:ansistring): ansistring;
+var
+  buff,sLen: ansistring;
   bLen:integer;
 begin
-  bLen := length(Data);
-  sLen := ansichar(blen div 256)+ansichar(blen mod 256);
+  bLen := Length(Data);
+  sLen := ansichar(blen div 256) + ansichar(blen mod 256);
   result := buff+ansichar($1C)+ansichar(code)+ansichar(tag)+sLen+Data;
 end;
 
-function TIPTCdata.IPTCArrayToXML: tstringlist;
+procedure TIptcData.IptcArrayToList(AList: TStrings);
 var
-  buff:tstringlist;
-  i:integer;
+  i: Integer;
+  tag: ITag;
 begin
-  buff := TStringList.Create;
-  buff.add('   <ITPCdata>');
+  for i:= 0 to Count-1 do begin
+    tag := ITagArray[i];
+    if (tag.Count = MultiTagCount) and (tag.Data = '') then
+      Continue;
+    AList.Add(tag.Desc + dExifDelim + tag.Data);
+  end;
+  //buf := IptcArrayToBuffer;
+//  ParseIptcStrings(buf, AList);
+end;
+
+procedure TIPTCData.IPTCArrayToXML(AList: TStrings);
+var
+  i: integer;
+begin
+  Assert(AList <> nil, 'TIPTCData.IPTCArrayToXML called with AList=nil.');
+  AList.Add('   <ITPCdata>');
   for i := 0 to Count-1 do
     with ITagArray[i] do
     begin
-      buff.add('   <'+name+'>');
-      if tag in [105,120] // headline and image caption
-        then buff.add('      <![CDATA['+data+']]>')
-        else buff.add('      '+data);
-      buff.add('   </'+name+'>');
+      AList.Add('   <' + name + '>');
+      if Tag in [105, 120] // headline and image caption
+        then AList.Add('      <![CDATA[' + Data + ']]>')
+        else AList.Add('      ' + Data);
+      AList.Add('   </' + Name + '>');
     end;
-  buff.add('   </ITPCdata>');
-  result := buff;
+  AList.Add('   </ITPCdata>');
 end;
- 
+     (*
 function SplitMultiTag(code, tag:integer; buff:ansistring):ansistring;
 var
   tmps:ansistring;
@@ -452,8 +551,7 @@ begin
     begin
       tmps := AnsiString(trim(string(copy(buff,1,j-1))));
       buff := AnsiString(trim(string(copy(buff,j+1,maxint))));
-    end
-    else
+    end else
     begin
       tmps := buff;
       buff := '';
@@ -461,21 +559,27 @@ begin
     result := result+MakeEntry(code,tag,tmps);
   end;
 end;
- 
-function TIPTCdata.IPTCArrayToBuffer:ansistring;
+
+function TIPTCdata.IPTCArrayToBuffer: Ansistring;
 var
-  buff,slen,h2:ansistring;
-  blen,i:integer;
+  buff: ansistring;
+  i: integer;
+  recordNo, datasetNo: Byte;
 begin
   buff := '';
   // load up the particular data
   for i := 0 to Count-1 do
-    with ITagArray[i] do
-    if (icode=2) and (tag in IPTCMultiTags) then
-      buff := buff+SplitMultiTag(icode,tag,data)
-    else
-      buff := buff+MakeEntry(icode,tag,data);
- 
+    with ITagArray[i] do begin
+      recordNo := Tag shr 8;
+      datasetNo := Tag and $00FF;
+      if (recordNo in [1, 2]) and (Count = MultiTagCount) then   // Multiple tag values
+        buff := buff + SplitMultiTag(recordNo, datasetNo, data)
+      else                                            // Single tag value
+        buff := buff + MakeEntry(recordNo, datasetNo, data);
+    end;
+  Result := buff;
+
+{
 // Photoshop requires the following headers:
   if not odd(length(buff)) then
     buff := buff+#0;
@@ -486,226 +590,257 @@ begin
  
 // Photoshop requires the following End-of-data marker:
   result := buff+'8BIM'#$04#$0B#0#0#0#0#0#0;
+}
+end;
+ *)
+function TIPTCdata.Clone(ASource: TIPTCdata): TIPTCdata;
+begin
+  Result := TIPTCdata.Create(FParent);
+  Result.fITagArray := Copy(ASource.fITagArray, 0, MaxTag);
+  Result.fITagCount := ASource.fITagCount;
 end;
 
-function TIPTCdata.Clone(source: TIPTCdata): TIPTCdata;
+(*
+procedure TOPTCdata.MakeIPTCSegment(buff: ansisstring);
 var
-  newie:TIPTCdata;
+  blen: integer;
 begin
-  newie := TIPTCdata.Create(parent);
-  newie.fITagArray := copy(source.fITagArray,0,MaxTag);
-  newie.fITagCount := source.fITagCount;
-  result := newie;
-end;
-
-function TIPTCdata.AddOrAppend(tagstr, dataval:ansistring): integer;
-var
-  i:integer;
-begin
-  result := -1;
-  i := LookupTagDefn(tagStr);  // see if keyword is valid
-  if i >= 0 then
+  bl := length(buff) + 2;
+  if IPTCSegment = nil then
   begin
-    if (IPTCTable[i].Tag in IPTCMultiTags) then
-      result := AppendToTag(tagstr,dataVal)
+    inc(SectionCnt);
+    IPTCSegment := @(sections[SectionCnt]);
+  end;
+  IPTCSegment^.Data := ansichar(bl div 256) + ansichar(bl mod 256) + buff;
+  IPTCSegment^.Size := bl;
+  IPTCSegment^.DType := M_IPTC;
+end;
+  *)
+function TIPTCdata.AddOrAppend(ATagName: String; ARawVal: ansistring): integer;
+var
+  idx: integer;
+begin
+  Result := -1;
+  idx := LookupTagDef(ATagName);  // see if keyword is valid
+  if idx >= 0 then
+  begin
+    if (IPTCTable[idx].Count = MultiTagCount) then  // Multiple tag values
+      Result := AppendToTag(ATagName, ARawVal)
     else
-      result := AddTag(tagstr,dataval);
+      Result := AddTag(ATagName, ARawVal);
   end;
 end;
 
-function noDups(exst,newstr:ansistring):ansistring;
+{ exstr and newstr are comma-separated lists of strings.
+  Adds the strings contained in newstr to exstr (ex = "existing") such that
+  exstr does not contain duplicates. }
+function noDups(exst, newstr: String): String;
 var
-  lst,nlst: tstringList;
-  s:ansistring;
-  i:integer;
+  lst,nlst: TStringList;
+  i: integer;
+  s: String;
 begin
-  lst := tstringlist.Create;
-  nlst := tstringlist.Create;
-  lst.CommaText := exst;
-  lst.CaseSensitive := false;
-  nlst.CommaText := newstr;
-  for i := 0 to nlst.Count-1 do
-  begin
-    s := AnsiString(trim(string(nlst[i])));
-    if (lst.IndexOf(s) < 0) then
+  lst := TStringlist.Create;
+  nlst := TStringlist.Create;
+  try
+    lst.CommaText := exst;
+    lst.CaseSensitive := false;
+    nlst.CommaText := newstr;
+    for i := 0 to nlst.Count-1 do
     begin
-      lst.Add(s);
+      s := trim(nlst[i]);
+      if (lst.IndexOf(s) = -1) then
+        lst.Add(s);
     end;
+    Result := lst.CommaText;
+  finally
+    nlst.Free;
+    lst.Free;
   end;
-  result := AnsiString(lst.CommaText);
 end;
 
-function TIPTCdata.AppendToTag(tagstr, dataval:ansistring): integer;
+function TIPTCdata.AppendToTag(ATagName: String; ARawVal:ansistring): integer;
 var
-  inspt:integer;   // INSertion PoinT
+  idx: integer;
+  dataVal: String;
 begin
-  inspt := LookupTag(tagstr);
-  if (inspt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Data :=
-          noDups(fITagArray[inspt].Data,dataval)
-  end
-  else
-    inspt := AddTag(tagstr,noDups('',dataval));
-  result := inspt;
+    if ARawVal <> '' then begin
+      dataVal := RawToData(ARawVal, fITagArray[idx].TType);
+      fITagArray[idx].Data := NoDups(fITagArray[idx].Data, dataVal);
+      AddTag(ATagname, ARawVal, true);
+    end;
+  end else
+    idx := AddTag(ATagName, ARawVal);
+  result := idx;
 end;
 
-function TIPTCdata.UpdateTag(tagstr, dataval:ansistring): integer;
-var inspt:integer;   // INSertion PoinT
+function TIPTCdata.UpdateTagDesc(ATagName: String; AValue: String): integer;
+var
+  idx: integer;
 begin
-  inspt := LookupTag(tagstr);
-  if (inspt >= 0) then
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Desc := dataval
+    if AValue <> '' then
+      fITagArray[idx].Desc := AValue;
   end;
-  result := inspt;
+  result := idx;
 end;
 
-function TIptcData.GetMultiPartTag(tagName:ansistring):tstringlist;
-var tmp:tstringlist;
+function TIptcData.GetMultiPartTag(ATagName: String): TStringList;
 begin
-  tmp := tstringlist.create;
-  tmp.CommaText := StringReplace(
-    GetTag(tagname),MultiTagSep,',',[rfReplaceAll]);
-  result := tmp;
+  Result := TStringlist.Create;
+  Result.CommaText := StringReplace(GetTag(ATagname), MultiTagSep, ',' ,[rfReplaceAll]);
 end;
- 
-function TIPTCdata.AddTag(tagstr, dataval:ansistring): integer;
-var inspt,defidx:integer;
-  newTag:itag;
+
+function TIptcData.RawToData(ARaw: ansistring; ATagType: Byte): String;
+var
+  w: Word;
 begin
-  inspt := LookupTag(tagstr);
-  if (inspt >= 0) then
+  case ATagType of
+    FMT_STRING, 0:
+      begin
+        Result := ARaw;   // to do: respect encoding
+        if Result[Length(Result)] = #0 then
+          Delete(Result, Length(Result), 1);
+      end;
+    FMT_USHORT:
+      begin
+        w := BEtoN(PWord(@ARaw[1])^);
+        Result := IntToStr(w);
+      end;
+    else
+      raise Exception.Create('Tag type not supported.');
+  end;
+end;
+
+function TIPTCdata.AddTag(ATagName: String; ARawVal: ansistring = '';
+  AForceNew: Boolean = false): integer;
+var
+  idx, defIdx: integer;
+  newTag: itag;
+begin
+  idx := LookupTag(ATagName);
+  if AForceNew or (idx = -1) then
   begin
-    if dataval <> '' then
-      fITagArray[inspt].Data := dataval
- end
-  else
-  begin
-    defidx := LookupTagDefn(tagstr);
-    if defidx < 0 then
+    defIdx := LookupTagDef(ATagName);
+    if defIdx < 0 then
     begin
-      result := -1;
+      Result := -1;
       exit;  // not a defined node, do not insert
     end;
-    newTag := IPTCTable[defidx];
-    newTag.Data := dataVal;
-    inspt := AddTagToArray(newTag);
+    newTag := IPTCTable[defIdx];
+    newTag.Raw := ARawVal;
+    newTag.Data := RawToData(ARawVal, newTag.TType);
+    idx := AddTagToArray(newTag);
+  end else
+  begin
+    if ARawVal <> '' then begin
+      fITagArray[idx].Raw := ARawVal;
+      fITagArray[idx].Data := RawToData(ARawVal, fITagArray[idx].TType);
+    end;
   end;
-  result := inspt;
+  Result := idx;
 end;
 
-procedure TIPTCdata.RemoveTag(tagstr:ansistring);
-var rempt,i:integer;
+procedure TIPTCdata.RemoveTag(ATagName: String);
+var
+  idx, i: integer;
 begin
- rempt := LookupTag(tagstr);
- if (rempt >= 0) then
- begin
-   for i := rempt to fITagCount-2 do
-     fITagArray[i] := fITagArray[i+1];
-   dec(fITagCount);
- end;
+  idx := LookupTag(ATagName);
+  if (idx >= 0) then
+  begin
+    for i := idx to fITagCount - 2 do
+      fITagArray[i] := fITagArray[i+1];
+    dec(fITagCount);
+  end;
 end;
  
 procedure TIPTCdata.Reset;
 begin
- Count := 0 ;
- FillChar(fITagArray[0],sizeof(iTag)*MaxTag,0);  // clear out old data
+  Count := 0;
+  SetLength(fITagArray, 0);
 end;
 
-function TIPTCdata.GetTag(tagstr:ansistring; defval:ansistring=''):ansistring;
-var i:integer;
+function TIPTCdata.GetTag(ATagName: string; ADefaultVal: String=''): String;
+var
+  idx: integer;
 begin
-  result := defval;
-  i := LookupTag(tagstr);
-  if i >=0 then
-    result := ITagArray[i].Data;
+  idx := LookupTag(ATagName);
+  if idx >= 0 then
+    Result := ITagArray[idx].Data
+  else
+    Result := ADefaultVal;
 end;
 
-Function TIPTCdata.HasData:boolean;
+Function TIPTCdata.HasData: boolean;
 begin
   result := Count > 0;
 end;
- 
-function TIPTCdata.ReadFile(fname:ansistring):boolean;
-var p:tImgData;
+
+class procedure TIPTCData.ReadFileStrings(const AFileName: String;
+  AList: TStrings);
+var
+  imgdata: TImgData;
 begin
-  p := tImgData(parent);
-  Reset;
-  p.ProcessFile(FName);                      // Get data from file.
-  if p.IPTCSegment <> nil then               // If IPTC segment detected
-  begin
-    ParseIPTCArray(p.IPTCSegment^.Data);
-//    filename := FName;
+  Assert(AList <> nil, 'TIPTCData.ReadFileStrings called with AList=nil.');
+  imgData := TImgData.Create;
+  try
+    imgData.ReadIptcStrings(AFileName, AList);
+  finally
+    imgData.Free;
   end;
-  result := HasData();
-end;
- 
-function TIPTCdata.ReadFileStrings(fname:ansistring):tstringlist;
-begin
-  result := ParseIPTCStrings(timgdata(parent).IPTCSegment^.Data);
-end;
- 
-{$IFNDEF dExifNoJpeg}
- 
-procedure TIPTCdata.WriteFile(fname:ansistring;memImage:tjpegimage);
-var tmp:ansistring;
-begin
-  tmp := IPTCArrayToBuffer;                       // Create temp buffer
-  timgdata(parent).MakeIPTCSegment(tmp);          // Create IPTC segment
-  timgdata(parent).WriteEXIFjpeg(memImage,FName); // Write to disk
-end;
- 
-procedure TIPTCdata.WriteFile(FName:ansistring; OrigName :ansistring = '');
-var tmp:ansistring;
-    Orig:tjpegimage;
-begin
-  Orig := TJPEGImage.Create;
-  if OrigName = '' then
-    OrigName := FName;
-  Orig.LoadFromFile(OrigName);                // Get the image
-  tmp := IPTCArrayToBuffer;                   // Create temp buffer
-  timgdata(parent).MakeIPTCSegment(tmp);      // Create IPTC segment
-  timgdata(parent).WriteEXIFjpeg(Orig,FName); // Write to disk
-  Orig.free;
 end;
 
-{$ELSE}
-
-procedure TIPTCdata.WriteFile(fname:ansistring; origname :ansistring = '');
+procedure TIPTCdata.SetTagByIdx(idx: integer; ADataVal: String);
+var
+  w: Integer;
+  sa: ansistring;
 begin
-  // if you're not using Borland's jpeg unit
-  // then you should override/avoid this method
-  raise exception.create('WriteIPTCfile does nothing!');
-  // I suppose I should make this method abstract...
-end;
- 
-{$ENDIF}
-procedure TIPTCdata.SetTagByIdx(idx: integer; val:ansistring);
-begin
-  fITagArray[idx].Data := val;
+  fITagArray[idx].Data := ADataVal;
+  case FITagArray[idx].TType of
+    FMT_USHORT:
+      begin
+        w := StrToInt(ADataVal);
+        SetLength(fITagArray[idx].Raw, 2);
+        Move(w, fITagArray[idx].Raw[1], 2);
+      end;
+    FMT_STRING,
+    0:
+      begin
+        sa := ADataVal;
+        fITagArray[idx].Raw := sa;   // To do: Fix encoding
+      end;
+  end;
 end;
 
-function GetTimeZoneBias:longint;
-{$IFDEF WINDOWS}
+{$IFDEF MSWINDOWS}
+function GetTimeZoneBias: Longint;
 var
   TZoneInfo: TTimeZoneInformation;
-{$ENDIF}
 begin
-  {$IFDEF WINDOWS}
   GetTimeZoneInformation(TZoneInfo);
   result := TZoneInfo.Bias;
-  {$ENDIF}
 end;
+{$ENDIF}
 
-function TIPTCdata.getTimeZoneStr:ansistring;
-var tmp,h,m:integer;
-    sign:ansistring;
+{$IFDEF UNIX}
+function GetTimeZoneBias: Longint;
 begin
-  result := defaultTimeZone;
-  if defaultTimeZone <> '_0000' then
+  Result := -TZSeconds div 60;
+end;
+{$ENDIF}
+
+function TIPTCdata.GetTimeZoneStr: String;
+var
+  tmp,h,m: integer;
+  sign: ansistring;
+begin
+  result := DefaultTimeZone;
+  if DefaultTimeZone <> '_0000' then
     exit;
   tmp := GetTimeZoneBias();
   h := abs(tmp) div 60; // hours
@@ -713,11 +848,12 @@ begin
   if tmp < 0         // local time correction: invertsign
     then sign := '+'
     else sign := '-';
-  result := AnsiString(Format('%s%.2d%.2d',[sign,h,m]));
+  result := Format('%s%.2d%.2d',[sign,h,m]);
 end;
 
-procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:ansistring);
-var dateStr, timeStr, timeZone:ansistring;
+procedure TIPTCdata.SetDateTimePrim(TimeIn:TDateTime; prefix:string);
+var
+  dateStr, timeStr, timeZone:ansistring;
 begin
   if AnsiString(AnsiLowerCase(prefix)) = 'default' then
   begin
@@ -736,67 +872,81 @@ end;
 
 procedure TIPTCdata.SetDateTime(TimeIn:TDateTime);
 begin
-  SetDateTimePrim(TimeIn,'Default');
+  SetDateTimePrim(TimeIn, 'Default');
 end;
 
-procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; prefix:ansistring);
+procedure TIPTCdata.SetDateTimeExt(TimeIn:TDateTime; APrefix:ansistring);
 begin
-  SetDateTimePrim(TimeIn,prefix);
+  SetDateTimePrim(TimeIn, APrefix);
 end;
 
-function TIPTCdata.GetDateTime:TDateTime;
+function TIPTCdata.GetDateTime: TDateTime;
 type
   TConvert= packed record
-     year: Array [1..4] of ansichar;
-     mon, day, hr, min, sec: Array [1..2] of ansichar;
+     year: Array[1..4] of ansichar;
+     mon, day, hr, min, sec: array[1..2] of ansichar;
   end;
   PConvert= ^TConvert;
 var
-  tsd,tst:ansistring;
+  str: ansistring;
+  yr, mn, dy, h, m, s: Integer;
+  d: TDateTime;
+  t: TDateTime;
 begin
-   try
-     tsd := GetTag('DateCreated','00000000');
-     tst := tsd+GetTag('TimeCreated','000000');
-     with PConvert( @tst[1] )^ do
-       Result := EncodeDate( StrToInt( year),
-                             StrToInt( mon ),
-                             StrToInt( day ))
-              +  EncodeTime( StrToInt( hr  ),
-                             StrToInt( min ),
-                             StrToInt( sec ), 0);
-   except
-     result := 0;
-   end;
+  Result := 0;
+  str := GetTag('DateCreated', '00000000') + GetTag('TimeCreated', '000000');
+  if Length(str) >= SizeOf(TConvert) then
+    with PConvert(@str[1])^ do
+      if TryStrToInt(year, yr) and
+         TryStrToInt(mon, mn) and
+         TryStrToInt(day, dy) and
+         TryEncodeDate(yr, mn, dy, d)
+      and
+         TryStrToInt(hr, h) and
+         TryStrToInt(min, m) and
+         TryStrToInt(sec, s) and
+         TryEncodeTime(h, m, s, 0, t)
+      then
+        Result := d + t;
 end;
 
-procedure IPTCWriteTransFile(fname:ansistring);
-var tmp:tstringlist;
-    i: integer;
+procedure IPTCWriteTransFile(const AFileName: String);
+var
+  L: TStringList;
+  i: integer;
 begin
-  tmp := tstringlist.Create;
-  for i := 0 to IPTCTAGCNT-1 do
-    tmp.Add( IPTCTable[i].Name+'='+ IPTCTable[i].Desc);
-  tmp.SaveToFile(fname);
-  tmp.Free;
-end;
-
-function IPTCReadTransFile(fname:ansistring):boolean;
-var tmp:tstringlist;
-    i: integer;
-    ts:ansistring;
-begin
-  result := false;
-  if not fileexists(fname) then
-    exit;
-  tmp := tstringlist.Create;
-  tmp.LoadFromFile(fname);
-  for i := 0 to IPTCTAGCNT-1 do
-  begin
-    ts := AnsiString(tmp.Values[IPTCTable[i].Name]);
-    if ts > '' then
-      IPTCTable[i].Desc := ts;
+  L := TStringList.Create;
+  try
+    for i := 0 to IPTCTAGCNT-1 do
+      L.Add(IPTCTable[i].Name + '=' + IPTCTable[i].Desc);
+    L.SaveToFile(AFileName);
+  finally
+    L.Free;
   end;
-  tmp.Free;
 end;
 
-end.
+function IPTCReadTransFile(const AFileName: String): boolean;
+var
+  L: TStringList;
+  i: integer;
+  s: string;
+begin
+  Result := false;
+  if not FileExists(AFilename) then
+    exit;
+
+  L := TStringlist.Create;
+  try
+    L.LoadFromFile(AFileName);
+    for i := 0 to IPTCTAGCNT-1 do
+    begin
+      s := L.Values[IPTCTable[i].Name];
+      if s > '' then
+        IPTCTable[i].Desc := s;
+    end;
+  finally
+    L.Free;
+  end;
+end;
+
+end.

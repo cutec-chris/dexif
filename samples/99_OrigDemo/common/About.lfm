@@ -1,0 +1,138 @@
+object AboutBox: TAboutBox
+  Left = 365
+  Height = 213
+  Top = 189
+  Width = 298
+  BorderStyle = bsDialog
+  Caption = 'About'
+  ClientHeight = 213
+  ClientWidth = 298
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Position = poScreenCenter
+  LCLVersion = '1.9.0.0'
+  object Panel1: TPanel
+    Left = 8
+    Height = 161
+    Top = 8
+    Width = 281
+    BevelInner = bvRaised
+    BevelOuter = bvLowered
+    ClientHeight = 161
+    ClientWidth = 281
+    TabOrder = 0
+    object ProgramIcon: TImage
+      Left = 2
+      Height = 57
+      Top = 2
+      Width = 65
+      Picture.Data = {
+        07544269746D617076020000424D760200000000000076000000280000002000
+        0000200000000100040000000000000200000000000000000000100000000000
+        000000000000000080000080000000808000800000008000800080800000C0C0
+        C000808080000000FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFF
+        FF00000000000000000000000000000000000EE8787878EEEEEEE03F30878EEE
+        EEE00EE8787878EEEEEEE03F30878EEEEEE00EE8787878EEEEEEE03F30878EEE
+        EEE00EE8787878EEEEEEE03F30878EEEEEE00887787877788888803F3088787E
+        EEE00788787878878887803F3088887EEEE00788887888878887803F3088887E
+        EEE00877888887788888703F308887EEEEE00888777778888888037883088888
+        8EE007777777777777703787883087777EE00888888888888803787FF8830888
+        888008888888888880378777778830888880077777777788037873F3F3F87808
+        88E00888888888803787FFFFFFFF8830EEE00887777778800001111111111100
+        EEE00888888888888899B999B99999EEEEE00888888888888899B9B99BB9B9EE
+        EEE0088888888888899BB9BB99BB99EEEEE0078888888888899B999B999999EE
+        EEE0087788888778899B9B9BB9BB99EEEEE00888778778888E9B9B9BB9999EEE
+        EEE0088888788888EE9B99B9BB9BEEEEEEE00EE8888888EEEEE999B9999EEEEE
+        EEE00EEEE888EEEEEEEE99BB999EEEEEEEE00EEEEE8EEEEEEEEEE999B9EEEEEE
+        EEE00EEEEE8EEEEEEEEEEEE999EEEEEEEEE00EEEEE8EEEEEEEEEEEEE99EEEEEE
+        EEE00EEEEE8EEEEEEEEEEEEE9EEEEEEEEEE00EEEEE8EEEEEEEEEEEEEEEEEEEEE
+        EEE00EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE00000000000000000000000000000
+        0000
+      }
+      Stretch = True
+    end
+    object ProductName: TLabel
+      Left = 82
+      Height = 17
+      Top = 10
+      Width = 91
+      Caption = 'Product Name: '
+      Font.Color = clBlack
+      Font.Height = -13
+      ParentColor = False
+      ParentFont = False
+    end
+    object Version: TLabel
+      Left = 82
+      Height = 15
+      Top = 34
+      Width = 44
+      Caption = 'Version: '
+      ParentColor = False
+    end
+    object Copyright: TLabel
+      Left = 2
+      Height = 15
+      Top = 74
+      Width = 273
+      Caption = 'Copyright: 2002 Gerry McGuire - All Rights Reserved'
+      ParentColor = False
+    end
+    object Label1: TLabel
+      Left = 2
+      Height = 15
+      Top = 98
+      Width = 59
+      Caption = 'Web Page: '
+      ParentColor = False
+    end
+    object Label2: TLabel
+      Left = 18
+      Height = 15
+      Top = 122
+      Width = 37
+      Caption = 'E-Mail:'
+      ParentColor = False
+    end
+    object Label3: TLabel
+      Left = 82
+      Height = 15
+      Hint = 'Click Here'
+      Top = 98
+      Width = 138
+      Caption = 'mcguirez.homestead.com'
+      Font.Color = clBlue
+      Font.Style = [fsUnderline]
+      ParentColor = False
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = Label3Click
+    end
+    object Label4: TLabel
+      Left = 82
+      Height = 15
+      Hint = 'Click Here'
+      Top = 122
+      Width = 128
+      Caption = 'mcguirez@hotmail.com'
+      Font.Color = clBlue
+      Font.Style = [fsUnderline]
+      ParentColor = False
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = Label4Click
+    end
+  end
+  object OKButton: TButton
+    Left = 119
+    Height = 25
+    Top = 180
+    Width = 75
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 1
+  end
+end

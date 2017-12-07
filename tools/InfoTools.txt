@@ -1,0 +1,9 @@
+EXIFTOOL:
+  Original name : ExifTool by Phil Harvey 
+  Autor: Phil Harvey
+  License: This is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+  HP: http://owl.phy.queensu.ca/~phil/exiftool/
+  Version exiftool-10.60 (Win)
+
+ 
+  

@@ -1,0 +1,40 @@
+object Form1: TForm1
+  Left = 0
+  Height = 417
+  Top = 0
+  Width = 545
+  Caption = 'Form1'
+  ClientHeight = 417
+  ClientWidth = 545
+  LCLVersion = '1.9.0.0'
+  object StaticText1: TStaticText
+    Left = 0
+    Height = 313
+    Top = 104
+    Width = 545
+    Align = alBottom
+    Alignment = taCenter
+    Font.CharSet = ANSI_CHARSET
+    Font.Pitch = fpVariable
+    ParentFont = False
+    TabOrder = 0
+  end
+  object BuCreateImage1: TButton
+    Left = 8
+    Height = 25
+    Top = 8
+    Width = 112
+    Caption = 'Create only'
+    OnClick = BuCreateImageClick
+    TabOrder = 1
+  end
+  object BuCreateImageAndSave: TButton
+    Left = 136
+    Height = 25
+    Top = 8
+    Width = 112
+    Caption = 'Create && save'
+    OnClick = BuCreateImageAndSaveClick
+    TabOrder = 2
+  end
+end

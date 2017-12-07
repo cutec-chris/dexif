@@ -1,0 +1,13 @@
+
+http://www.lazarusforum.de/viewtopic.php?f=18&t=3952&p=97133#p97133
+Ich habe auch meine Fragen:
+
+ReadJpegFile und ReadTiffFile haben den Dateinamen als Parameter "aFileName", der aber nicht benutzt wird, sondern nur die interne Variable "Filename" (ohne "a"). Wahrscheinlich muss man in diesen Funktionen auch Filename auf aFileName setzen, indem man SetFileInfo(aFileName) aufruft. Aber sicher bin ich mir nicht
+TImgData.Sections ist deklariert für Indices 1..21. In ReadJPegSections hört die Schleife aber schon bei Index 20 auf. Allerdings gibt es noch die Variable SectionCnt, die anscheinend die tatsächlich benutzten Sections mitzählt. Aber warum ist TImgData.Sections dann kein dynamisches Array?
+ReadComments: benutzt intern einen WideString, gibt das Ergebnis aber als String zurück. Das funktioniert unter fpc 3.0+, aber vorher wahrscheinlich nicht. Ich denke man muss, um Kompatibilität zu früheren fpc-Versionen zu bewahren, hier ein UTF8Encode einbauen.
+Warum sind ReadArtist/WriteArtist etc im private-Abschnitt? Sie werden nirgendwo aufgerufen, und von außerhalb kann man das auch nicht, da "private". Ich denke, diese Funktionen von Mitja sollten public sein.
+Die erneute Arbeit mit dieser Bibliothek bestätigt meinen Eindruck von früher: Mit heißer Nadel gestrickt. Ich weiß nicht, ob es sich lohnt, da viel Arbeit reinzustecken, um die Klassen sicherer zu implementieren. Wahrscheinlich wäre diese besser investiert, wenn man versuchen würde, EXIF direkt in die fpc-Routinen einzubauen. TFPCustomImage hat z.B. speziell eine StringList FExtra, die man wahrscheinlich für Meta-Daten verwenden könnte.
+
+[EDIT]
+Mitja, in "TImageInfo.Readcomments", im else-Zweig von "if pos('ASCII', p^.Row) = 1", in dem der Widestring behandelt wird, stimmt möglicherweise die Stringlängenberechnung nicht. Du schreibst: SetLength(w, (Length(p^.Raw)-10 div 2)) - muss das nicht eher heißen "SetLength(s, Length(p^.Raw) div 2 - 10)" (denn der 1-byte-String p^.Raw enthält ja nun 2-byte-Zeichen)? Analog evtl auch darunter das "Move"?
+

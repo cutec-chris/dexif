@@ -4,10 +4,12 @@
 
 unit dexif_package;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  dEXIF, dIPTC, msData;
+  dEXIF, dIPTC, msData, dexifwrite, dGlobal, dTags, dUtils, dMetadata, 
+  dIPTCWrite;
 
 implementation
 

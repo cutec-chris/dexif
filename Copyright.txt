@@ -1,0 +1,67 @@
+----------------------------------
+This port of dEXIF to Lazarus/Freepascal is accepted in July 2017 by the Copyright-Owner
+----------------------------------
+Hello Andreas ,
+  It is possible, all I ask is attribution somewhere in your documentation or source.  
+  I will indeed look at updating the license terms but wanted to let you know it's OK to proceed so you don't have to wait.
+Thanks,   
+
+Gerry McGuire dEXIF author.
+
+---------------------------------
+dEXIF is Copyright © 2001 - 2006 Gerry McGuire. All rights reserved.
+
+LICENSE
+
+Before proceeding with the installation and/or use of this software,
+carefully read the following terms and conditions of this license
+agreement and limited warranty.
+
+By installing or using this software you indicate your acceptance of
+this License. If you do not accept or agree with these terms, you may
+not install or use this software!
+
+This software, including documentation, source code, object code and/or additional
+materials dEXIF is owned by Gerry McGuire (the Author).
+
+This License does not provide you with title or ownership of dEXIF, but only a
+right of limited use as outlined in this License agreement. The Author hereby grants
+you a non-exclusive, royalty free license to use dEXIF as set forth below:
+
+ *  You may integrate dEXIF with your Applications, subject to the redistribution 
+    terms below.
+
+ *  You may modify or adapt dEXIF in whole or in part for the development of 
+    Applications based on dEXIF.
+
+ *  You may use portions of the dEXIF source code or dEXIF Demo Programs in 
+    your own products.
+
+You are granted a non-exclusive, royalty-free right to reproduce and redistribute
+executable files created using dEXIF (the Executable Code) in conjunction with
+software products that you develop and/or market (the Applications).
+
+Without the expressed, written consent of the Author: 
+
+  * You may NOT distribute modified versions of dEXIF, in whole or in part.
+  
+  * You may NOT rent or lease dEXIF.
+
+  * You may NOT sell any portion of dEXIF on its own, without integrating it into 
+    your Applications as Executable Code.
+
+  * You may NOT bundle dEXIF with commercial development libraries.
+
+  * You may NOT charge for the value dEXIF adds to your Applications.
+
+There is no warranty or other guarantee of fitness for this software, it
+is provided solely "as is". Bug reports or fixes may be sent to the
+Author, who may or may not act on them as he desires.
+
+If you redistribute dEXIF in binary form (i.e. as a library or linked
+into an application), the accompanying documentation (e.g. readme file, help file
+or about-box) should state that: This software is based, in part, on the work of
+Gerry McGuire or words to that effect.  It would be appreciated if you send along
+a pointer to your work to mailto://mcguirez@hotmail.com. 
+
+Thanks to Anders Melander for the template upon which this copyright notice is based.

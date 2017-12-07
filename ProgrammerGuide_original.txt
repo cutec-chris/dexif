@@ -1,0 +1,275 @@
+
+         Programmer's Guide to dEXIF and dIPTC
+
+     Image Metadata Manipulators Written in Delphi.
+
+                      Gerry McGuire
+
+                   mcguirez@hotmail.com
+
+         Copyright 2001-2006 - All Rights Reserved
+
+
+
+Theory of Operation:
+
+An EXIF header is a multilevel binary structure with the
+following characteristics:  (Several details are glossed over
+here - a more complete specification can be found at
+http://www.pima.net/standards/iso/tc42/wg18/WG18_POW.htm )
+
+  * The image file is divided into sections.  These sections
+    are separated by a marker byte followed by a section
+    type byte.
+
+  * One of these sections is the "EXIF" section.  This section is used by
+    the capturing device (camera) to record the various conditions and
+    settings in effect at the time of aquisition.
+
+  * Another of these sections is the "IPTC" section.  IPTC stands for the
+    "International Press Telecommunications Council" and this section holds
+    metadata relevant for publishing an image.  This section contains
+    data such as "Caption", "Byline", "Urgency" etc.  Photoshop can read
+    and write to this area and is available under "Image Info..." on the
+    file menu.
+
+  * Another one of these sections is the "Comments" section.  It basically
+    holds up to 64k of data.  I believe there may be more than one Comments
+    section although dEXIF only handles the first one at this time.
+
+  * An EXIF section consists of a directory structure. There is only one
+    valid EXIF section per image.  This section may also contain several
+    sub-sections which each contain their own directory.
+
+  * An EXIF directory consists of entries that consist of
+      a) a 16 bit field identifier (Tag)
+      b) a 16 bit type indicator
+      c) a 32 bit component count (used to determine the data length
+      d) If the data is 4 bytes in size or less, it is contained here
+         otherwise a 32 bit pointer to the data is contained here.
+
+   * One of the EXIF entries is the "MakerNote" entry.  This information
+     varies by the manufacturer.  Typically this is also a directory
+     structure that can be interpreted in the same fashion as the
+     EXIF directory.
+
+   * Typical jpegs have a JFIF section which is a brief 16 byte header.
+
+   * An EXIF section may be substituted for a JFIF section but there must
+     be one or the other.  If a JFIF section exists it must be first, an
+     EXIF entry must also be first unless there is also a JFIF section
+     in which case the EXIF section must be second.  (Anyone remember
+     Monty Python's holy hand grenade incantation?)
+ 
+   * A jpeg, using Borland's jepg unit, will not be altered unless
+     the compress method is called.  That is, no degradation of the
+     image is caused by continually reading and writing via this
+     library.
+
+   * If a thumbnail is present, a pointer to the thumbnail block 
+     occupies the 32 bytes immediately after the EXIF IFD0 directory.
+     In some formats (NIKON) there may be information following the
+     thumbnail block but still in the EXIF segment.
+
+   * The routines read the EXIF information from the file, copy it to 
+     a buffer, and create the TAG list from the buffer.  
+
+     File --------> EXIF Buffer ---------> Tag list ----------> User
+
+     Therefore changes to the Tab list will not be written to a file.
+     There are two methods on the ExifObj (WriteThruInt and 
+     WriteThruString) that alter the EXIF buffer and changes can
+     be written to an image file. 
+
+
+Sample Code:
+
+dEXIF handles the major sections by parsing the initial image header and
+putting each into it's own buffer.  This is currently accomplished by the
+dEXIF unit which also processes the EXIF data.  The dIPTC processes the
+IPTC section - surprise~!
+
+An IPTC segment and a Comments segment can be added to an arbitrary
+jpeg file, but an EXIF structure cannot be added.  This is because
+EXIF contains mostly camera setting etc, that cannot be meaningfully
+generated.  An EXIF structure can be copied over, presumably from a
+file that was the root source of the targeted image file.
+
+Sample Code [EXIF Section]:
+
+   The following examples assume this declaration:
+
+        Var ImgData: TImgData;
+        Begin
+           ImgData := TImgData.Create;
+
+   Open a file, extract the simple EXIF string summary:
+
+       // The following returns true if successful.  Will parse both 
+       // jpgs and tiff files.
+       if ImgData.ProcessFile('filename.jpg') then
+          if ImgData.HasExif then
+             MyString := ImgData.ExifObj.toString();
+
+   Open a file, extract a more detailed EXIF data summary:
+
+       // One string with embedded (CR/LF) breaks.
+       if ImgData.ProcessFile('filename.jpg') then
+          if ImgData.HasExif then
+             MyString := ImgData.ExifObj.toLongString();
+
+   Open a file, extract all EXIF data, interpreted (decoded) with
+   all possible detail.
+
+       DexifDecode := true;      // true by default - translates literals
+                                 // into something human-readable
+       ImgData.TraceLevel := 1;  // set detail level for trace string
+       // One string with embedded (CR/LF) breaks.
+       if ImgData.ProcessFile('filename.jpg') then
+          if ImgData.HasExif then
+                                 // Parse this to extract specific data
+             MyTraceString := ImgData.ExifObj.TraceString  
+
+   Some of the More common fields are parsed already and placed in
+   the TImageInfo class.  ImageInfo is predeclared and is used by
+   the global read routines.  (This will change - I'm working on it!)
+
+    With ImgData do
+       if ProcessFile('filename.jpg') and HasExif then // Read in file
+       begin
+         // These first 3 are read from the OS
+         MyFileName := ExifObj.Filename;
+         FileDate   := ExifObj.FileDateTime;       // tDateTime;
+         FileSize   := ExifObj.FileSize;           // longint;
+         // These are extracted from the image
+         Make       := ExifObj.CameraMake;         // string[32];
+         Model      := ExifObj.CameraModel;        // string[40];
+         DateTime   := ExifObj.DateTime;           // string[20];
+         Height     := ExifObj.Height
+         Width      := ExifObj.Width;              // integer
+         YPos       := ExifObj.HPosn;              // integer
+         XPos       := ExifObj.WPosn;              // integer
+         IsColor    := ExifObj.IsColor;            // integer;
+         Process    := ExifObj.Process;            // integer;
+         FlashUsed  := ExifObj.FlashUsed;          // integer;
+         // These are derived (computed) values
+         FocalLength := ExifObj.FocalLength;       // real;
+         ExposureTime := ExifObj.ExposureTime;     // real;
+         ApertureFNumber := ExifObj.ApertureFNumber;    // real;
+         Distance   := ExifObj.Distance;           // real;
+         CCDWidth   := ExifObj.CCDWidth;           // real;
+         Comments   := ExifObj.Comments;           // string;
+       end;
+
+   Open a file, manipulate the image and save to a new file adjusting
+   the EXIF size for the new file:
+
+       // var MyImage:TJpegImage;
+       if ImgData.ProcessFile('FileName.jpg') then
+       begin
+         MyImage.ReadFromFile('FileName.jpg);
+         // manipulate image here
+         ImgData.WriteEXIF(MyImage,'NewFile.jpg');
+       end;
+
+   Open a file and save to a new file removing all metadata:
+
+       // var MyImage:TJpegImage;
+       if ImgData.ProcessFile('FileName.jpg') then
+       begin
+         ImgData.ClearSections(); // Get rid of all MetaData
+         ImgData.WriteEXIF('NewFile.jpg');  // When only one name is specified,
+       end;                         // The last file read is used as source.
+
+
+Sample Code [Comments Section]:
+
+   The comments section can hold upto 64k bytes of data.
+   Don't confuse it with the UserComments tag of the EXIF
+   segament, which is fixed by the camera and is much shorter.
+
+   Open a jpeg file and extract the comments section
+   into a string.  note that the comment section can
+   contain binary data - it's not necessarily a string:
+
+       ImgData.ProcessFile('filename.jpg');  // calls the EXIF parsing routine
+       if ImgData.CommentSection > 0 then    // there was a Comment Section
+          MyString := ImgData.GetCommentSegment();
+
+   Open a file, do nothing other than add
+   a tstringlist to the comment section and save:
+
+       ImgData.ProcessFile('filename.jpg');  // calls the EXIF parsing routine
+                                             // The following call will overwrite
+       ImgData.MakeCommentSegment(MyString); // or add a comment section
+
+
+Sample Code [IPTC Section]:
+
+    Read IPTC strings from a jpeg file:
+
+      // We're not interested to deal with EXIF data
+      StringList := ImgData.IPTCObj.ReadFileStrings('filename.jpg');
+
+    Read IPTC data into dIPTC for further manipulation,
+    check the copyright tag, add it if it doesn't exisit
+    and save the file:
+
+      // normally use a WITH block but this IS an example:
+      if ImgData.IPTCObj.ReadFile('filename.jpg') then
+      begin     // file parsed OK - and there was actual data
+        if ImgData.IPTCObj.GetTag('Copyright') = '' then
+        begin
+          ImgData.IPTCObj.AddTag('Copyright','Copyright 2004 - Gerry McGuire');
+          ImgData.IPTCObj.WriteFile();  // defaults to last ReadFile value
+        end
+      end;
+
+    Adding IPTC data to a generated image which does
+    not yet exist as a file: (typically you'd use a
+    With ImgData.IPTCObj... statement)
+
+      ImgData.IPTCObj.Reset;  // clear out old values
+      ImgData.IPTCObj.AddTag('Copyright','Copyright 2004 - Gerry McGuire');
+      ImgData.IPTCObj.AddTag('Keywords','Software, Sample');
+      // To add a keyword without removing earlier values
+      ImgData.IPTCObj.AppendToTag('Keywords','Another');
+      ImgData.IPTCObj.AddTag('OriginatingProgram','dEXIF Version 1.2c');
+      ImgData.IPTCObj.WriteFile('newfile.jpg',NewJpgImage);  // Last argument is TJpegImage
+
+    Read in a file and save any ITPC data as XML:
+
+      ImgData.IPTCObj.ReadFile('filename.jpg');  // as an alternative, you can
+      if ImgData.IPTCObj.HasData then            // check for data after the ReadFile
+          ImgData.IPTCObj.IPTCArrayToXML('filename.xml');
+
+    Note that the EXIF section has a similar function and that the ImgData
+    object has a method ( MetaDataToXML() ) which returns a stringlist that
+    contains the XML of both segments.
+
+    Read all of the currently defined tags and their
+    labels into a stringgrid.  The data array is
+    TIPTCdata's default value.
+
+      // var grid: tstringgrid; i:integer;
+      grid.colcount := 2;
+      grid.rowcount := ImgData.IPTCObj.count;
+      for i := 0 to ImgData.IPTCObj.Count-1 do
+      begin
+        grid.cells[0,i] := ImgData.IPTCObj[i].desc;   // get label value
+        grid.cells[1,i] := ImgData.IPTCObj[i].data;   // get actual data
+      end;
+
+    Write a file containing all the user tag descriptions:
+
+      ImgData.IPTCObj.IPTCWriteTransFile( 'translate.txt');
+
+    Read in file containing all the user tag descriptions (may be used
+    for translating UI into a non-English language).  Perform this in
+    a form create method or before any images are read in.
+
+      ImgData.IPTCObj.IPTCWReadTransFile( 'translate.txt');
+
+
+    See the IPTCView application bundled with this source code
+    for a more detailed example then those presented above.

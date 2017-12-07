@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="10"/>
+    <PathDelim Value="\"/>
+    <General>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="TestGUIdEXIF"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+    </General>
+    <BuildModes Count="1">
+      <Item1 Name="Default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="4">
+      <Item1>
+        <PackageName Value="LazUtils"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="fpcunittestrunner"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="FCL"/>
+      </Item4>
+    </RequiredPackages>
+    <Units Count="17">
+      <Unit0>
+        <Filename Value="TestGUIdEXIF.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="tstbasic.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstBasic"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="tstreadexif.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="tstselfimage.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="tstwritereadexif.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\dEXIF.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\dIPTC.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\msData.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\dexifwrite.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\dglobal.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dGlobal"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\dtags.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dTags"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\dExif.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\dUtils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="tstthumbnail.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstThumbnail"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="tstdeleteexif.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="tstDeleteExif"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\dmetadata.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dMetadata"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\diptcwrite.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dIptcWrite"/>
+      </Unit16>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="TestGUIdEXIF"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value=".."/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Linking>
+      <Debugging>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="5">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+      <Item4>
+        <Name Value="EAssertionFailedError"/>
+      </Item4>
+      <Item5>
+        <Name Value="EConvertError"/>
+      </Item5>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

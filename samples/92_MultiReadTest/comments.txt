@@ -1,0 +1,20 @@
+All images
+----------
+ExifTool seems to specify the Thumbnail offset from image start while dExif
+refers to the begin of the TIFF header; in images without an APP0 segment this
+is a 12-byte difference.
+
+
+Schilfgebiet.jpg
+----------------
+Tag "ExposureTime" is written in Big-Endian format although the EXIF segment
+is identified to be Little-Endian. Reading the exposure time as Big-Endian
+then the value is 1/250, like in ExifTool.
+
+The same seems to be true for "FocalLength" which shows a much more reasonable
+value (4500/100 = 4.5mm) when read as BigEndian than the -0.9mm resulting from
+LittleEndian. Note this is not in agreement with ExifTool.
+
+Reading also "Flash" as BigEndian yields the value $10 = 16, which means
+"Off, Did not fire".
+

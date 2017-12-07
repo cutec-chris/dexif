@@ -1,0 +1,16 @@
+;IMPORTANT: This file must be stored in ANSI encoding
+; Use a TAB character between the two columns
+
+Comment	ÄÖÜ in the comment segment.
+Artist	Hansi Müller
+ImageDescription	Hübsches Bild
+UserComment	Schöner Kommentar!
+Make	ÄÖÜ camera make
+Model	äöü camera model
+Copyright	© wp
+Orientation	Mirror horizontal|2
+ExposureProgram	Manual|1
+MeteringMode	Spot|3
+LightSource	Tungsten|3
+GPSLatitude	
+GPSLongitude	
