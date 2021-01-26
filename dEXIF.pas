@@ -373,7 +373,7 @@ const
   TIFF_COMP_TYPE = 1;
 
   GPSCnt = 32;
-  ExifTagCnt = 251;  // NOTE: was 250 before, but "count" is 251
+  ExifTagCnt = 255;  // NOTE: was 250 before, but "count" is 251 and now 255 with lens tags
   TotalTagCnt = GPSCnt + ExifTagCnt;
 
 { Many tags added based on Php4 source...
@@ -695,6 +695,10 @@ var
     Desc:''; Code:'0:Unknown,1:Macro,2:Close view,3:Distant view'),
   (TID:0; TType:2; Tag:$A420; ParentID:$8769; Count:1; Name:'ImageUniqueID';
     Desc:'';  Code:'0:Close view,1:Distant view'),
+  (TID:0; TType:5; Tag:$A432; ParentID:$0000; Count:4; Name:'LensSpecification'),
+  (TID:0; TType:2; Tag:$A433; ParentID:$0000; Count:1; Name:'LensMake'),
+  (TID:0; TType:2; Tag:$A434; ParentID:$0000; Count:1; Name:'LensModel'),
+  (TID:0; TType:2; Tag:$A435; ParentID:$0000; Count:1; Name:'LensSerialNumber'),  
   (TID:0; TType:0; Tag:0;     ParentID:$0000; Count:1; Name:'Unknown')
 );
 
