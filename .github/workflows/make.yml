@@ -1,0 +1,52 @@
+---
+name: Make
+
+on:
+  schedule:
+    - cron:  '0 0 1 * *'
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - master
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Build on Linux
+      shell: bash
+      run: |
+        set -xeuo pipefail
+        sudo bash -c '
+          apt-get update
+          apt-get -y install lazarus lib{avformat,avutil,avcodec,swscale}-dev cppcheck
+        ' >/dev/null
+        mkdir -p use/acinerella/build
+        (if pushd use/acinerella/build;then
+          cmake ..
+          make
+          sudo cp libacinerella.so /usr/lib/
+        fi)
+        sudo ldconfig --verbose
+        find "${PWD}" -type 'f' -name '*.c' -exec cppcheck --quiet \
+          --enable=warning {} + >&2
+        instantfpc -Fu/usr/lib/lazarus/*/components/lazutils \
+          -B '.github/workflows/make.pas'

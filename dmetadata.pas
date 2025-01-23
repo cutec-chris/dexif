@@ -15,7 +15,7 @@ uses
  {$ELSE}
   {$IFNDEF dExifNoJpeg} jpeg, {$ENDIF}
  {$ENDIF}
-  dGlobal, dExif, dIPTC;
+  dGlobal, dEXIF, dIPTC;
 
 type
   TImgData = class;
